@@ -41,7 +41,7 @@ leiden <- spark_read_csv(sc,
 
 
 
-# aggregate oa_status
+# aggregate oa_status -----
 oa_status <- papers %>%
   filter(!is.na(is_oa)) %>%
   select(paperid, fos_displayname, year, is_oa, oa_status) %>%
@@ -57,8 +57,9 @@ oa_status_per_year <- oa_status %>%
   collect()
 
 oa_per_year %>%
+  group_by(fos_displayname, year) %>%
   mutate(oa_share = n/sum(n)) %>%
-  filter(is_oa == 1) %>%
+  filter(is_oa) %>%
   ggplot(aes(as.factor(year), oa_share, colour = fos_displayname,
              group = fos_displayname)) +
   geom_point() +
@@ -70,7 +71,8 @@ oa_per_year %>%
 
 
 oa_status_per_year %>%
-  filter(oa_status %in% c("bronze", "closed", "gold", "green", "hybrid")) %>%
+  group_by(fos_displayname, year) %>%
+  filter(!is.na(oa_status)) %>%
   mutate(oa_share = n/sum(n)) %>%
   ggplot(aes(as.factor(year), oa_share, colour = oa_status,
              group = oa_status)) +
@@ -84,7 +86,8 @@ oa_status_per_year %>%
 
 # swapping facets with oclours
 oa_status_per_year %>%
-  filter(oa_status %in% c("bronze", "closed", "gold", "green", "hybrid")) %>%
+  group_by(fos_displayname, year) %>%
+  filter(!is.na(oa_status)) %>%
   mutate(oa_share = n/sum(n)) %>%
   ggplot(aes(as.factor(year), oa_share, colour = fos_displayname,
              group = fos_displayname)) +
