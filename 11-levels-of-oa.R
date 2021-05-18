@@ -107,28 +107,22 @@ paper_oa_flag <- papers %>%
   select(paperid, is_oa, oa_status, year, fos_displayname)
 
 oa_per_funder <- funded_projects %>%
-  left_join(paper_oa_flag) %>%
-  collect()
+  left_join(paper_oa_flag)
 
 oa_per_funder
 
 oa_per_funder %>%
-  count(funder_name, sort = TRUE) %>% View()
+  count(funder_name, sort = TRUE)
 
 oa_per_funder_aggregated <- oa_per_funder %>%
   select(doi, funder_name, year, is_oa) %>%
   distinct() %>% # remove duplicate rows since many papers are funded by multiple projects
   group_by(year, funder_name) %>%
   count(is_oa) %>%
-  mutate(is_oa = recode(is_oa, `0` = "no", `1` = "yes", .missing = "unknown")) %>%
-  filter(is_oa != "unknown") %>%
+  filter(!is.na(is_oa)) %>%
   mutate(oa_share = n/sum(n),
-         total_papers = sum(n))
-
-# why do so many have no year?
-# the issue was that I only joined the climate papers
-
-# -> obvs the results are now heavily influenced by medicine
+         total_papers = sum(n)) %>%
+  collect()
 
 text_labels <- oa_per_funder_aggregated %>%
   group_by(funder_name) %>%
@@ -137,7 +131,7 @@ text_labels <- oa_per_funder_aggregated %>%
 
 
 oa_per_funder_aggregated %>%
-  filter(is_oa == "yes") %>%
+  filter(is_oa) %>%
   ggplot(aes(lubridate::ymd(year, truncated = 2L), oa_share,
              group = funder_name)) +
   geom_point() +
@@ -156,3 +150,6 @@ oa_per_funder_aggregated %>%
 
 
 ## OA per country
+
+## exit ----
+spark_disconnect(sc)
