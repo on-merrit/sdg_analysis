@@ -1,18 +1,41 @@
+# setup -----
+Sys.setenv(SPARK_HOME="/usr/hdp/current/spark2-client")
+library(sparklyr)
+
+config <- spark_config()
+config$spark.executor.cores <- 10
+config$spark.executor.instances <- 5
+config$spark.executor.memory <- "30G"
+sc <- spark_connect(master = "yarn-client", config = config)
+
 library(tidyverse)
+library(arrow)
 
-con <- DBI::dbConnect(RSQLite::SQLite(), dbname = "data/processed/sdg_mag.db")
-
-DBI::dbListTables(con)
-
-
-affils <- tbl(con, "affils_w_country")
-author_metadata <- tbl(con, "author_metadata")
-author_paper_affiliations <- tbl(con, "author_paper_affil")
-papers <- tbl(con, "papers")
-funded_projects <- tbl(con, "funded_projects")
-wb_indicators <- tbl(con, "world_bank_indicators")
-leiden <- tbl(con, "leiden_ranking")
-
+papers <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_papers_collated.csv",
+                         name = "papers")
+affils <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/affiliations_with_country.csv",
+                         name = "affils")
+author_metadata <- spark_read_csv(sc,
+                                  "/user/tklebel/sdg/data/sdg_author_data.csv",
+                                  name = "author_metadata")
+author_paper_affiliations <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
+  name = "author_paper_affiliations"
+)
+funded_projects <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
+  name = "funded_projects"
+)
+wb_indicators <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/world_bank_indicators.csv",
+  name = "wb_indicators")
+leiden <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/leiden_ranking.csv",
+                         name = "leiden")
 
 
 # explore duplicates ------
@@ -22,13 +45,13 @@ papers %>%
 
 # todo: fix look into this discrepancy
 duplicated_papers <- papers %>%
-  count(paperid) %>%
+  count(paperid, fos_displayname) %>%
   filter(n > 1) %>%
   collect()
 # questions: how do some have an NA paperid?
 # why are there duplicates?
 papers %>%
-  filter(paperid == 295256) %>%
+  filter(paperid == 2803628678) %>%
   collect() %>%
   View()
 # one reason for "duplication" is being relevant to multiple fos (virus being
