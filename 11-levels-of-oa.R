@@ -38,29 +38,6 @@ leiden <- spark_read_csv(sc,
                          name = "leiden")
 
 
-# explore duplicates ------
-papers %>%
-  distinct(paperid) %>%
-  count()
-
-# todo: fix look into this discrepancy
-duplicated_papers <- papers %>%
-  count(paperid, fos_displayname) %>%
-  filter(n > 1) %>%
-  collect()
-# questions: how do some have an NA paperid?
-# why are there duplicates?
-papers %>%
-  filter(paperid == 2803628678) %>%
-  collect() %>%
-  View()
-# one reason for "duplication" is being relevant to multiple fos (virus being
-# part of Medicine, mainly)
-# but to some part there are real duplicates here
-papers %>%
-  filter(paperid == 295256) %>%
-  collect() %>%
-  distinct()
 
 
 
