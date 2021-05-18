@@ -1,12 +1,12 @@
 # setup -----
-Sys.setenv(SPARK_HOME="/usr/hdp/current/spark2-client")
+Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
 library(sparklyr)
 
 config <- spark_config()
 config$spark.executor.cores <- 10
 config$spark.executor.instances <- 5
 config$spark.executor.memory <- "30G"
-sc <- spark_connect(master = "yarn-client", config = config)
+sc <- spark_connect(master = "yarn-client", config = config, app_name = "SDG_OA")
 
 library(tidyverse)
 library(arrow)
