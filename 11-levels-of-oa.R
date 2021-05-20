@@ -4,7 +4,7 @@ library(sparklyr)
 
 config <- spark_config()
 config$spark.executor.cores <- 10
-config$spark.executor.instances <- 5
+config$spark.executor.instances <- 8
 config$spark.executor.memory <- "30G"
 sc <- spark_connect(master = "yarn-client", config = config, app_name = "SDG_OA")
 
@@ -68,28 +68,16 @@ oa_per_year %>%
   labs(x = NULL, title = "OA share by Field of Study",
        y = NULL, colour = NULL) +
   theme(legend.position = "top")
+ggsave("plots/oa_by_fos.png")
 
-
-oa_status_per_year %>%
-  group_by(fos_displayname, year) %>%
-  filter(!is.na(oa_status)) %>%
-  mutate(oa_share = n/sum(n)) %>%
-  ggplot(aes(as.factor(year), oa_share, colour = oa_status,
-             group = oa_status)) +
-  geom_point() +
-  geom_line() +
-  facet_wrap(vars(fos_displayname)) +
-  scale_y_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
-  labs(x = NULL, title = "OA share by Field of Study",
-       y = NULL, colour = NULL) +
-  theme(legend.position = "top")
 
 # swapping facets with oclours
 oa_status_per_year %>%
   group_by(fos_displayname, year) %>%
   filter(!is.na(oa_status)) %>%
   mutate(oa_share = n/sum(n)) %>%
-  ggplot(aes(as.factor(year), oa_share, colour = fos_displayname,
+  ggplot(aes(lubridate::ymd(year, truncated = 2L), oa_share,
+             colour = fos_displayname,
              group = fos_displayname)) +
   geom_point() +
   geom_line() +
@@ -98,6 +86,7 @@ oa_status_per_year %>%
   labs(x = NULL, title = "OA share by Field of Study",
        y = NULL, colour = NULL) +
   theme(legend.position = "top")
+ggsave("plots/oa_type_by_fos.png")
 
 # the rise in oa is thus mainly due to rise in gold OA, slightly rise in hybrid
 # unpaywall might always prefer gold over green
@@ -145,11 +134,100 @@ oa_per_funder_aggregated %>%
   labs(x = NULL, title = "OA share by funder",
        y = NULL, colour = NULL) +
   theme(legend.position = "top")
-
+ggsave("plots/oa_by_funder.png", width = 16, height = 9)
 # share of OA going down for CA institutes of health
 
 
-## OA per country
+## OA per country -----
+oa_per_affiliation <- paper_oa_flag %>%
+  select(-fos_displayname) %>%
+  left_join(author_paper_affiliations) %>%
+  right_join(affils)
+
+oa_per_affiliation_selected <- oa_per_affiliation %>%
+  group_by(paperid) %>%
+  mutate(frac_count = 1 / max(authorsequencenumber, na.rm = TRUE)) %>%
+  select(paperid, authorid, is_oa, oa_status, year, country, frac_count) %>%
+  filter(!is.na(is_oa))
+
+
+oa_per_country <- oa_per_affiliation_selected %>%
+  group_by(country, is_oa) %>%
+  summarise(sum_frac_oa = sum(frac_count)) %>%
+  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa)) %>%
+  collect()
+
+order_df <- oa_per_country %>%
+  filter(is_oa) %>%
+  arrange(desc(prop_oa)) %>%
+  mutate(order = seq_along(prop_oa))
+
+oa_per_country %>%
+  filter(sum_frac_oa > 1000) %>%
+  left_join(order_df) %>%
+  ggplot(aes(prop_oa, fct_reorder(country, order, max, na.rm = TRUE), fill = is_oa)) +
+  geom_col()
+
+wb_local <- wb_indicators %>%
+  filter(year == 2018) %>%
+  collect()
+
+
+oa_with_r_d_gdp <- oa_per_country %>%
+  left_join(wb_local, by = c("country" = "country_code")) %>%
+  select(-indicator_name) %>%
+  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.MKTP.KD")) %>%
+  pivot_wider(names_from = indicator_code, values_from = value) %>%
+  drop_na() %>%
+  filter(is_oa)
+
+oa_with_r_d_gdp %>%
+  ggplot(aes(GB.XPD.RSDV.GD.ZS, prop_oa, colour = NY.GDP.MKTP.KD)) +
+  geom_point(aes(size = NY.GDP.MKTP.KD), show.legend = FALSE) +
+  scale_colour_viridis_c(trans = "log", option = "D", end = .9) +
+  ggrepel::geom_text_repel(aes(label = country_name), show.legend = FALSE) +
+  labs(x = "Expenditure towards research", y = "OA share") +
+  scale_y_continuous(labels = scales::percent)
+ggsave("plots/oa_country_rd.png", width = 13, height = 9)
+
+
+oa_with_gdp_per_cap <- oa_per_country %>%
+  left_join(wb_local, by = c("country" = "country_code")) %>%
+  select(-indicator_name) %>%
+  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.PCAP.KD")) %>%
+  pivot_wider(names_from = indicator_code, values_from = value) %>%
+  drop_na() %>%
+  filter(is_oa)
+
+
+oa_with_gdp_per_cap %>%
+  ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
+  geom_point() +
+  ggrepel::geom_text_repel(aes(label = country_name)) +
+  labs(x = "GDP per capita", y = "OA share") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10()
+ggsave("plots/oa_per_gdp_p_cap.png", width = 12, height = 8)
+
+
+  test_df <- .Last.value
+
+test_df %>%
+  group_by(country) %>%
+  summarise(mean_oa = mean(is_oa),
+            n = n()) %>%
+  arrange(desc(mean_oa)) %>%
+  filter(country == "DEU")
+
+test_df %>%
+  group_by(country, is_oa) %>%
+  summarise(sums = sum(frac_count)) %>%
+  mutate(props = sums/sum(sums))
+
+
+## OA per gdp, % spent on research
+
+## OA per academic age
 
 ## exit ----
 spark_disconnect(sc)
