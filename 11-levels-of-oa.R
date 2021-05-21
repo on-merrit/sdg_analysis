@@ -40,6 +40,9 @@ leiden <- spark_read_csv(sc,
 
 
 
+# functions ----
+as_year <- function(num_val) lubridate::ymd(num_val, truncated = 2L)
+
 
 # aggregate oa_status -----
 oa_status <- papers %>%
@@ -248,10 +251,32 @@ age_dist %>%
   View()
 
 age_trunc <- papers_w_age %>%
-  filter(current_age <= 70 | current_age > 0)
+  filter(current_age <= 70 | current_age > 0) %>%
+  select(year, paperid, is_oa, oa_status, current_age, authorsequencenumber)
 
-age_trunc
+# make age groups
+age_oa <- age_trunc %>%
+  mutate(age_group = case_when(
+    current_age > 0 & current_age < 10 ~ "1-9 years",
+    current_age >= 10 & current_age < 20 ~ "10-19 years",
+    current_age >= 20 & current_age < 30 ~ "20-39 years",
+    current_age >= 30 & current_age < 40 ~ "30-39 years",
+    current_age >= 40 & current_age < 50 ~ "40-49 years",
+    current_age >= 50 & current_age < 60 ~ "50-59 years",
+    TRUE ~ "60+ years"
+  )) %>%
+  group_by(year, age_group) %>%
+  summarise(oa_share = mean(as.numeric(is_oa))) %>%
+  collect()
 
+age_oa %>%
+  ggplot(aes(as_year(year), oa_share, colour = age_group, group = age_group)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
+  theme_bw() +
+  labs(x = NULL, y = "OA share", title = "OA share over time", colour = NULL)
+ggsave("plots/oa_per_age.png", scale = 1.5)
 
 ## exit ----
 spark_disconnect(sc)
