@@ -3,9 +3,9 @@ Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
 library(sparklyr)
 
 config <- spark_config()
-config$spark.executor.cores <- 10
-config$spark.executor.instances <- 8
-config$spark.executor.memory <- "30G"
+config$spark.executor.cores <- 15
+config$spark.executor.instances <- 5
+config$spark.executor.memory <- "50G"
 sc <- spark_connect(master = "yarn-client", config = config, app_name = "SDG_OA")
 
 library(tidyverse)
@@ -168,6 +168,10 @@ oa_per_country %>%
   ggplot(aes(prop_oa, fct_reorder(country, order, max, na.rm = TRUE), fill = is_oa)) +
   geom_col()
 
+
+
+## OA per gdp, % spent on research
+
 wb_local <- wb_indicators %>%
   filter(year == 2018) %>%
   collect()
@@ -210,24 +214,44 @@ oa_with_gdp_per_cap %>%
 ggsave("plots/oa_per_gdp_p_cap.png", width = 12, height = 8)
 
 
-  test_df <- .Last.value
 
-test_df %>%
-  group_by(country) %>%
-  summarise(mean_oa = mean(is_oa),
-            n = n()) %>%
-  arrange(desc(mean_oa)) %>%
-  filter(country == "DEU")
+## OA per academic age ------
+author_w_year <- author_paper_affiliations %>%
+  left_join(author_metadata) %>%
+  select(paperid, authorid, authorsequencenumber, year_first_paper)
 
-test_df %>%
-  group_by(country, is_oa) %>%
-  summarise(sums = sum(frac_count)) %>%
-  mutate(props = sums/sum(sums))
+papers_w_age <- papers %>%
+  # only take papers with OA status for now
+  filter(!is.na(oa_status)) %>%
+  left_join(author_w_year) %>%
+  mutate(current_age = year - year_first_paper)
 
 
-## OA per gdp, % spent on research
+age_dist <- papers_w_age %>%
+  filter(year == 2018) %>%
+  distinct(authorid, current_age) %>%
+  count(current_age) %>%
+  collect()
 
-## OA per academic age
+
+age_dist %>%
+  ggplot(aes(current_age, n)) +
+  geom_col() +
+  scale_y_continuous(labels = function(x) format(x,
+                                                 big.mark = ".",
+                                                 decimal.mark = ",")) +
+  labs(y = "Number of researchers", title = "Current age of researchers in 2018",
+       caption = "Only taking authors on papers that have an OA status into account")
+ggsave("plots/age_overview.png")
+
+age_dist %>%
+  View()
+
+age_trunc <- papers_w_age %>%
+  filter(current_age <= 70 | current_age > 0)
+
+age_trunc
+
 
 ## exit ----
 spark_disconnect(sc)
