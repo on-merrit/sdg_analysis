@@ -132,7 +132,7 @@ oa_per_funder_aggregated <- oa_per_funder %>%
   collect()
 ```
 
-```{r, fig.width=15, fig.height=12}
+```{r sdg_oa_by_funder, fig.width=15, fig.height=12}
 text_labels <- oa_per_funder_aggregated %>%
   group_by(funder_name) %>%
   summarise(nn_papers = sum(total_papers)) %>%
@@ -160,7 +160,7 @@ Share of OA going down for CA institutes of health. There is an explanation
 for this in the Nature 2018 paper by Lariviere and Sugimoto.
 
 
-```{r}
+```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
 spark_disconnect(sc)
 ```
