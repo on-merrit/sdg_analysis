@@ -25,6 +25,7 @@ message("Connection to Spark successful!")
 library(tidyverse)
 library(arrow)
 
+message("Reading the datasets...")
 papers <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_papers_collated.csv",
                          name = "papers")
 affils <- spark_read_csv(sc,
@@ -51,6 +52,7 @@ leiden <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/leiden_ranking.csv",
                          name = "leiden")
 
+message("Successfully read all datasets!")
 ```
 
 
