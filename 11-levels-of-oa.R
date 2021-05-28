@@ -37,12 +37,7 @@ leiden <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/leiden_ranking.csv",
                          name = "leiden")
 
-
-
-
-# functions ----
-as_year <- function(num_val) lubridate::ymd(num_val, truncated = 2L)
-
+source("R/helpers.R")
 
 # aggregate oa_status -----
 oa_status <- papers %>%
@@ -277,6 +272,12 @@ age_oa %>%
   theme_bw() +
   labs(x = NULL, y = "OA share", title = "OA share over time", colour = NULL)
 ggsave("plots/oa_per_age.png", scale = 1.5)
+
+# next: do the same but facet by FOS and OA type
+# also: compare first and last and middle authors
+
+# on R&D: do scatter of GDP and expenditure of GDP. if there is a high cor,
+# % of R&D is not very informative
 
 ## exit ----
 spark_disconnect(sc)
