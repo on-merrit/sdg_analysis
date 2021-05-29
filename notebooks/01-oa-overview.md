@@ -23,70 +23,10 @@ oa_status <- papers %>%
 oa_per_year <- oa_status %>%
   count(fos_displayname, year, is_oa) %>%
   collect()
-```
 
-```
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-```
-
-```r
 oa_status_per_year <- oa_status %>%
   count(fos_displayname, year, oa_status) %>%
   collect()
-```
-
-```
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
 ```
 
 
@@ -158,67 +98,6 @@ oa_per_funder_aggregated <- oa_per_funder %>%
   mutate(oa_share = n/sum(n),
          total_papers = sum(n)) %>%
   collect()
-```
-
-```
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-```
-
-```
-## Warning: Missing values are always removed in SQL.
-## Use `SUM(x, na.rm = TRUE)` to silence this warning
-## This warning is displayed only once per session.
-```
-
-```
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
 ```
 
 
