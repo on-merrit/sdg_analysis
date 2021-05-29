@@ -2,7 +2,9 @@
 title: "OA Overview"
 author: "Thomas Klebel"
 date: "20 5 2021"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
