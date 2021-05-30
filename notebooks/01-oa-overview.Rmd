@@ -13,6 +13,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 # setup -----
 Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
 library(sparklyr)
+library(tidyverse)
+library(arrow)
+source(here::here("R/helpers.R"))
 
 message("Connecting to spark...")
 
@@ -23,9 +26,6 @@ config$spark.executor.memory <- "60G"
 sc <- spark_connect(master = "yarn-client", config = config,
                     app_name = "SDG_OA_Markdown")
 message("Connection to Spark successful!")
-
-library(tidyverse)
-library(arrow)
 
 message("Reading the datasets...")
 papers <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_papers_collated.csv",
