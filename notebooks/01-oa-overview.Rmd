@@ -162,6 +162,88 @@ Share of OA going down for CA institutes of health. There is an explanation
 for this in the Nature 2018 paper by Lariviere and Sugimoto.
 
 
+# OA by country
+```{r, cache=TRUE}
+oa_per_affiliation <- paper_oa_flag %>%
+  select(-fos_displayname) %>%
+  left_join(author_paper_affiliations) %>%
+  right_join(affils)
+
+oa_per_affiliation_selected <- oa_per_affiliation %>%
+  group_by(paperid) %>%
+  mutate(frac_count = 1 / max(authorsequencenumber, na.rm = TRUE)) %>%
+  select(paperid, authorid, is_oa, oa_status, year, country, frac_count) %>%
+  filter(!is.na(is_oa))
+
+
+oa_per_country <- oa_per_affiliation_selected %>%
+  group_by(country, is_oa) %>%
+  summarise(sum_frac_oa = sum(frac_count)) %>%
+  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa)) %>%
+  collect()
+
+
+wb_local <- wb_indicators %>%
+  filter(year == 2018) %>%
+  collect()
+```
+
+
+## Correlation between indicators
+```{r, fig.width=13, fig.height=13}
+cor_matrix <- wb_local %>% 
+  select(country_code, country_name, indicator_name, value) %>% 
+  pivot_wider(names_from = "indicator_name", values_from = "value") %>% 
+  select(-starts_with("country")) %>% 
+  cor(use = "pairwise.complete.obs")
+
+plot_correlation(cor_matrix, cluster = TRUE)
+```
+
+
+
+```{r oa_sdg_by_country_rd, fig.width=13, fig.height=9}
+## OA per gdp, % spent on research
+oa_with_r_d_gdp <- oa_per_country %>%
+  left_join(wb_local, by = c("country" = "country_code")) %>%
+  select(-indicator_name) %>%
+  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.MKTP.KD")) %>%
+  pivot_wider(names_from = indicator_code, values_from = value) %>%
+  drop_na() %>%
+  filter(is_oa)
+
+oa_with_r_d_gdp %>%
+  ggplot(aes(GB.XPD.RSDV.GD.ZS, prop_oa, colour = NY.GDP.MKTP.KD)) +
+  geom_point(aes(size = NY.GDP.MKTP.KD), show.legend = FALSE) +
+  scale_colour_viridis_c(trans = "log", option = "D", end = .9) +
+  ggrepel::geom_text_repel(aes(label = country_name), show.legend = FALSE) +
+  labs(x = "Expenditure towards research", y = "OA share") +
+  scale_y_continuous(labels = scales::percent)
+```
+
+
+```{r oa_sdg_per_country_gdp_p_cap, fig.width=12, fig.height=8}
+oa_with_gdp_per_cap <- oa_per_country %>%
+  left_join(wb_local, by = c("country" = "country_code")) %>%
+  select(-indicator_name) %>%
+  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.PCAP.KD")) %>%
+  pivot_wider(names_from = indicator_code, values_from = value) %>%
+  drop_na() %>%
+  filter(is_oa)
+
+
+oa_with_gdp_per_cap %>%
+  ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
+  geom_point() +
+  ggrepel::geom_text_repel(aes(label = country_name)) +
+  labs(x = "GDP per capita", y = "OA share") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10()
+```
+
+
+
+
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
 spark_disconnect(sc)
