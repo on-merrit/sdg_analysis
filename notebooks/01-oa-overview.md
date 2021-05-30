@@ -1,7 +1,7 @@
 ---
 title: "OA Overview"
 author: "Thomas Klebel"
-date: "20 5 2021"
+date: "30 May, 2021"
 output: 
   html_document:
     keep_md: true
@@ -231,6 +231,131 @@ oa_with_gdp_per_cap %>%
 ![](01-oa-overview_files/figure-html/oa_sdg_per_country_gdp_p_cap-1.png)<!-- -->
 
 
+# OA by country with author groups
+
+```r
+author_paper_affiliations_w_groups <- author_paper_affiliations %>% 
+  group_by(paperid) %>% 
+  mutate(paper_author_cat = case_when(
+    max(authorsequencenumber) == 1 ~ "single",
+    max(authorsequencenumber) == 2 ~ "double",
+    TRUE ~ "multi"
+  )) %>% 
+  mutate(author_position = case_when(
+    paper_author_cat == "single" ~ "first_author",
+    paper_author_cat == "double" & authorsequencenumber == 1 ~ "first_author",
+    paper_author_cat == "double" & authorsequencenumber == 2 ~ "last_author",
+    paper_author_cat == "multi" & authorsequencenumber == 1 ~ "first_author",
+    paper_author_cat == "multi" & 
+      authorsequencenumber == max(authorsequencenumber) ~ "last_author",
+    TRUE ~ "middle_author"
+  ))
+
+oa_per_affiliation <- paper_oa_flag %>%
+  select(-fos_displayname) %>%
+  left_join(author_paper_affiliations_w_groups) %>%
+  right_join(affils) %>% 
+  filter(!is.na(is_oa))
+```
+
+```
+## Joining, by = "paperid"
+```
+
+```
+## Joining, by = "affiliationid"
+```
+
+```r
+oa_per_country_over_years <- oa_per_affiliation %>%
+  count(country, year, author_position, is_oa) %>%
+  group_by(country, year, author_position) %>% 
+  mutate(prop_oa = n/sum(n)) %>%
+  collect()
+```
+
+
+## author positions by country
+
+
+```r
+country_names <- wb_indicators %>% 
+  distinct(country_name, country_code) %>% 
+  collect()
+
+pdata <- oa_per_country_over_years %>% 
+  group_by(country, author_position) %>% 
+  summarise(n = sum(n)) %>% 
+  add_proportion(n, order_var = author_position,
+                 order_string = "first") %>% 
+  left_join(country_names, by = c("country" = "country_code")) %>% 
+  drop_na()
+```
+
+```
+## `summarise()` has grouped output by 'country'. You can override using the `.groups` argument.
+```
+
+```r
+p <- pdata %>% 
+  ggplot(aes(fct_reorder(country_name, order), prop, fill = author_position)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = NULL, y = "Proportion")
+plotly::ggplotly(p)
+```
+
+preserve0b6d457f2166f251
+
+Here we could also look into the proportion of papers coming from single, dual 
+or multi-author papers.
+
+
+
+```r
+gdp_p_cap <- wb_indicators %>% 
+  filter(indicator_code == "NY.GDP.PCAP.KD") %>% 
+  collect()
+
+pdata <- oa_per_country_over_years %>% 
+  group_by(country) %>% 
+  mutate(country_with_low_n = any(n < 5)) %>% 
+  filter(!country_with_low_n) %>% 
+  left_join(gdp_p_cap, by = c("year", "country" = "country_code")) %>% 
+  rename(gdp_p_cap = value) %>% 
+  group_by(country, year, author_position) %>% 
+  mutate(total_n = sum(n)) %>% 
+  filter(is_oa)
+
+pdata %>% 
+  ggplot(aes(gdp_p_cap, prop_oa, size = total_n)) +
+  geom_point() +
+  facet_grid(rows = vars(year),
+             cols = vars(author_position)) +
+  # ggrepel::geom_text_repel(aes(label = country_name)) +
+  labs(x = "GDP per capita", y = "OA share") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10()
+```
+
+![](01-oa-overview_files/figure-html/sdg_oa_by_country_by_gdp-1.png)<!-- -->
+
+
+### Only for first authors
+
+```r
+pdata %>% 
+  filter(author_position == "first_author") %>% 
+  ggplot(aes(gdp_p_cap, prop_oa, size = total_n)) +
+  geom_point() +
+  facet_wrap(vars(year)) +
+  # ggrepel::geom_text_repel(aes(label = country_name)) +
+  labs(x = "GDP per capita", y = "OA share") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10()
+```
+
+![](01-oa-overview_files/figure-html/sdg_oa_by_country_by_gdp_first_authors-1.png)<!-- -->
 
 
 

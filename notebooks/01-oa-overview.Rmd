@@ -15,6 +15,7 @@ Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
 library(sparklyr)
 library(tidyverse)
 library(arrow)
+library(gganimate)
 source(here::here("R/helpers.R"))
 
 message("Connecting to spark...")
@@ -242,6 +243,126 @@ oa_with_gdp_per_cap %>%
 ```
 
 
+# OA by country with author groups
+```{r, cache=TRUE}
+author_paper_affiliations_w_groups <- author_paper_affiliations %>% 
+  group_by(paperid) %>% 
+  mutate(paper_author_cat = case_when(
+    max(authorsequencenumber) == 1 ~ "single",
+    max(authorsequencenumber) == 2 ~ "double",
+    TRUE ~ "multi"
+  )) %>% 
+  mutate(author_position = case_when(
+    paper_author_cat == "single" ~ "first_author",
+    paper_author_cat == "double" & authorsequencenumber == 1 ~ "first_author",
+    paper_author_cat == "double" & authorsequencenumber == 2 ~ "last_author",
+    paper_author_cat == "multi" & authorsequencenumber == 1 ~ "first_author",
+    paper_author_cat == "multi" & 
+      authorsequencenumber == max(authorsequencenumber) ~ "last_author",
+    TRUE ~ "middle_author"
+  ))
+
+oa_per_affiliation <- paper_oa_flag %>%
+  select(-fos_displayname) %>%
+  left_join(author_paper_affiliations_w_groups) %>%
+  right_join(affils) %>% 
+  filter(!is.na(is_oa))
+
+oa_per_country_over_years <- oa_per_affiliation %>%
+  count(country, year, author_position, is_oa) %>%
+  group_by(country, year, author_position) %>% 
+  mutate(prop_oa = n/sum(n)) %>%
+  collect()
+
+```
+
+
+## author positions by country
+
+```{r}
+country_names <- wb_indicators %>% 
+  distinct(country_name, country_code) %>% 
+  collect()
+
+pdata <- oa_per_country_over_years %>% 
+  group_by(country, author_position) %>% 
+  summarise(n = sum(n)) %>% 
+  add_proportion(n, order_var = author_position,
+                 order_string = "first") %>% 
+  left_join(country_names, by = c("country" = "country_code")) %>% 
+  drop_na()
+
+p <- pdata %>% 
+  ggplot(aes(fct_reorder(country_name, order), prop, fill = author_position)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = NULL, y = "Proportion")
+plotly::ggplotly(p)
+```
+
+Here we could also look into the proportion of papers coming from single, dual 
+or multi-author papers.
+
+
+```{r sdg_oa_by_country_by_gdp, fig.width=8, fig.height=15}
+gdp_p_cap <- wb_indicators %>% 
+  filter(indicator_code == "NY.GDP.PCAP.KD") %>% 
+  collect()
+
+pdata <- oa_per_country_over_years %>% 
+  group_by(country) %>% 
+  mutate(country_with_low_n = any(n < 5)) %>% 
+  filter(!country_with_low_n) %>% 
+  left_join(gdp_p_cap, by = c("year", "country" = "country_code")) %>% 
+  rename(gdp_p_cap = value) %>% 
+  group_by(country, year, author_position) %>% 
+  mutate(total_n = sum(n)) %>% 
+  filter(is_oa)
+
+pdata %>% 
+  ggplot(aes(gdp_p_cap, prop_oa, size = total_n)) +
+  geom_point() +
+  facet_grid(rows = vars(year),
+             cols = vars(author_position)) +
+  # ggrepel::geom_text_repel(aes(label = country_name)) +
+  labs(x = "GDP per capita", y = "OA share") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10()
+
+```
+
+
+### Only for first authors
+```{r sdg_oa_by_country_by_gdp_first_authors, fig.height=10, fig.width=15}
+pdata %>% 
+  filter(author_position == "first_author") %>% 
+  ggplot(aes(gdp_p_cap, prop_oa, size = total_n)) +
+  geom_point() +
+  facet_wrap(vars(year)) +
+  # ggrepel::geom_text_repel(aes(label = country_name)) +
+  labs(x = "GDP per capita", y = "OA share") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10()
+```
+
+
+## Animated and for all
+```{r}
+# use this answer to improve the approach: https://stackoverflow.com/a/54849281/3149349
+p <- pdata %>%
+  # filter(author_position == "first_author") %>%
+  ggplot(aes(gdp_p_cap, prop_oa, size = n, group = country)) +
+  geom_point() +
+  facet_wrap(vars(author_position),
+             nrow = 3) +
+  # ggrepel::geom_text_repel(aes(label = country_name)) +
+  labs(x = "GDP per capita", y = "OA share") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = 'Year: {frame_time}') +
+  transition_time(year) +
+  ease_aes('linear')
+animate(p, renderer = ffmpeg_renderer())
+```
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
