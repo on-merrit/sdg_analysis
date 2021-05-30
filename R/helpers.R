@@ -15,3 +15,27 @@ plot_correlation <- function(cor_matrix, cluster = TRUE) {
                      diag = FALSE
   )
 }
+
+
+make_proportion <- function(df, var, group, order_string = NA_character_) {
+  df %>%
+    group_by({{group}}) %>%
+    count({{var}}) %>%
+    mutate(prop = n/sum(n),
+           order = case_when(
+             str_detect({{var}}, order_string) ~ prop,
+             TRUE ~ 0
+           ),
+           order = sum(order))
+}
+
+add_proportion <- function(df, var, order_var,
+                           order_string = NA_character_) {
+  df %>%
+    mutate(prop = {{var}}/sum({{var}}),
+           order = case_when(
+             str_detect({{order_var}}, order_string) ~ prop,
+             TRUE ~ 0
+           ),
+           order = sum(order))
+}
