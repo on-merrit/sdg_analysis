@@ -57,7 +57,7 @@ message("Successfully read all datasets!")
 
 
 ## Academic age
-```{r, cache=TRUE}
+```{r, cache=TRUE, warning=FALSE}
 author_w_year <- author_paper_affiliations %>%
   left_join(author_metadata) %>%
   select(paperid, authorid, authorsequencenumber, year_first_paper)
@@ -125,4 +125,3 @@ age_oa %>%
 
 
 ## by FOS and OA type
-# also: compare first and last and middle authors
