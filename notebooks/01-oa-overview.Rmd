@@ -16,6 +16,7 @@ library(sparklyr)
 library(tidyverse)
 library(arrow)
 library(gganimate)
+library(visdat)
 source(here::here("R/helpers.R"))
 
 message("Connecting to spark...")
@@ -54,6 +55,8 @@ wb_indicators <- spark_read_csv(
 leiden <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/leiden_ranking.csv",
                          name = "leiden")
+
+wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
 
 message("Successfully read all datasets!")
 ```
@@ -183,24 +186,48 @@ oa_per_country <- oa_per_affiliation_selected %>%
   mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa)) %>%
   collect()
 
-
-wb_local <- wb_indicators %>%
-  filter(year == 2018) %>%
-  collect()
 ```
 
 
 ## Correlation between indicators
-```{r, fig.width=13, fig.height=13}
-cor_matrix <- wb_local %>% 
+```{r}
+# use the mean of the 2015-2018 for now to reduce missing data
+# maybe better to to lag values (drag forward if missing)
+wb_local <- wb_indicators %>%
+  filter(year >= 2015 & year <= 2018) %>%
+  group_by(country_name, country_code, indicator_code, indicator_name) %>% 
+  summarise(value = mean(value, na.rm = TRUE)) %>% 
+  collect()
+
+proper_countries <- wb_countries %>% 
+  filter(!is.na(`Currency Unit`)) %>% 
+  select(country_code = `Country Code`, short_name = `Short Name`)
+
+wb_2015_2018 <- wb_local %>% 
   select(country_code, country_name, indicator_name, value) %>% 
   pivot_wider(names_from = "indicator_name", values_from = "value") %>% 
-  select(-starts_with("country")) %>% 
-  cor(use = "pairwise.complete.obs")
+  right_join(proper_countries)
 
-plot_correlation(cor_matrix, cluster = TRUE)
+cor_matrix <- wb_2015_2018 %>% 
+  select(-starts_with("country"), -short_name) %>% 
+  cor(use = "pairwise.complete.obs")
 ```
 
+
+```{r wdi_missing, fig.height=8, fig.width=6}
+wb_2015_2018 %>% 
+  filter(!is.na(country_name)) %>% 
+  select(-short_name) %>% 
+  vis_miss(cluster = TRUE)
+```
+
+Quite a large portion (about 40%) of ocuntries does not have data for R&D 
+expenditure, even when averaging over the years 2015-2018. 
+
+
+```{r wdi_correlations, fig.width=13, fig.height=13}
+plot_correlation(cor_matrix, cluster = TRUE)
+```
 
 
 ```{r oa_sdg_by_country_rd, fig.width=13, fig.height=9}
@@ -347,7 +374,7 @@ pdata %>%
 
 
 ## Animated and for all
-```{r}
+```{r, eval=FALSE}
 # use this answer to improve the approach: https://stackoverflow.com/a/54849281/3149349
 p <- pdata %>%
   # filter(author_position == "first_author") %>%
@@ -361,9 +388,11 @@ p <- pdata %>%
   labs(title = 'Year: {frame_time}') +
   transition_time(year) +
   ease_aes('linear')
-animate(p, renderer = ffmpeg_renderer())
+anim_save(here::here("animations/oa_by_country_author_position.mp4"), p, 
+          renderer = ffmpeg_renderer())
 ```
 
+<img src="../animations/oa_by_country_author_position.mp4" type="video/mp4"/>
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")

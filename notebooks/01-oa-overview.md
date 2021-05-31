@@ -1,7 +1,7 @@
 ---
 title: "OA Overview"
 author: "Thomas Klebel"
-date: "30 May, 2021"
+date: "31 May, 2021"
 output: 
   html_document:
     keep_md: true
@@ -163,8 +163,12 @@ oa_per_country <- oa_per_affiliation_selected %>%
   collect()
 
 
+# use the mean of the 2015-2018 for now to reduce missing data
+# maybe better to to lag values (drag forward if missing)
 wb_local <- wb_indicators %>%
-  filter(year == 2018) %>%
+  filter(year >= 2015 & year <= 2018) %>%
+  group_by(country_name, country_code, indicator_code, indicator_name) %>% 
+  summarise(value = mean(value, na.rm = TRUE)) %>% 
   collect()
 ```
 
@@ -172,17 +176,47 @@ wb_local <- wb_indicators %>%
 ## Correlation between indicators
 
 ```r
-cor_matrix <- wb_local %>% 
+proper_countries <- wb_countries %>% 
+  filter(!is.na(`Currency Unit`)) %>% 
+  select(country_code = `Country Code`, short_name = `Short Name`)
+
+wb_2015_2018 <- wb_local %>% 
   select(country_code, country_name, indicator_name, value) %>% 
   pivot_wider(names_from = "indicator_name", values_from = "value") %>% 
-  select(-starts_with("country")) %>% 
-  cor(use = "pairwise.complete.obs")
+  right_join(proper_countries)
+```
 
+```
+## Joining, by = "country_code"
+```
+
+```r
+cor_matrix <- wb_2015_2018 %>% 
+  select(-starts_with("country"), -short_name) %>% 
+  cor(use = "pairwise.complete.obs")
+```
+
+
+
+```r
+wb_2015_2018 %>% 
+  filter(!is.na(country_name)) %>% 
+  select(-short_name) %>% 
+  vis_miss(cluster = TRUE)
+```
+
+![](01-oa-overview_files/figure-html/wdi_missing-1.png)<!-- -->
+
+Quite a large portion (about 40%) of ocuntries does not have data for R&D 
+expenditure, even when averaging over the years 2015-2018. 
+
+
+
+```r
 plot_correlation(cor_matrix, cluster = TRUE)
 ```
 
-![](01-oa-overview_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
-
+![](01-oa-overview_files/figure-html/wdi_correlations-1.png)<!-- -->
 
 
 
@@ -305,7 +339,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preserve0b6d457f2166f251
+preserve9da6a63d1b6e21e1
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -357,6 +391,28 @@ pdata %>%
 
 ![](01-oa-overview_files/figure-html/sdg_oa_by_country_by_gdp_first_authors-1.png)<!-- -->
 
+
+## Animated and for all
+
+```r
+# use this answer to improve the approach: https://stackoverflow.com/a/54849281/3149349
+p <- pdata %>%
+  # filter(author_position == "first_author") %>%
+  ggplot(aes(gdp_p_cap, prop_oa, size = n, group = country)) +
+  geom_point() +
+  facet_wrap(vars(author_position),
+             nrow = 3) +
+  # ggrepel::geom_text_repel(aes(label = country_name)) +
+  labs(x = "GDP per capita", y = "OA share") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = 'Year: {frame_time}') +
+  transition_time(year) +
+  ease_aes('linear')
+anim_save(here::here("animations/oa_by_country_author_position.mp4"), p, 
+          renderer = ffmpeg_renderer())
+```
+
+<img src="../animations/oa_by_country_author_position.mp4" type="video/mp4"/>
 
 
 
