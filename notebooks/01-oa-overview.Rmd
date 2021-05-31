@@ -186,7 +186,11 @@ oa_per_country <- oa_per_affiliation_selected %>%
   mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa)) %>%
   collect()
 
+```
 
+
+## Correlation between indicators
+```{r}
 # use the mean of the 2015-2018 for now to reduce missing data
 # maybe better to to lag values (drag forward if missing)
 wb_local <- wb_indicators %>%
@@ -194,11 +198,7 @@ wb_local <- wb_indicators %>%
   group_by(country_name, country_code, indicator_code, indicator_name) %>% 
   summarise(value = mean(value, na.rm = TRUE)) %>% 
   collect()
-```
 
-
-## Correlation between indicators
-```{r}
 proper_countries <- wb_countries %>% 
   filter(!is.na(`Currency Unit`)) %>% 
   select(country_code = `Country Code`, short_name = `Short Name`)
