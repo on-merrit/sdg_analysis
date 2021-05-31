@@ -1,0 +1,127 @@
+---
+title: "SDG OA author characteristics"
+author: "Thomas Klebel"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# setup -----
+Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
+library(sparklyr)
+library(tidyverse)
+library(arrow)
+source(here::here("R/helpers.R"))
+
+message("Connecting to spark...")
+
+config <- spark_config()
+config$spark.executor.cores <- 15
+config$spark.executor.instances <- 5
+config$spark.executor.memory <- "60G"
+sc <- spark_connect(master = "yarn-client", config = config,
+                    app_name = "SDG_OA_authors")
+message("Connection to Spark successful!")
+
+message("Reading the datasets...")
+papers <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_papers_collated.csv",
+                         name = "papers")
+affils <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/affiliations_with_country.csv",
+                         name = "affils")
+author_metadata <- spark_read_csv(sc,
+                                  "/user/tklebel/sdg/data/sdg_author_data.csv",
+                                  name = "author_metadata")
+author_paper_affiliations <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
+  name = "author_paper_affiliations"
+)
+funded_projects <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
+  name = "funded_projects"
+)
+wb_indicators <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/world_bank_indicators.csv",
+  name = "wb_indicators")
+leiden <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/leiden_ranking.csv",
+                         name = "leiden")
+
+message("Successfully read all datasets!")
+```
+
+
+## Academic age
+```{r, cache=TRUE, warning=FALSE}
+author_w_year <- author_paper_affiliations %>%
+  left_join(author_metadata) %>%
+  select(paperid, authorid, authorsequencenumber, year_first_paper)
+
+papers_w_age <- papers %>%
+  # only take papers with OA status for now
+  filter(!is.na(oa_status)) %>%
+  left_join(author_w_year) %>%
+  mutate(current_age = year - year_first_paper)
+
+
+age_dist <- papers_w_age %>%
+  filter(year == 2018) %>%
+  distinct(authorid, current_age) %>%
+  count(current_age) %>%
+  collect()
+```
+
+```{r academic_age_overview}
+age_dist %>%
+  ggplot(aes(current_age, n)) +
+  geom_col() +
+  scale_y_continuous(labels = function(x) format(x,
+                                                 big.mark = ".",
+                                                 decimal.mark = ",")) +
+  labs(y = "Number of researchers", title = "Current age of researchers in 2018",
+       caption = "Only taking authors on papers that have an OA status into account")
+```
+
+
+```{r, cache=TRUE}
+age_trunc <- papers_w_age %>%
+  filter(current_age <= 70 | current_age > 0) %>%
+  select(year, paperid, is_oa, oa_status, current_age, authorsequencenumber)
+
+# make age groups
+age_oa <- age_trunc %>%
+  mutate(age_group = case_when(
+    current_age > 0 & current_age < 10 ~ "1-9 years",
+    current_age >= 10 & current_age < 20 ~ "10-19 years",
+    current_age >= 20 & current_age < 30 ~ "20-39 years",
+    current_age >= 30 & current_age < 40 ~ "30-39 years",
+    current_age >= 40 & current_age < 50 ~ "40-49 years",
+    current_age >= 50 & current_age < 60 ~ "50-59 years",
+    TRUE ~ "60+ years"
+  )) %>%
+  group_by(year, age_group) %>%
+  summarise(oa_share = mean(as.numeric(is_oa))) %>%
+  collect()
+```
+
+
+```{r oa_authors_by_academic_age, fig.height=8, fig.width=10}
+age_oa %>%
+  ggplot(aes(as_year(year), oa_share, colour = age_group, group = age_group)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
+  theme_bw() +
+  labs(x = NULL, y = "OA share", title = "OA share over time", colour = NULL)
+```
+
+
+# Group into first, last, and middle author
+
+
+## by FOS and OA type
