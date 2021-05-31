@@ -9,6 +9,7 @@ papers <- tbl(con, "papers")
 author_paper_affiliations <- tbl(con, "author_paper_affil")
 leiden <- readxl::read_excel("data/external/CWTS Leiden Ranking 2020.xlsx",
                              sheet = "Results")
+write_csv(leiden, "data/external/leiden_ranking.csv")
 
 leiden_small <- leiden %>%
   filter(Field == "All sciences", Period == "2015–2018",
