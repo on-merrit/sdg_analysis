@@ -375,7 +375,8 @@ pdata %>%
 
 ## Animated and for all
 ```{r, eval=FALSE}
-# use this answer to improve the approach: https://stackoverflow.com/a/54849281/3149349
+# approach for saving and embedding from https://stackoverflow.com/a/54849281/3149349
+# and https://stackoverflow.com/a/50394922/3149349
 p <- pdata %>%
   # filter(author_position == "first_author") %>%
   ggplot(aes(gdp_p_cap, prop_oa, size = n, group = country)) +
@@ -392,7 +393,9 @@ anim_save(here::here("animations/oa_by_country_author_position.mp4"), p,
           renderer = ffmpeg_renderer())
 ```
 
-<img src="../animations/oa_by_country_author_position.mp4" type="video/mp4"/>
+<video width="960" height="720" controls>
+  <source src="../animations/oa_by_country_author_position.mp4" type="video/mp4">
+</video>
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")

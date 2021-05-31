@@ -161,8 +161,12 @@ oa_per_country <- oa_per_affiliation_selected %>%
   summarise(sum_frac_oa = sum(frac_count)) %>%
   mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa)) %>%
   collect()
+```
 
 
+## Correlation between indicators
+
+```r
 # use the mean of the 2015-2018 for now to reduce missing data
 # maybe better to to lag values (drag forward if missing)
 wb_local <- wb_indicators %>%
@@ -170,12 +174,7 @@ wb_local <- wb_indicators %>%
   group_by(country_name, country_code, indicator_code, indicator_name) %>% 
   summarise(value = mean(value, na.rm = TRUE)) %>% 
   collect()
-```
 
-
-## Correlation between indicators
-
-```r
 proper_countries <- wb_countries %>% 
   filter(!is.na(`Currency Unit`)) %>% 
   select(country_code = `Country Code`, short_name = `Short Name`)
@@ -339,7 +338,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preserve9da6a63d1b6e21e1
+preserve0bd9243d95a9ded7
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -395,7 +394,8 @@ pdata %>%
 ## Animated and for all
 
 ```r
-# use this answer to improve the approach: https://stackoverflow.com/a/54849281/3149349
+# approach for saving and embedding from https://stackoverflow.com/a/54849281/3149349
+# and https://stackoverflow.com/a/50394922/3149349
 p <- pdata %>%
   # filter(author_position == "first_author") %>%
   ggplot(aes(gdp_p_cap, prop_oa, size = n, group = country)) +
@@ -412,7 +412,9 @@ anim_save(here::here("animations/oa_by_country_author_position.mp4"), p,
           renderer = ffmpeg_renderer())
 ```
 
-<img src="../animations/oa_by_country_author_position.mp4" type="video/mp4"/>
+<video width="960" height="720" controls>
+  <source src="../animations/oa_by_country_author_position.mp4" type="video/mp4">
+</video>
 
 
 
