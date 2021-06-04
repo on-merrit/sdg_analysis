@@ -66,10 +66,10 @@ message("Successfully read all datasets!")
 ```
 
 
-# Number of papers
-## Over time
+# SDG over time
+## Number of papers
 
-```{r}
+```{r sdg_who_by_sdg_count}
 fos_counts <- papers %>% 
   count(fos_displayname, year) %>% 
   collect()
@@ -86,6 +86,41 @@ fos_counts %>%
 Improvements:
 - directly labeling the lines and removing the legend
 - using not raw number of papers but % of MAG overall papers
+
+
+## Citations/papers
+
+```{r sdg_who_by_sdg_citation}
+fos_citations <- papers %>% 
+  group_by(year, fos_displayname) %>% 
+  summarise(across(citations_norm, .fns = c(mean = mean, sd = sd))) %>% 
+  collect()
+
+fos_citations  %>% 
+  drop_na() %>% 
+  ggplot(aes(as_year(year), citations_norm_mean, colour = fos_displayname)) +
+  geom_line() +
+  geom_point() +
+  labs(x = NULL, y = "mean normalized citations", colour = NULL,
+       title = "Impact of SDG research over time")
+
+fos_citations %>% 
+  drop_na() %>% 
+  ggplot(aes(as_year(year), citations_norm_sd, colour = fos_displayname)) +
+  geom_line() +
+  geom_point() +
+  labs(x = NULL, y = "SD of normalized citations", colour = NULL,
+       title = "Variability of impact of SDG research over time")
+
+
+```
+
+Caveats:
+
+- Standard deviation might not make much sense for such a skewed distribution ->
+what would be better?
+
+
 
 
 
