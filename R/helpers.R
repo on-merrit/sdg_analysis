@@ -39,3 +39,23 @@ add_proportion <- function(df, var, order_var,
            ),
            order = sum(order))
 }
+
+
+make_author_groups <- function(spark_author_paper_affiliations) {
+  spark_author_paper_affiliations %>%
+    group_by(paperid) %>%
+    mutate(paper_author_cat = case_when(
+      max(authorsequencenumber) == 1 ~ "single",
+      max(authorsequencenumber) == 2 ~ "double",
+      TRUE ~ "multi"
+    )) %>%
+    mutate(author_position = case_when(
+      paper_author_cat == "single" ~ "first_author",
+      paper_author_cat == "double" & authorsequencenumber == 1 ~ "first_author",
+      paper_author_cat == "double" & authorsequencenumber == 2 ~ "last_author",
+      paper_author_cat == "multi" & authorsequencenumber == 1 ~ "first_author",
+      paper_author_cat == "multi" &
+        authorsequencenumber == max(authorsequencenumber) ~ "last_author",
+      TRUE ~ "middle_author"
+    ))
+}
