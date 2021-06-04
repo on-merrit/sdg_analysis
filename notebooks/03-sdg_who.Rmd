@@ -82,6 +82,7 @@ fos_counts %>%
   labs(x = NULL, y = "# of papers", colour = NULL,
        title = "Development of SDG areas over time") 
 ```
+
 We can observe a slight upward trend, that could be attributable to the overall
 growth of research.
 

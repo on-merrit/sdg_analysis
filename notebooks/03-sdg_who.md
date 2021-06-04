@@ -32,7 +32,12 @@ fos_counts %>%
 ```
 
 ![](03-sdg_who_files/figure-html/sdg_who_by_sdg_count-1.png)<!-- -->
+
+We can observe a slight upward trend, that could be attributable to the overall
+growth of research.
+
 Improvements:
+
 - directly labeling the lines and removing the legend
 - using not raw number of papers but % of MAG overall papers
 
@@ -56,6 +61,23 @@ fos_citations  %>%
 ```
 
 ![](03-sdg_who_files/figure-html/sdg_who_by_sdg_citation-1.png)<!-- -->
+The figure displays normalised citations per SDG (+virus). Overall, the research
+in medicine is close to the average impact in similar journals, presumably 
+because this simply represents the whole corpus of medicine journals and 
+research. Virus, as a comparison case, has a slightly higher impact.
+
+Research on SDG 2 (approximated by agriculture) receives up to 20% more citations
+than articles in similar journals. Research on SDG 13 (climate) receives 
+substantially more citations (20%-60%), however with a strong downward trend. It
+is unclear what the reason for this might be. It could be tied to the citation 
+window (how quickly citations accrue), but I'm not sure why climate should have
+a long one.
+
+Caveats:
+
+- Since we are using the mean here, this could be sensitive to extreme outliers
+
+
 
 ```r
 fos_citations %>% 
@@ -67,12 +89,15 @@ fos_citations %>%
        title = "Variability of impact of SDG research over time")
 ```
 
-![](03-sdg_who_files/figure-html/sdg_who_by_sdg_citation-2.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_by_sdg_citation_sd-1.png)<!-- -->
+
+The variability is quite high. 
 
 Caveats:
 
 - Standard deviation might not make much sense for such a skewed distribution ->
-what would be better?
+what would be better? maybe to say something about quantiles/quartiles?
+
 
 
 # Academic Age over time
@@ -173,7 +198,9 @@ ggplot(age_box_base) +
 
 ![](03-sdg_who_files/figure-html/sdg_who_age_box-1.png)<!-- -->
 
-
+The academic ages of researchers are quite similar, with researchers working on
+climate having the highest average age, and those working on agriculture the 
+lowest age.
 
 
 ```r
@@ -194,6 +221,9 @@ ggplot(mean_ages, aes(as_year(year), mean_age, colour = fos_displayname)) +
 ```
 
 ![](03-sdg_who_files/figure-html/sdg_who_age_over_time-1.png)<!-- -->
+
+Compared to the medians in the boxplot, the mean values are quite a bit higher,
+but the order is the same.
 
 
 ```r
@@ -222,6 +252,25 @@ mean_ages_p_position %>%
 ```
 
 ![](03-sdg_who_files/figure-html/sdg_who_age_position-1.png)<!-- -->
+
+Multiple findings:
+
+- Virus is most diametral: "very" young first authors, and old last authors
+- First authors getting younger, last authors older -> seems like we can observe
+either more multi-author papers and/or stronger split in authorship roles and 
+positions
+- climate research is strongest in this trend, maybe changing towards a 
+knowledge dissemination model similar to other sciences?
+  + It could be interesting to see whether there is some knowledge spillover,
+  i.e. researchers coming from other disciplines and moving into climate, and
+  with that brining their norms/traditions into climate research.
+
+The question of how co-authorship evolves (more or less multi-author papers)
+will be covered in another chapter.
+
+
+
+Still to do here: similar analyses for citations
 
 
 
