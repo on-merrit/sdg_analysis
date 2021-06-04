@@ -185,14 +185,14 @@ colnames(age_box_base) <- c(
 ggplot(age_box_base) +
   geom_boxplot(
     aes(
-      x = fos_displayname,
+      x = x,
       ymin = ymin,
       lower = lower,
       middle = middle,
       upper = upper,
       ymax = ymax,
-      group = fos_displayname,
-      fill = fos_displayname
+      group = x,
+      fill = x
     ),
     stat = "identity", show.legend = FALSE
   ) +
