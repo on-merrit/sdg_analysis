@@ -21,6 +21,8 @@ library(gganimate)
 library(visdat)
 source(here::here("R/helpers.R"))
 
+theme_set(theme_bw())
+
 message("Connecting to spark...")
 
 config <- spark_config()
@@ -62,3 +64,28 @@ wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
 
 message("Successfully read all datasets!")
 ```
+
+
+# Number of papers
+## Over time
+
+```{r}
+fos_counts <- papers %>% 
+  count(fos_displayname, year) %>% 
+  collect()
+  
+fos_counts %>% 
+  drop_na() %>% 
+  ggplot(aes(as_year(year), n, colour = fos_displayname)) +
+  geom_line() +
+  geom_point() +
+  scale_y_log10(labels = scales::comma) +
+  labs(x = NULL, y = "# of papers", colour = NULL,
+       title = "Development of SDG areas over time") 
+```
+Improvements:
+- directly labeling the lines and removing the legend
+- using not raw number of papers but % of MAG overall papers
+
+
+
