@@ -17,8 +17,7 @@ Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
 library(sparklyr)
 library(tidyverse)
 library(arrow)
-library(gganimate)
-library(visdat)
+library(dbplot)
 source(here::here("R/helpers.R"))
 
 theme_set(theme_bw())
@@ -169,7 +168,80 @@ This is not very meaningful.
 
 Better: simple averages/boxplots for how SDGs compare
 
+```{r, cache=TRUE}
+age_box_base <- age_cohorts %>% 
+  filter(year == 2018, current_age > 0, current_age <= 50) %>% 
+  db_compute_boxplot(fos_displayname, current_age)
+```
 
+```{r sdg_who_age_box}
+# since the code for plotting the boxplot is currently not exported in the 
+# dbplot package, I'm copying it here directly
+colnames(age_box_base) <- c(
+  "x", "n", "lower", "middle", "upper", "max_raw", "min_raw",
+  "iqr", "min_iqr", "max_iqr", "ymax", "ymin"
+)
+
+ggplot(age_box_base) +
+  geom_boxplot(
+    aes(
+      x = fos_displayname,
+      ymin = ymin,
+      lower = lower,
+      middle = middle,
+      upper = upper,
+      ymax = ymax,
+      group = fos_displayname,
+      fill = fos_displayname
+    ),
+    stat = "identity", show.legend = FALSE
+  ) +
+  labs(x = NULL, y = "Academic age", title = "Academic age as of 2018",
+       caption = "Only ages above 0 and below 51 are included")
+
+```
+
+
+
+```{r}
+mean_ages <- age_cohorts %>% 
+  group_by(fos_displayname, year) %>% 
+  filter(current_age > 0, current_age <= 50) %>% 
+  summarise(mean_age = mean(current_age, na.rm = TRUE)) %>% 
+  collect()
+```
+
+```{r sdg_who_age_over_time}
+ggplot(mean_ages, aes(as_year(year), mean_age, colour = fos_displayname)) +
+  geom_line() +
+  geom_point() +
+  labs(x = NULL, colour = NULL, y = "Mean age at publication",
+       title = "Author ages over time")
+```
+
+```{r}
+mean_ages_p_position <- age_cohorts %>% 
+  group_by(fos_displayname, year, author_position) %>% 
+  filter(current_age > 0, current_age <= 50) %>% 
+  summarise(mean_age = mean(current_age, na.rm = TRUE)) %>% 
+  collect()
+```
+
+```{r sdg_who_age_position, fig.height=8, fig.width=7}
+mean_ages_p_position %>% 
+  mutate(author_position = recode(
+    author_position,
+    first_author = "First author", last_author = "Last author",
+    middle_author = "Middle author")) %>% 
+  ggplot(aes(as_year(year), mean_age, 
+                                 colour = fos_displayname)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(author_position), nrow = 2) +
+  theme(legend.position = c(.8, .2)) +
+  labs(x = NULL, colour = NULL, y = "Mean age at publication",
+     title = "Author ages over time")
+```
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
