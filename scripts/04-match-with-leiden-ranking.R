@@ -1,20 +1,34 @@
+Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
+library(sparklyr)
 library(tidyverse)
+library(arrow)
+source(here::here("R/helpers.R"))
 
-con <- DBI::dbConnect(RSQLite::SQLite(), dbname = "data/processed/sdg_mag.db")
+message("Connecting to spark...")
 
-DBI::dbListTables(con)
+config <- spark_config()
+config$spark.executor.cores <- 2
+config$spark.executor.instances <- 1
+config$spark.executor.memory <- "6G"
+sc <- spark_connect(master = "yarn-client", config = config,
+                    app_name = "leiden")
+message("Connection to Spark successful!")
 
-affils <- tbl(con, "affils_w_country")
-papers <- tbl(con, "papers")
-author_paper_affiliations <- tbl(con, "author_paper_affil")
-leiden <- readxl::read_excel("data/external/CWTS Leiden Ranking 2020.xlsx",
-                             sheet = "Results")
-write_csv(leiden, "data/external/leiden_ranking.csv")
+message("Reading the datasets...")
+affils <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/affiliations_with_country.csv",
+                         name = "affils")
+
+leiden <- read_csv("data/external/leiden_ranking.csv")
+
 
 leiden_small <- leiden %>%
   filter(Field == "All sciences", Period == "2015–2018",
          Frac_counting == 0) %>%
   select(University, Country, impact_P)
+
+leiden_small
+
 
 
 author_paper_affiliations %>%
@@ -37,37 +51,5 @@ joined_affils %>%
 # todo here would be to manually draw up a table (two cols) to match these
 # 250 institutions
 
-copy_to(con, leiden, "leiden_ranking",
-        temporary = FALSE,
-        indexes = list(
-          "University", "Field", "Country", "Period", "Frac_counting"
-        )
-)
 
-
-# it could be that there are actually some that did not appear in our set. so
-# maybe we need to match less
-
-# possible after importing leiden into sqlite
-leiden <- tbl(con, "leiden_ranking")
-affils <- tbl(con, "affils_w_country")
-
-leiden_small <- leiden %>%
-  filter(Field == "All sciences", Period == "2015–2018",
-         Frac_counting == 0) %>%
-  select(University, Country, impact_P)
-leiden_small
-
-all_matched <- affils %>%
-  distinct(affiliationid, normalizedname, displayname, country_code = country) %>%
-  filter(!is.na(affiliationid)) %>%
-  left_join(leiden_small, by = c("displayname" = "University"))
-
-all_matched %>%
-  summarise(matched_affils = sum(!is.na(Country)))
-# nope, this is the same number.
-# but this also means, that our sdg set covers at least all institutions in the
-# leiden ranking
-
-DBI::dbDisconnect(con)
 
