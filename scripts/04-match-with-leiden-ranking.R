@@ -12,44 +12,52 @@ config$spark.executor.instances <- 1
 config$spark.executor.memory <- "6G"
 sc <- spark_connect(master = "yarn-client", config = config,
                     app_name = "leiden")
-message("Connection to Spark successful!")
 
-message("Reading the datasets...")
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country.csv",
                          name = "affils")
 
-leiden <- read_csv("data/external/leiden_ranking.csv")
+# trying to collect the leiden ranking from spark fails due to a JAva heap space
+# error
+# leiden <- spark_read_csv(sc,
+#                          "/user/tklebel/sdg/data/leiden_ranking.csv",
+#                           name = "leiden")
+
+affils_local <- collect(affils)
+leiden_local <- read_csv("data/external/leiden_ranking.csv")
 
 
-leiden_small <- leiden %>%
+
+
+
+leiden_small <- leiden_local %>%
   filter(Field == "All sciences", Period == "2015–2018",
          Frac_counting == 0) %>%
-  select(University, Country, impact_P)
+  select(University, Country)
 
-leiden_small
+leiden_small_for_match <- leiden_small %>%
+  mutate(university_normalized = str_to_lower(University) %>%
+           stringi::stri_trans_general(id = "latin-ascii"))
 
 
+mag_affils_for_match <- affils_local %>%
+  select(affiliationid, normalizedname, displayname) %>%
+  mutate(university_normalized = str_to_lower(displayname) %>%
+           stringi::stri_trans_general(id = "latin-ascii"))
 
-author_paper_affiliations %>%
-  distinct(affiliationid) %>%
-  filter(!is.na(affiliationid)) %>%
-  left_join(affils) %>%
-  select(affiliationid, normalizedname, displayname, country) %>%
-  collect() -> sdg_affils
 
-joined_affils <- sdg_affils %>%
-  left_join(leiden_small, by = c("displayname" = "University"))
+joined_affils <- mag_affils_for_match %>%
+  left_join(leiden_small_for_match, by = "university_normalized")
 
-nrow(leiden_small)
+unmatched_leiden <- leiden_small_for_match %>%
+  anti_join(joined_affils)
+
+unmatched_leiden %>%
+  write_csv("data/processed/leiden_unmatched.csv")
+
 
 joined_affils %>%
-  summarise(matched_affils = sum(!is.na(Country)),
-            unmatched = nrow(leiden_small) - matched_affils)
+  write_csv("data/processed/all_affils.csv")
 
-
-# todo here would be to manually draw up a table (two cols) to match these
-# 250 institutions
-
-
+spark_disconnect(sc)
 
