@@ -55,7 +55,7 @@ make_author_groups <- function(spark_author_paper_affiliations) {
       paper_author_cat == "double" & authorsequencenumber == 2 ~ "last_author",
       paper_author_cat == "multi" & authorsequencenumber == 1 ~ "first_author",
       paper_author_cat == "multi" &
-        authorsequencenumber == max(authorsequencenumber) ~ "last_author",
+        authorsequencenumber == max(authorsequencenumber, na.rm = TRUE) ~ "last_author",
       TRUE ~ "middle_author"
     ))
 }
