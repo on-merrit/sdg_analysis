@@ -49,6 +49,8 @@ mag_affils_for_match <- affils_local %>%
 joined_affils <- mag_affils_for_match %>%
   left_join(leiden_small_for_match, by = "university_normalized")
 
+write_csv(joined_affils, "data/processed/leiden_matched.csv")
+
 unmatched_leiden <- leiden_small_for_match %>%
   anti_join(joined_affils)
 
