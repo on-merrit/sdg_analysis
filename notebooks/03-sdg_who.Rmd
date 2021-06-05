@@ -353,7 +353,7 @@ plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000) {
 ```
 
 
-```{r}
+```{r sdg_who_uni_production_vs_sdg_production}
 papers_per_affiliation_per_w_leiden %>%
   plot_bivariate(impact_P) +
   labs(x = "# of publications of University 2015-2018 (fractional)",
@@ -362,7 +362,7 @@ papers_per_affiliation_per_w_leiden %>%
 ```
 
 
-```{r}
+```{r sdg_who_tncs_vs_sdg_production}
 papers_per_affiliation_per_w_leiden %>%
   plot_bivariate(TNCS, 800, 20000) +
   labs(x = "# of citations of University 2015-2018 (fractional)",
@@ -371,7 +371,7 @@ papers_per_affiliation_per_w_leiden %>%
 ```
 
 
-```{r}
+```{r sdg_who_mncs_vs_sdg_production}
 papers_per_affiliation_per_w_leiden %>%
   plot_bivariate(MNCS, 2, 15000) +
   labs(x = "average of citations of University 2015-2018 (fractional)",

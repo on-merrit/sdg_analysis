@@ -378,7 +378,7 @@ papers_per_affiliation_per_w_leiden %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_uni_production_vs_sdg_production-1.png)<!-- -->
 
 
 
@@ -394,7 +394,7 @@ papers_per_affiliation_per_w_leiden %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_tncs_vs_sdg_production-1.png)<!-- -->
 
 
 
@@ -410,7 +410,7 @@ papers_per_affiliation_per_w_leiden %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_mncs_vs_sdg_production-1.png)<!-- -->
 
 Todo here: look into highest value on x axis (probably harvard) -> why not there
 for agriculture?
