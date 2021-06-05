@@ -293,6 +293,94 @@ will be covered in another chapter.
 
 Still to do here: similar analyses for citations
 
+# Institutional prestige
+
+We use: 
+
+
+> P. Total number of publications of a university.
+> TNCS and MNCS. The total and the average number of citations of the publications of a university, normalized for field and publication year. An MNCS value of two for instance means that the publications of a university have been cited twice above the average of their field and publication year.
+
+
+```{r, cache=TRUE}
+papers_per_affiliation_per_fos <- papers %>% 
+  left_join(author_paper_affiliations) %>% 
+  left_join(affils) %>% 
+  group_by(authorid, paperid) %>% 
+  mutate(frac_value = 1/n()) %>% 
+  group_by(affiliationid, year, fos_displayname) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE)) %>% 
+  collect()
+```
+
+
+```{r, cache=TRUE}
+leiden_small_local <- leiden %>%
+  filter(Field == "All sciences", Period == "2015–2018",
+         Frac_counting == 1) %>%
+  select(University, Country, TNCS, MNCS, impact_P) %>% 
+  collect() %>% 
+  mutate(across(c(TNCS, MNCS), as.numeric))
+
+affil_leiden_key <- read_csv(here::here("data/processed/leiden_matched.csv"))
+
+papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local)
+```
+
+
+```{r}
+plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000) {
+  pdata <- df %>%
+    filter(year == 2018, !is.na(impact_P))
+  labels <- pdata %>%
+    group_by(fos_displayname) %>%
+    summarise(cor = cor({{var}}, n_frac_papers)) %>%
+    mutate(x = x_pos, y = y_pos,
+           label = glue::glue("r = {round(cor, 2)}"))
+  pdata %>%
+    ggplot(aes({{var}}, n_frac_papers)) +
+    geom_point(alpha = .3) +
+    scale_x_log10() +
+    scale_y_log10(labels = scales::comma) +
+    facet_wrap(vars(fos_displayname)) +
+    geom_smooth() +
+    geom_text(data = labels, aes(x = x, y = y, label = label))
+}
+
+```
+
+
+```{r}
+papers_per_affiliation_per_w_leiden %>%
+  plot_bivariate(impact_P) +
+  labs(x = "# of publications of University 2015-2018 (fractional)",
+       y = "# of papers towards SDG in 2018 (fractional)",
+       title = "University production vs. SDG production")
+```
+
+
+```{r}
+papers_per_affiliation_per_w_leiden %>%
+  plot_bivariate(TNCS, 800, 20000) +
+  labs(x = "# of citations of University 2015-2018 (fractional)",
+       y = "# of papers towards SDG in 2018 (fractional)",
+       title = "University total citations vs. SDG production")
+```
+
+
+```{r}
+papers_per_affiliation_per_w_leiden %>%
+  plot_bivariate(MNCS, 2, 15000) +
+  labs(x = "average of citations of University 2015-2018 (fractional)",
+       y = "# of papers towards SDG in 2018 (fractional)",
+       title = "University average citations vs. SDG production")
+```
+
+Todo here: look into highest value on x axis (probably harvard) -> why not there
+for agriculture?
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
