@@ -541,6 +541,7 @@ papers_per_country_fos_author_pos_country %>%
   # filter(mncs < 10) %>% 
   ggplot(aes(gdp_per_cap, mncs, colour = Region, label = country_name)) +
   geom_point(alpha = .8) + 
+  # approach from https://github.com/slowkow/ggrepel/issues/17#issuecomment-364796450
   stat_dens2d_filter_g(geom = "text_repel", keep.fraction = .05) +
   facet_wrap(vars(fos_displayname)) +
   scale_y_log10() +
