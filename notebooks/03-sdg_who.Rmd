@@ -244,7 +244,8 @@ ggplot(mean_ages, aes(as_year(year), mean_age, colour = fos_displayname)) +
   geom_line() +
   geom_point() +
   labs(x = NULL, colour = NULL, y = "Mean age at publication",
-       title = "Author ages over time")
+       title = "Author ages over time", 
+       caption = "Only ages above 0 and below 51 are included")
 ```
 
 Compared to the medians in the boxplot, the mean values are quite a bit higher,

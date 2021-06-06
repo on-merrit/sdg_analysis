@@ -217,7 +217,8 @@ ggplot(mean_ages, aes(as_year(year), mean_age, colour = fos_displayname)) +
   geom_line() +
   geom_point() +
   labs(x = NULL, colour = NULL, y = "Mean age at publication",
-       title = "Author ages over time")
+       title = "Author ages over time", 
+       caption = "Only ages above 0 and below 51 are included")
 ```
 
 ![](03-sdg_who_files/figure-html/sdg_who_age_over_time-1.png)<!-- -->
