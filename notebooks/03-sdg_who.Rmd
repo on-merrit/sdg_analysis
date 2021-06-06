@@ -299,6 +299,7 @@ We use:
 
 
 > P. Total number of publications of a university.
+
 > TNCS and MNCS. The total and the average number of citations of the publications of a university, normalized for field and publication year. An MNCS value of two for instance means that the publications of a university have been cited twice above the average of their field and publication year.
 
 
@@ -379,8 +380,13 @@ papers_per_affiliation_per_w_leiden %>%
        title = "University average citations vs. SDG production")
 ```
 
-Todo here: look into highest value on x axis (probably harvard) -> why not there
-for agriculture?
+The highest value on the x axis is the rockefeller university, with a focus on
+biomed. That's why they are not there for agriculture and only have one 
+publication for climate change.
+
+Todo next: 
+
+- All of the above vs citations
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
