@@ -445,4 +445,188 @@ Todo next:
 
 - All of the above vs citations
 
+# By Country
+## Counts
+
+
+```r
+wb_local <- wb_indicators %>%
+  filter(year >= 2014 & year <= 2018) %>%
+  group_by(country_name, country_code, indicator_code, indicator_name) %>% 
+  summarise(value = mean(value, na.rm = TRUE)) %>% 
+  collect()
+
+proper_countries <- wb_countries %>% 
+  filter(!is.na(`Currency Unit`)) %>% 
+  select(country_code = `Country Code`, short_name = `Short Name`, Region,
+         income_group = `Income Group`)
+
+wb_2014_2018 <- wb_local %>% 
+  select(country_code, country_name, indicator_name, indicator_code, value) %>% 
+  filter(indicator_code == "NY.GDP.PCAP.KD") %>% # only keep GDP p cap for now
+  rename(gdp_per_cap = value) %>% 
+  select(-starts_with("indicator")) %>% 
+  right_join(proper_countries)
+```
+
+```
+## Joining, by = "country_code"
+```
+
+
+
+```r
+author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
+
+papers_w_affils <- papers %>% 
+  select(paperid, fos_displayname, year, citations_norm) %>% 
+  left_join(author_paper_affiliations_w_groups) %>% 
+  right_join(affils) %>% 
+  select(paperid, fos_displayname, year, authorid, affiliationid, country,
+         paper_author_cat, author_position, citations_norm)
+```
+
+```
+## Joining, by = "paperid"
+```
+
+```
+## Joining, by = "affiliationid"
+```
+
+
+```r
+papers_per_country_fos_author_pos <- papers_w_affils %>% 
+  group_by(country, year, fos_displayname, author_position) %>% 
+  summarise(n = n(),
+            tncs = sum(citations_norm, na.rm = TRUE),
+            mncs = mean(citations_norm, na.rm = TRUE)) %>% 
+  collect()
+```
+
+
+
+```r
+papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos %>% 
+  filter(year == 2018) %>% 
+  left_join(wb_2014_2018, by = c("country" = "country_code")) %>% 
+  drop_na()
+
+papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos_country %>% 
+  mutate(income_group = fct_relevel(income_group, "High income", 
+                                    "Upper middle income", 
+                                    "Lower middle income", "Low income"))
+```
+
+
+
+```r
+papers_per_country_fos_author_pos_country %>% 
+  filter(author_position == "first_author") %>% 
+  ggplot(aes(gdp_per_cap, n, colour = Region)) +
+  geom_point() +
+  scale_y_log10() +
+  scale_x_log10() +
+  facet_wrap(vars(fos_displayname))
+```
+
+![](03-sdg_who_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+
+
+```r
+papers_per_country_fos_author_pos_country %>% 
+  ggplot(aes(author_position, n, fill = income_group)) +
+  geom_boxplot() +
+  facet_wrap(vars(fos_displayname)) +
+  # facet_grid(rows = vars(author_position),
+  #            cols = vars(fos_displayname)) +
+  scale_y_log10() 
+```
+
+![](03-sdg_who_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+
+
+
+```r
+plot_box <- function(df, var) {
+  df %>% 
+    filter(author_position == "first_author") %>% 
+    ggplot(aes(fos_displayname, {{var}}, fill = income_group)) +
+    geom_boxplot() +
+    scale_y_log10(labels = scales::comma)
+}
+```
+
+
+
+```r
+plot_box(papers_per_country_fos_author_pos_country, n) +
+  labs(title = "Productivity by SDG",
+       subtitle = "First authors only",
+       y = "# of papers", x = NULL, fill = NULL)
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_production_by_region-1.png)<!-- -->
+
+```r
+plot_box(papers_per_country_fos_author_pos_country, tncs) +
+  labs(title = "Total citations for research on SDGs",
+       subtitle = "First authors only",
+       y = "total citations (full counting)", x = NULL, fill = NULL)
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_tncs_by_region-1.png)<!-- -->
+
+
+```r
+plot_box(papers_per_country_fos_author_pos_country, mncs) +
+  labs(title = "Mean citations for research on SDG",
+       subtitle = "First authors only",
+       y = "mean citations (full counting)", x = NULL, fill = NULL)
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_mncs_by_region-1.png)<!-- -->
+
+
+
+```r
+papers_per_country_fos_author_pos_country %>% 
+  filter(author_position == "first_author") %>% 
+  ggplot(aes(n, mncs, colour = income_group)) +
+  geom_point(size = .4) +
+  scale_x_log10() +
+  scale_y_log10() +
+  geom_smooth(se = TRUE, alpha = .1)
+```
+
+```
+## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
+```
+
+![](03-sdg_who_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+
+
+```r
+papers_per_country_fos_author_pos_country %>% 
+  filter(author_position == "first_author") %>% 
+  # mutate(mncs = mncs + .1) %>% 
+  # filter(mncs < 10) %>% 
+  ggplot(aes(gdp_per_cap, mncs, colour = Region, label = country_name)) +
+  geom_point(alpha = .8) + 
+  stat_dens2d_filter_g(geom = "text_repel", keep.fraction = .05) +
+  facet_wrap(vars(fos_displayname)) +
+  scale_y_log10() +
+  scale_x_log10(labels = scales::comma) +
+  theme(legend.position = "top") +
+  labs(x = "GDP per capita", y = "Mean normalized citations (full counting)",
+       title = "Impact of research by country & region", 
+       caption = "Only first authors; GDP is the average for 2014-2018; MNCS is for 2018",
+       colour = NULL)
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_mncs_by_country-1.png)<!-- -->
+
+
+
+
 
