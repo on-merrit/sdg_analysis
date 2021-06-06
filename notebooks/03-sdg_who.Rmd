@@ -258,7 +258,7 @@ mean_ages_p_position <- age_cohorts %>%
   collect()
 ```
 
-```{r sdg_who_age_position, fig.height=8, fig.width=7}
+```{r sdg_who_age_position, fig.height=6, fig.width=9}
 mean_ages_p_position %>% 
   mutate(author_position = recode(
     author_position,
@@ -289,6 +289,24 @@ knowledge dissemination model similar to other sciences?
 The question of how co-authorship evolves (more or less multi-author papers)
 will be covered in another chapter.
 
+
+```{r sdg_who_age_gap, fig.width=8, fig.height=5}
+# plot age difference between first and last
+mean_ages_p_position %>% 
+  pivot_wider(names_from = "author_position", values_from = "mean_age") %>% 
+  mutate(age_diff = last_author - first_author) %>% 
+  ggplot(aes(as_year(year), age_diff, colour = fos_displayname)) +
+  geom_line() +
+  geom_point() +
+  coord_cartesian(ylim = c(0, 10)) +
+  scale_y_continuous(breaks = seq(0, 10, 2)) +
+  labs(x = NULL, colour = NULL, 
+       y = "Difference between age of first and last author",
+       title = "Developing age gap between first and last author")
+```
+
+The gap is actually largening in all areas, but the strongest increase is in
+climate. However: is this a big increase, i.e., is this relevant?
 
 
 Still to do here: similar analyses for citations
