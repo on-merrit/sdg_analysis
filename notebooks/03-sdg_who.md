@@ -248,7 +248,8 @@ mean_ages_p_position %>%
   facet_wrap(vars(author_position), nrow = 2) +
   theme(legend.position = c(.8, .2)) +
   labs(x = NULL, colour = NULL, y = "Mean age at publication",
-     title = "Author ages over time")
+       title = "Author ages over time", 
+       caption = "Only ages above 0 and below 51 are included")
 ```
 
 ![](03-sdg_who_files/figure-html/sdg_who_age_position-1.png)<!-- -->
@@ -282,7 +283,8 @@ mean_ages_p_position %>%
   scale_y_continuous(breaks = seq(0, 10, 2)) +
   labs(x = NULL, colour = NULL, 
        y = "Difference between age of first and last author",
-       title = "Developing age gap between first and last author")
+       title = "Developing age gap between first and last author",
+       caption = "Only ages above 0 and below 51 are included")
 ```
 
 ![](03-sdg_who_files/figure-html/sdg_who_age_gap-1.png)<!-- -->
