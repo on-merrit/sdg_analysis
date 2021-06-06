@@ -3,7 +3,7 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "05 June, 2021"
+date: "06 June, 2021"
 output: 
   html_document:
     keep_md: true
@@ -270,6 +270,27 @@ will be covered in another chapter.
 
 
 
+```r
+# plot age difference between first and last
+mean_ages_p_position %>% 
+  pivot_wider(names_from = "author_position", values_from = "mean_age") %>% 
+  mutate(age_diff = last_author - first_author) %>% 
+  ggplot(aes(as_year(year), age_diff, colour = fos_displayname)) +
+  geom_line() +
+  geom_point() +
+  coord_cartesian(ylim = c(0, 10)) +
+  scale_y_continuous(breaks = seq(0, 10, 2)) +
+  labs(x = NULL, colour = NULL, 
+       y = "Difference between age of first and last author",
+       title = "Developing age gap between first and last author")
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_age_gap-1.png)<!-- -->
+
+The gap is actually largening in all areas, but the strongest increase is in
+climate. However: is this a big increase, i.e., is this relevant?
+
+
 Still to do here: similar analyses for citations
 
 # Institutional prestige
@@ -278,6 +299,7 @@ We use:
 
 
 > P. Total number of publications of a university.
+
 > TNCS and MNCS. The total and the average number of citations of the publications of a university, normalized for field and publication year. An MNCS value of two for instance means that the publications of a university have been cited twice above the average of their field and publication year.
 
 
@@ -412,7 +434,12 @@ papers_per_affiliation_per_w_leiden %>%
 
 ![](03-sdg_who_files/figure-html/sdg_who_mncs_vs_sdg_production-1.png)<!-- -->
 
-Todo here: look into highest value on x axis (probably harvard) -> why not there
-for agriculture?
+The highest value on the x axis is the rockefeller university, with a focus on
+biomed. That's why they are not there for agriculture and only have one 
+publication for climate change.
+
+Todo next: 
+
+- All of the above vs citations
 
 
