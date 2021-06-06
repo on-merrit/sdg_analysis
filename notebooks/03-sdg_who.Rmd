@@ -239,7 +239,7 @@ mean_ages <- age_cohorts %>%
   collect()
 ```
 
-```{r sdg_who_age_over_time}
+```{r sdg_who_age_over_time, fig.width=8, fig.height=5}
 ggplot(mean_ages, aes(as_year(year), mean_age, colour = fos_displayname)) +
   geom_line() +
   geom_point() +
@@ -271,7 +271,7 @@ mean_ages_p_position %>%
   facet_wrap(vars(author_position), nrow = 2) +
   theme(legend.position = c(.8, .2)) +
   labs(x = NULL, colour = NULL, y = "Mean age at publication",
-     title = "Author ages over time")
+       title = "Author ages over time")
 ```
 
 Multiple findings:
