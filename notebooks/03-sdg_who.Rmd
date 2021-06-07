@@ -37,6 +37,10 @@ message("Connection to Spark successful!")
 message("Reading the datasets...")
 papers <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_papers_collated.csv",
                          name = "papers")
+# remove Virus for now
+papers <- papers %>% 
+  filter(fos_displayname != "Virus")
+
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country.csv",
                          name = "affils")
@@ -80,7 +84,8 @@ fos_counts %>%
   ggplot(aes(as_year(year), n, colour = fos_displayname)) +
   geom_line() +
   geom_point() +
-  scale_y_log10(labels = scales::comma) +
+  scale_y_log10(labels = scales::comma,
+                breaks = c(10e+3, 30e+3, 1e+5, 1e+6)) +
   labs(x = NULL, y = "# of papers", colour = NULL,
        title = "Development of SDG areas over time") 
 ```
