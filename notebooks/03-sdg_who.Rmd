@@ -345,13 +345,15 @@ papers_per_affiliation_per_fos <- papers %>%
 
 ```{r, cache=TRUE}
 leiden_small_local <- leiden %>%
-  filter(Field == "All sciences", Period == "2015–2018",
-         Frac_counting == 1) %>%
-  select(University, Country, TNCS, MNCS, impact_P) %>% 
+  filter(Field == "All sciences", Frac_counting == 1) %>%
+  select(University, Country, Period, P_top10, PP_top10, impact_P) %>% 
   collect() %>% 
-  mutate(across(c(TNCS, MNCS), as.numeric))
+  mutate(across(c(P_top10, PP_top10, impact_P), as.numeric),
+         last_year_of_period = str_extract(Period, "\\d{4}$"))
 
-affil_leiden_key <- read_csv(here::here("data/processed/leiden_matched.csv"))
+affil_leiden_key <- read_csv2(
+  here::here("data/leiden matching/matching_leiden.csv")
+)
 
 papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
   mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
@@ -384,6 +386,7 @@ plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000) {
 
 ```{r sdg_who_uni_production_vs_sdg_production}
 papers_per_affiliation_per_w_leiden %>%
+  filter(last_year_of_period == 2018) %>% 
   plot_bivariate(impact_P) +
   labs(x = "# of publications of University 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
@@ -393,8 +396,9 @@ papers_per_affiliation_per_w_leiden %>%
 
 ```{r sdg_who_tncs_vs_sdg_production}
 papers_per_affiliation_per_w_leiden %>%
-  plot_bivariate(TNCS, 800, 20000) +
-  labs(x = "# of citations of University 2015-2018 (fractional)",
+  filter(last_year_of_period == 2018) %>% 
+  plot_bivariate(P_top10, 800, 20000) +
+  labs(x = "# of publications of University that is in top 10% of citations 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
        title = "University total citations vs. SDG production")
 ```
@@ -402,8 +406,10 @@ papers_per_affiliation_per_w_leiden %>%
 
 ```{r sdg_who_mncs_vs_sdg_production}
 papers_per_affiliation_per_w_leiden %>%
-  plot_bivariate(MNCS, 2, 15000) +
-  labs(x = "average of citations of University 2015-2018 (fractional)",
+  filter(last_year_of_period == 2018) %>% 
+  plot_bivariate(PP_top10, .03, 15000) +
+  scale_x_log10(labels = scales::percent) +
+  labs(x = "% of publications of University that is in top 10% of citations 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
        title = "University average citations vs. SDG production")
 ```
@@ -411,6 +417,12 @@ papers_per_affiliation_per_w_leiden %>%
 The highest value on the x axis is the rockefeller university, with a focus on
 biomed. That's why they are not there for agriculture and only have one 
 publication for climate change.
+
+Questions arising here:
+
+- Why is there an inflection point, in particular for medicine? Why do lower
+prestige institutions (below ~8% of citations towards 10% papers) 
+produce more and get cited even more than middle universities in medicine?
 
 Todo next: 
 
