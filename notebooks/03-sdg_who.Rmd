@@ -450,10 +450,6 @@ Questions arising here:
 prestige institutions (below ~8% of citations towards 10% papers) 
 produce more and get cited even more than middle universities in medicine?
 
-Todo next: 
-
-- All of the above vs citations
-
 ## By citations
 ```{r sdg_who_pptop10_vs_sdg_citations}
 papers_per_affiliation_per_w_leiden %>%
@@ -465,7 +461,61 @@ papers_per_affiliation_per_w_leiden %>%
        title = "% of top 10% cited publications vs. SDG production")
 ```
 
+## Over time
+```{r}
+# approach from https://stackoverflow.com/a/11728547/3149349
+cut_quantiles <- function(x) {
+    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE), 
+        labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")), 
+        include.lowest = TRUE)
+}
 
+pdata <- papers_per_affiliation_per_w_leiden %>% 
+  filter(year == as.numeric(last_year_of_period), !is.na(P_top10)) %>% 
+  mutate(across(c(P_top10, PP_top10, impact_P), cut_quantiles)) 
+```
+
+```{r}
+plot_over_time <- function(df, indicator, y_var) {
+  df %>% 
+    group_by(fos_displayname, year, {{indicator}}) %>% 
+    mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
+    ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
+    geom_line() +
+    facet_wrap(vars(fos_displayname)) +
+    scale_y_log10() +
+    guides(colour = guide_legend(reverse = TRUE)) +
+    labs(x = NULL)
+}
+```
+
+
+```{r}
+pdata %>%
+  plot_over_time(indicator = P_top10, n_frac_papers) +
+  labs(y = "Median of # of papers (fractional)")
+```
+
+
+```{r}
+pdata %>%
+  plot_over_time(indicator = P_top10, n_frac_citations) +
+  labs(y = "Median of # of citations (normalised and fractional)")
+```
+
+
+```{r}
+pdata %>%
+  plot_over_time(indicator = PP_top10, n_frac_papers) +
+  labs(y = "Median of # of papers (fractional)")
+```
+
+
+```{r}
+pdata %>%
+  plot_over_time(indicator = PP_top10, n_frac_citations) +
+  labs(y = "Median of # of citations (normalised and fractional)")
+```
 
 # By Country
 ## Counts
