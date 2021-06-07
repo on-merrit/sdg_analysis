@@ -363,14 +363,24 @@ papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
 ```
 
 ## Check inclusion into Leiden
-```{r}
+```{r, fig.width=9, fig.height=5}
 papers_per_affiliation_per_w_leiden %>% 
-  mutate(in_leiden = !is.na(University)) %>% 
-  pivot_longer(starts_with("n_")) %>% 
+  filter(year == 2018) %>% 
+  mutate(in_leiden = if_else(!is.na(University), "matched", "unmatched")) %>% 
+  pivot_longer(starts_with("n_"), names_to = "indicator") %>% 
+  mutate(indicator = if_else(
+    indicator == "n_frac_citations", 
+    "# of citations (fractional)",
+    "# of publications (fractional)"
+  )) %>% 
   ggplot(aes(fos_displayname, value, fill = in_leiden)) +
-  facet_wrap(vars(name)) + 
+  facet_wrap(vars(indicator)) + 
   geom_boxplot() +
-  scale_y_log10()
+  scale_y_log10(labels = scales::comma) +
+  labs(x = NULL, y = NULL, fill = "Leiden Ranking",
+       title = "Difference according to mapping to Leiden ranking",
+       caption = "Only papers from 2018 plotted") +
+  theme(legend.position = "top")
 ```
 
 
