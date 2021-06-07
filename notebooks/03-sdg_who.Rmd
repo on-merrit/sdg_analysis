@@ -362,6 +362,20 @@ papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
   left_join(leiden_small_local)
 ```
 
+## Check inclusion into Leiden
+```{r}
+papers_per_affiliation_per_w_leiden %>% 
+  mutate(in_leiden = !is.na(University)) %>% 
+  pivot_longer(starts_with("n_")) %>% 
+  ggplot(aes(fos_displayname, value, fill = in_leiden)) +
+  facet_wrap(vars(name)) + 
+  geom_boxplot() +
+  scale_y_log10()
+```
+
+
+
+### Bivariate plots
 
 ```{r}
 plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000,
