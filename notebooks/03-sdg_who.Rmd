@@ -382,7 +382,7 @@ papers_per_affiliation_per_w_leiden %>%
   plot_bivariate(impact_P) +
   labs(x = "# of publications of University 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
-       title = "University production vs. SDG production")
+       title = "University productivity vs. SDG productivity")
 ```
 
 
@@ -476,10 +476,14 @@ papers_per_country_fos_author_pos_country %>%
   ggplot(aes(gdp_per_cap, n, colour = Region, label = country_name)) +
   geom_point() +
   stat_dens2d_filter_g(geom = "text_repel", keep.fraction = .05) +
-  scale_y_log10() +
-  scale_x_log10() +
+  scale_y_log10(labels = scales::comma) +
+  scale_x_log10(labels = scales::comma) +
   facet_wrap(vars(fos_displayname)) +
-  theme(legend.position = "top")
+  theme(legend.position = "top") +
+  labs(x = "GDP per capita", y = "# of publications (full counting)",
+       title = "Productivity of research by country & region", 
+       caption = "Only first authors; GDP is the average for 2014-2018; # of papers is for 2018",
+       colour = NULL)
 ```
 
 ```{r}
