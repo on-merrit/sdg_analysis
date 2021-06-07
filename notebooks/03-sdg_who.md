@@ -528,6 +528,7 @@ cut_quantiles <- function(x) {
 
 pdata <- papers_per_affiliation_per_w_leiden %>% 
   filter(year == as.numeric(last_year_of_period), !is.na(P_top10)) %>% 
+  group_by(Period) %>% 
   mutate(across(c(P_top10, PP_top10, impact_P), cut_quantiles)) 
 ```
 
@@ -554,7 +555,7 @@ pdata %>%
   labs(y = "Median of # of papers (fractional)")
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_ptop_productivity_time-1.png)<!-- -->
 
 
 
@@ -564,7 +565,7 @@ pdata %>%
   labs(y = "Median of # of citations (normalised and fractional)")
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_ptop_impact_time-1.png)<!-- -->
 
 
 
@@ -574,7 +575,7 @@ pdata %>%
   labs(y = "Median of # of papers (fractional)")
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_pptop_productivity_time-1.png)<!-- -->
 
 
 
@@ -584,11 +585,80 @@ pdata %>%
   labs(y = "Median of # of citations (normalised and fractional)")
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_pptop_impact_time-1.png)<!-- -->
 
 Maybe y-axis could be "normalised" to be the fraction of the total, i.e.
 papers/all papers, and citations/all citations. This way would show the "share",
 irrespective of size.
+
+### Display as fraction
+
+```r
+plot_proportions <- function(df, indicator, y_var) {
+  df %>% 
+    group_by(fos_displayname, year, {{indicator}}) %>% 
+    summarise(n = sum({{y_var}}, na.rm = TRUE)) %>% 
+    group_by(fos_displayname, year) %>% 
+    mutate(prop = n/sum(n)) %>% 
+    ggplot(aes(as_year(year), prop, colour = {{indicator}})) +
+    geom_line() +
+    facet_wrap(vars(fos_displayname)) + 
+    guides(colour = guide_legend(reverse = TRUE)) +
+    labs(x = NULL) +
+    scale_y_continuous(labels = scales::percent)
+}
+```
+
+
+```r
+pdata %>%
+  plot_proportions(indicator = P_top10, n_frac_papers) +
+  labs(y = "% of publications (fractional)")
+```
+
+```
+## `summarise()` has grouped output by 'fos_displayname', 'year'. You can override using the `.groups` argument.
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_ptop_productivity_share-1.png)<!-- -->
+
+```r
+pdata %>%
+  plot_proportions(indicator = PP_top10, n_frac_papers) +
+  labs(y = "% of publications (fractional)")
+```
+
+```
+## `summarise()` has grouped output by 'fos_displayname', 'year'. You can override using the `.groups` argument.
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_pptop_productivity_share-1.png)<!-- -->
+
+
+```r
+pdata %>%
+  plot_proportions(indicator = P_top10, n_frac_citations) +
+  labs(y = "% of citations (fractional)")
+```
+
+```
+## `summarise()` has grouped output by 'fos_displayname', 'year'. You can override using the `.groups` argument.
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_ptop_citations_share-1.png)<!-- -->
+
+
+```r
+pdata %>%
+  plot_proportions(indicator = PP_top10, n_frac_citations) +
+  labs(y = "% of citations (fractional)")
+```
+
+```
+## `summarise()` has grouped output by 'fos_displayname', 'year'. You can override using the `.groups` argument.
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_pptop_citations_share-1.png)<!-- -->
 
 # By Country
 ## Counts
@@ -694,7 +764,7 @@ papers_per_country_fos_author_pos_country %>%
   scale_y_log10() 
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 
 
@@ -754,7 +824,7 @@ papers_per_country_fos_author_pos_country %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 
 ```r
