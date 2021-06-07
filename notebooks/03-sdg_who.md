@@ -26,7 +26,8 @@ fos_counts %>%
   ggplot(aes(as_year(year), n, colour = fos_displayname)) +
   geom_line() +
   geom_point() +
-  scale_y_log10(labels = scales::comma) +
+  scale_y_log10(labels = scales::comma,
+                breaks = c(10e+3, 30e+3, 1e+5, 1e+6)) +
   labs(x = NULL, y = "# of papers", colour = NULL,
        title = "Development of SDG areas over time") 
 ```
@@ -314,7 +315,8 @@ papers_per_affiliation_per_fos <- papers %>%
   group_by(authorid, paperid) %>% 
   mutate(frac_value = 1/n()) %>% 
   group_by(affiliationid, year, fos_displayname) %>% 
-  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE)) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE),
+            n_frac_citations = sum(frac_value * citations_norm, na.rm = TRUE)) %>% 
   collect()
 ```
 
@@ -330,13 +332,19 @@ papers_per_affiliation_per_fos <- papers %>%
 
 ```r
 leiden_small_local <- leiden %>%
-  filter(Field == "All sciences", Period == "2015–2018",
-         Frac_counting == 1) %>%
-  select(University, Country, TNCS, MNCS, impact_P) %>% 
+  filter(Field == "All sciences", Frac_counting == 1) %>%
+  select(University, Country, Period, P_top10, PP_top10, impact_P) %>% 
   collect() %>% 
-  mutate(across(c(TNCS, MNCS), as.numeric))
+  mutate(across(c(P_top10, PP_top10, impact_P), as.numeric),
+         last_year_of_period = str_extract(Period, "\\d{4}$"))
 
-affil_leiden_key <- read_csv(here::here("data/processed/leiden_matched.csv"))
+affil_leiden_key <- read_csv2(
+  here::here("data/leiden matching/matching_leiden.csv")
+)
+```
+
+```
+## ℹ Using '\',\'' as decimal and '\'.\'' as grouping mark. Use `read_delim()` for more control.
 ```
 
 ```
@@ -348,7 +356,8 @@ affil_leiden_key <- read_csv(here::here("data/processed/leiden_matched.csv"))
 ##   displayname = col_character(),
 ##   university_normalized = col_character(),
 ##   University = col_character(),
-##   Country = col_character()
+##   Country = col_character(),
+##   university_normalized_leiden = col_logical()
 ## )
 ```
 
@@ -367,19 +376,47 @@ papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
 ## Joining, by = c("University", "Country")
 ```
 
+## Check inclusion into Leiden
+
+```r
+papers_per_affiliation_per_w_leiden %>% 
+  filter(year == 2018) %>% 
+  mutate(in_leiden = if_else(!is.na(University), "matched", "unmatched")) %>% 
+  pivot_longer(starts_with("n_"), names_to = "indicator") %>% 
+  mutate(indicator = if_else(
+    indicator == "n_frac_citations", 
+    "# of citations (fractional)",
+    "# of publications (fractional)"
+  )) %>% 
+  ggplot(aes(fos_displayname, value, fill = in_leiden)) +
+  facet_wrap(vars(indicator)) + 
+  geom_boxplot() +
+  scale_y_log10(labels = scales::comma) +
+  labs(x = NULL, y = NULL, fill = "Leiden Ranking",
+       title = "Difference according to mapping to Leiden ranking",
+       caption = "Only papers from 2018 plotted") +
+  theme(legend.position = "top")
+```
+
+![](03-sdg_who_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
+
+
+### Bivariate plots
 
 
 ```r
-plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000) {
+plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000,
+                           dv = n_frac_papers) {
   pdata <- df %>%
     filter(year == 2018, !is.na(impact_P))
   labels <- pdata %>%
     group_by(fos_displayname) %>%
-    summarise(cor = cor({{var}}, n_frac_papers)) %>%
+    summarise(cor = cor({{var}}, {{dv}}, use = "pairwise.complete.obs")) %>%
     mutate(x = x_pos, y = y_pos,
            label = glue::glue("r = {round(cor, 2)}"))
   pdata %>%
-    ggplot(aes({{var}}, n_frac_papers)) +
+    ggplot(aes({{var}}, {{dv}})) +
     geom_point(alpha = .3) +
     scale_x_log10() +
     scale_y_log10(labels = scales::comma) +
@@ -393,6 +430,7 @@ plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000) {
 
 ```r
 papers_per_affiliation_per_w_leiden %>%
+  filter(last_year_of_period == 2018) %>% 
   plot_bivariate(impact_P) +
   labs(x = "# of publications of University 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
@@ -409,41 +447,148 @@ papers_per_affiliation_per_w_leiden %>%
 
 ```r
 papers_per_affiliation_per_w_leiden %>%
-  plot_bivariate(TNCS, 800, 20000) +
-  labs(x = "# of citations of University 2015-2018 (fractional)",
+  filter(last_year_of_period == 2018) %>% 
+  plot_bivariate(P_top10, 800, 20000) +
+  labs(x = "# of publications of University that is in top 10% of citations 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
-       title = "University total citations vs. SDG production")
+       title = "# of top 10% cited publications vs. SDG production")
 ```
 
 ```
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](03-sdg_who_files/figure-html/sdg_who_tncs_vs_sdg_production-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_ptop10_vs_sdg_production-1.png)<!-- -->
 
 
 
 ```r
 papers_per_affiliation_per_w_leiden %>%
-  plot_bivariate(MNCS, 2, 15000) +
-  labs(x = "average of citations of University 2015-2018 (fractional)",
+  filter(last_year_of_period == 2018) %>% 
+  plot_bivariate(PP_top10, .03, 15000) +
+  scale_x_log10(labels = scales::percent) +
+  labs(x = "% of publications of University that is in top 10% of citations 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
-       title = "University average citations vs. SDG production")
+       title = "% of top 10% cited publications vs. SDG production")
+```
+
+```
+## Scale for 'x' is already present. Adding another scale for 'x', which will
+## replace the existing scale.
 ```
 
 ```
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](03-sdg_who_files/figure-html/sdg_who_mncs_vs_sdg_production-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_pptop10_vs_sdg_production-1.png)<!-- -->
 
 The highest value on the x axis is the rockefeller university, with a focus on
 biomed. That's why they are not there for agriculture and only have one 
 publication for climate change.
 
-Todo next: 
+Questions arising here:
 
-- All of the above vs citations
+- Why is there an inflection point, in particular for medicine? Why do lower
+prestige institutions (below ~8% of citations towards 10% papers) 
+produce more and get cited even more than middle universities in medicine?
+
+## By citations
+
+```r
+papers_per_affiliation_per_w_leiden %>%
+  filter(last_year_of_period == 2018) %>% 
+  plot_bivariate(PP_top10, .03, 15000, dv = n_frac_citations) +
+  scale_x_log10(labels = scales::percent) +
+  labs(x = "% of publications of University that is in top 10% of citations 2015-2018 (fractional)",
+       y = "# of citations towards papers in SDG in 2018 (fractional)",
+       title = "% of top 10% cited publications vs. SDG production")
+```
+
+```
+## Scale for 'x' is already present. Adding another scale for 'x', which will
+## replace the existing scale.
+```
+
+```
+## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
+```
+
+![](03-sdg_who_files/figure-html/sdg_who_pptop10_vs_sdg_citations-1.png)<!-- -->
+
+## Over time
+
+```r
+# approach from https://stackoverflow.com/a/11728547/3149349
+cut_quantiles <- function(x) {
+    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE), 
+        labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")), 
+        include.lowest = TRUE)
+}
+
+pdata <- papers_per_affiliation_per_w_leiden %>% 
+  filter(year == as.numeric(last_year_of_period), !is.na(P_top10)) %>% 
+  mutate(across(c(P_top10, PP_top10, impact_P), cut_quantiles)) 
+```
+
+
+```r
+plot_over_time <- function(df, indicator, y_var) {
+  df %>% 
+    group_by(fos_displayname, year, {{indicator}}) %>% 
+    mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
+    ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
+    geom_line() +
+    facet_wrap(vars(fos_displayname)) +
+    scale_y_log10() +
+    guides(colour = guide_legend(reverse = TRUE)) +
+    labs(x = NULL)
+}
+```
+
+
+
+```r
+pdata %>%
+  plot_over_time(indicator = P_top10, n_frac_papers) +
+  labs(y = "Median of # of papers (fractional)")
+```
+
+![](03-sdg_who_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+
+
+
+```r
+pdata %>%
+  plot_over_time(indicator = P_top10, n_frac_citations) +
+  labs(y = "Median of # of citations (normalised and fractional)")
+```
+
+![](03-sdg_who_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+
+
+
+```r
+pdata %>%
+  plot_over_time(indicator = PP_top10, n_frac_papers) +
+  labs(y = "Median of # of papers (fractional)")
+```
+
+![](03-sdg_who_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+
+
+
+```r
+pdata %>%
+  plot_over_time(indicator = PP_top10, n_frac_citations) +
+  labs(y = "Median of # of citations (normalised and fractional)")
+```
+
+![](03-sdg_who_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+
+Maybe y-axis could be "normalised" to be the fraction of the total, i.e.
+papers/all papers, and citations/all citations. This way would show the "share",
+irrespective of size.
 
 # By Country
 ## Counts
@@ -549,7 +694,7 @@ papers_per_country_fos_author_pos_country %>%
   scale_y_log10() 
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
 
 
@@ -609,7 +754,7 @@ papers_per_country_fos_author_pos_country %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 ```r
