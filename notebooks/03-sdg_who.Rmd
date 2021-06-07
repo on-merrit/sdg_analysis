@@ -472,6 +472,7 @@ cut_quantiles <- function(x) {
 
 pdata <- papers_per_affiliation_per_w_leiden %>% 
   filter(year == as.numeric(last_year_of_period), !is.na(P_top10)) %>% 
+  group_by(Period) %>% 
   mutate(across(c(P_top10, PP_top10, impact_P), cut_quantiles)) 
 ```
 
@@ -490,28 +491,28 @@ plot_over_time <- function(df, indicator, y_var) {
 ```
 
 
-```{r}
+```{r sdg_who_ptop_productivity_time, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = P_top10, n_frac_papers) +
   labs(y = "Median of # of papers (fractional)")
 ```
 
 
-```{r}
+```{r sdg_who_ptop_impact_time, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = P_top10, n_frac_citations) +
   labs(y = "Median of # of citations (normalised and fractional)")
 ```
 
 
-```{r}
+```{r sdg_who_pptop_productivity_time, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = PP_top10, n_frac_papers) +
   labs(y = "Median of # of papers (fractional)")
 ```
 
 
-```{r}
+```{r sdg_who_pptop_impact_time, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = PP_top10, n_frac_citations) +
   labs(y = "Median of # of citations (normalised and fractional)")
@@ -539,12 +540,28 @@ plot_proportions <- function(df, indicator, y_var) {
 
 ```
 
-```{r}
+```{r sdg_who_ptop_productivity_share, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_proportions(indicator = P_top10, n_frac_papers) +
   labs(y = "% of publications (fractional)")
 ```
+```{r sdg_who_pptop_productivity_share, fig.asp=.5, fig.width=8}
+pdata %>%
+  plot_proportions(indicator = PP_top10, n_frac_papers) +
+  labs(y = "% of publications (fractional)")
+```
 
+```{r sdg_who_ptop_citations_share, fig.asp=.5, fig.width=8}
+pdata %>%
+  plot_proportions(indicator = P_top10, n_frac_citations) +
+  labs(y = "% of citations (fractional)")
+```
+
+```{r sdg_who_pptop_citations_share, fig.asp=.5, fig.width=8}
+pdata %>%
+  plot_proportions(indicator = PP_top10, n_frac_citations) +
+  labs(y = "% of citations (fractional)")
+```
 
 # By Country
 ## Counts
