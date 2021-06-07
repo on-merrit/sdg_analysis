@@ -3,7 +3,7 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "06 June, 2021"
+date: "07 June, 2021"
 output: 
   html_document:
     keep_md: true
@@ -523,14 +523,16 @@ papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos_c
 ```r
 papers_per_country_fos_author_pos_country %>% 
   filter(author_position == "first_author") %>% 
-  ggplot(aes(gdp_per_cap, n, colour = Region)) +
+  ggplot(aes(gdp_per_cap, n, colour = Region, label = country_name)) +
   geom_point() +
+  stat_dens2d_filter_g(geom = "text_repel", keep.fraction = .05) +
   scale_y_log10() +
   scale_x_log10() +
-  facet_wrap(vars(fos_displayname))
+  facet_wrap(vars(fos_displayname)) +
+  theme(legend.position = "top")
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/sdg_who_total_n_by_country-1.png)<!-- -->
 
 
 ```r
@@ -543,7 +545,7 @@ papers_per_country_fos_author_pos_country %>%
   scale_y_log10() 
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 
 
@@ -603,7 +605,7 @@ papers_per_country_fos_author_pos_country %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](03-sdg_who_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](03-sdg_who_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 
 ```r
@@ -613,6 +615,7 @@ papers_per_country_fos_author_pos_country %>%
   # filter(mncs < 10) %>% 
   ggplot(aes(gdp_per_cap, mncs, colour = Region, label = country_name)) +
   geom_point(alpha = .8) + 
+  # approach from https://github.com/slowkow/ggrepel/issues/17#issuecomment-364796450
   stat_dens2d_filter_g(geom = "text_repel", keep.fraction = .05) +
   facet_wrap(vars(fos_displayname)) +
   scale_y_log10() +

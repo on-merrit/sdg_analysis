@@ -470,14 +470,16 @@ papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos_c
 ```
 
 
-```{r}
+```{r sdg_who_total_n_by_country, fig.width=10, fig.height=8}
 papers_per_country_fos_author_pos_country %>% 
   filter(author_position == "first_author") %>% 
-  ggplot(aes(gdp_per_cap, n, colour = Region)) +
+  ggplot(aes(gdp_per_cap, n, colour = Region, label = country_name)) +
   geom_point() +
+  stat_dens2d_filter_g(geom = "text_repel", keep.fraction = .05) +
   scale_y_log10() +
   scale_x_log10() +
-  facet_wrap(vars(fos_displayname))
+  facet_wrap(vars(fos_displayname)) +
+  theme(legend.position = "top")
 ```
 
 ```{r}
@@ -503,20 +505,20 @@ plot_box <- function(df, var) {
 ```
 
 
-```{r sdg_who_production_by_region}
+```{r sdg_who_production_by_region, fig.width=8, fig.height=5}
 plot_box(papers_per_country_fos_author_pos_country, n) +
   labs(title = "Productivity by SDG",
        subtitle = "First authors only",
        y = "# of papers", x = NULL, fill = NULL)
 ```
-```{r sdg_who_tncs_by_region}
+```{r sdg_who_tncs_by_region, fig.width=8, fig.height=5}
 plot_box(papers_per_country_fos_author_pos_country, tncs) +
   labs(title = "Total citations for research on SDGs",
        subtitle = "First authors only",
        y = "total citations (full counting)", x = NULL, fill = NULL)
 ```
 
-```{r sdg_who_mncs_by_region}
+```{r sdg_who_mncs_by_region, fig.width=8, fig.height=5}
 plot_box(papers_per_country_fos_author_pos_country, mncs) +
   labs(title = "Mean citations for research on SDG",
        subtitle = "First authors only",
