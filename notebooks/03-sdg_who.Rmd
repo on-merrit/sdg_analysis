@@ -338,7 +338,8 @@ papers_per_affiliation_per_fos <- papers %>%
   group_by(authorid, paperid) %>% 
   mutate(frac_value = 1/n()) %>% 
   group_by(affiliationid, year, fos_displayname) %>% 
-  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE)) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE),
+            n_frac_citations = sum(frac_value * citations_norm, na.rm = TRUE)) %>% 
   collect()
 ```
 
@@ -363,16 +364,17 @@ papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
 
 
 ```{r}
-plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000) {
+plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000,
+                           dv = n_frac_papers) {
   pdata <- df %>%
     filter(year == 2018, !is.na(impact_P))
   labels <- pdata %>%
     group_by(fos_displayname) %>%
-    summarise(cor = cor({{var}}, n_frac_papers)) %>%
+    summarise(cor = cor({{var}}, {{dv}}, use = "pairwise.complete.obs")) %>%
     mutate(x = x_pos, y = y_pos,
            label = glue::glue("r = {round(cor, 2)}"))
   pdata %>%
-    ggplot(aes({{var}}, n_frac_papers)) +
+    ggplot(aes({{var}}, {{dv}})) +
     geom_point(alpha = .3) +
     scale_x_log10() +
     scale_y_log10(labels = scales::comma) +
@@ -394,24 +396,24 @@ papers_per_affiliation_per_w_leiden %>%
 ```
 
 
-```{r sdg_who_tncs_vs_sdg_production}
+```{r sdg_who_ptop10_vs_sdg_production}
 papers_per_affiliation_per_w_leiden %>%
   filter(last_year_of_period == 2018) %>% 
   plot_bivariate(P_top10, 800, 20000) +
   labs(x = "# of publications of University that is in top 10% of citations 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
-       title = "University total citations vs. SDG production")
+       title = "# of top 10% cited publications vs. SDG production")
 ```
 
 
-```{r sdg_who_mncs_vs_sdg_production}
+```{r sdg_who_pptop10_vs_sdg_production}
 papers_per_affiliation_per_w_leiden %>%
   filter(last_year_of_period == 2018) %>% 
   plot_bivariate(PP_top10, .03, 15000) +
   scale_x_log10(labels = scales::percent) +
   labs(x = "% of publications of University that is in top 10% of citations 2015-2018 (fractional)",
        y = "# of papers towards SDG in 2018 (fractional)",
-       title = "University average citations vs. SDG production")
+       title = "% of top 10% cited publications vs. SDG production")
 ```
 
 The highest value on the x axis is the rockefeller university, with a focus on
@@ -427,6 +429,19 @@ produce more and get cited even more than middle universities in medicine?
 Todo next: 
 
 - All of the above vs citations
+
+## By citations
+```{r sdg_who_pptop10_vs_sdg_citations}
+papers_per_affiliation_per_w_leiden %>%
+  filter(last_year_of_period == 2018) %>% 
+  plot_bivariate(PP_top10, .03, 15000, dv = n_frac_citations) +
+  scale_x_log10(labels = scales::percent) +
+  labs(x = "% of publications of University that is in top 10% of citations 2015-2018 (fractional)",
+       y = "# of citations towards papers in SDG in 2018 (fractional)",
+       title = "% of top 10% cited publications vs. SDG production")
+```
+
+
 
 # By Country
 ## Counts
