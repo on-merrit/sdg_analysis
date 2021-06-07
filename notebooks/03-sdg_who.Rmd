@@ -517,6 +517,35 @@ pdata %>%
   labs(y = "Median of # of citations (normalised and fractional)")
 ```
 
+Maybe y-axis could be "normalised" to be the fraction of the total, i.e.
+papers/all papers, and citations/all citations. This way would show the "share",
+irrespective of size.
+
+### Display as fraction
+```{r}
+plot_proportions <- function(df, indicator, y_var) {
+  df %>% 
+    group_by(fos_displayname, year, {{indicator}}) %>% 
+    summarise(n = sum({{y_var}}, na.rm = TRUE)) %>% 
+    group_by(fos_displayname, year) %>% 
+    mutate(prop = n/sum(n)) %>% 
+    ggplot(aes(as_year(year), prop, colour = {{indicator}})) +
+    geom_line() +
+    facet_wrap(vars(fos_displayname)) + 
+    guides(colour = guide_legend(reverse = TRUE)) +
+    labs(x = NULL) +
+    scale_y_continuous(labels = scales::percent)
+}
+
+```
+
+```{r}
+pdata %>%
+  plot_proportions(indicator = P_top10, n_frac_papers) +
+  labs(y = "% of publications (fractional)")
+```
+
+
 # By Country
 ## Counts
 
