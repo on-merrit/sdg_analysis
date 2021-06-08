@@ -3,7 +3,7 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "07 June, 2021"
+date: "08 June, 2021"
 output: 
   html_document:
     keep_md: true
