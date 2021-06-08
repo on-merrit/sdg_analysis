@@ -622,7 +622,7 @@ papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos_c
 ```
 
 
-```{r sdg_who_total_n_by_country, fig.width=10, fig.height=8}
+```{r sdg_who_total_n_by_country, fig.width=12, fig.height=8}
 papers_per_country_fos_author_pos_country %>% 
   filter(author_position == "first_author") %>% 
   ggplot(aes(gdp_per_cap, n, colour = Region, label = country_name)) +
@@ -692,7 +692,7 @@ papers_per_country_fos_author_pos_country %>%
   geom_smooth(se = TRUE, alpha = .1)
 ```
 
-```{r sdg_who_mncs_by_country, fig.width=10, fig.height=8}
+```{r sdg_who_mncs_by_country, fig.width=12, fig.height=8}
 papers_per_country_fos_author_pos_country %>% 
   filter(author_position == "first_author") %>% 
   # mutate(mncs = mncs + .1) %>% 
