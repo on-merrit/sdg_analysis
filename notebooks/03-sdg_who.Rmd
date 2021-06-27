@@ -37,9 +37,11 @@ message("Connection to Spark successful!")
 message("Reading the datasets...")
 papers <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_papers_collated.csv",
                          name = "papers")
-# remove Virus for now
+sdg_labels <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_labels.csv",
+                             name = "sdg_labels")
+# join the labels here, since we are doing everything by SDG
 papers <- papers %>% 
-  filter(fos_displayname != "Virus")
+  left_join(sdg_labels)
 
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country.csv",
@@ -76,12 +78,12 @@ message("Successfully read all datasets!")
 
 ```{r sdg_who_by_sdg_count}
 fos_counts <- papers %>% 
-  count(fos_displayname, year) %>% 
+  count(SDG_label, year) %>% 
   collect()
   
 fos_counts %>% 
   drop_na() %>% 
-  ggplot(aes(as_year(year), n, colour = fos_displayname)) +
+  ggplot(aes(as_year(year), n, colour = SDG_label)) +
   geom_line() +
   geom_point() +
   scale_y_log10(labels = scales::comma,
@@ -103,13 +105,13 @@ Improvements:
 
 ```{r sdg_who_by_sdg_citation}
 fos_citations <- papers %>% 
-  group_by(year, fos_displayname) %>% 
+  group_by(year, SDG_label) %>% 
   summarise(across(citations_norm, .fns = c(mean = mean, sd = sd))) %>% 
   collect()
 
 fos_citations  %>% 
   drop_na() %>% 
-  ggplot(aes(as_year(year), citations_norm_mean, colour = fos_displayname)) +
+  ggplot(aes(as_year(year), citations_norm_mean, colour = SDG_label)) +
   geom_line() +
   geom_point() +
   labs(x = NULL, y = "mean normalized citations", colour = NULL,
@@ -135,7 +137,7 @@ Caveats:
 ```{r sdg_who_by_sdg_citation_sd}
 fos_citations %>% 
   drop_na() %>% 
-  ggplot(aes(as_year(year), citations_norm_sd, colour = fos_displayname)) +
+  ggplot(aes(as_year(year), citations_norm_sd, colour = SDG_label)) +
   geom_line() +
   geom_point() +
   labs(x = NULL, y = "SD of normalized citations", colour = NULL,
@@ -159,10 +161,10 @@ what would be better? maybe to say something about quantiles/quartiles?
 author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
 
 age_base <- papers %>% 
-  select(paperid, fos_displayname, year) %>% 
+  select(paperid, SDG_label, year) %>% 
   left_join(author_paper_affiliations_w_groups) %>% 
   left_join(author_metadata) %>% 
-  select(paperid, fos_displayname, year, author_position, authorid, 
+  select(paperid, SDG_label, year, author_position, authorid, 
          year_first_paper)
 
 age_cohorts <- age_base %>% 
@@ -181,14 +183,14 @@ age_cohorts <- age_base %>%
   ungroup()
 
 sdg_age <- age_cohorts %>% 
-  count(fos_displayname, year, author_position, age_cohort) %>% 
+  count(SDG_label, year, author_position, age_cohort) %>% 
   collect()
 ```
 
 ```{r, fig.height=12, fig.width=10}
 sdg_age %>% 
   filter(age_cohort != "NA") %>% 
-  ggplot(aes(as_year(year), n, colour = fos_displayname)) +
+  ggplot(aes(as_year(year), n, colour = SDG_label)) +
   geom_line() +
   geom_point() +
   facet_grid(rows = vars(age_cohort), 
@@ -204,7 +206,7 @@ Better: simple averages/boxplots for how SDGs compare
 ```{r, cache=TRUE}
 age_box_base <- age_cohorts %>% 
   filter(year == 2018, current_age > 0, current_age <= 50) %>% 
-  db_compute_boxplot(fos_displayname, current_age)
+  db_compute_boxplot(SDG_label, current_age)
 ```
 
 ```{r sdg_who_age_box}
@@ -240,14 +242,14 @@ lowest age.
 
 ```{r}
 mean_ages <- age_cohorts %>% 
-  group_by(fos_displayname, year) %>% 
+  group_by(SDG_label, year) %>% 
   filter(current_age > 0, current_age <= 50) %>% 
   summarise(mean_age = mean(current_age, na.rm = TRUE)) %>% 
   collect()
 ```
 
 ```{r sdg_who_age_over_time, fig.width=8, fig.height=5}
-ggplot(mean_ages, aes(as_year(year), mean_age, colour = fos_displayname)) +
+ggplot(mean_ages, aes(as_year(year), mean_age, colour = SDG_label)) +
   geom_line() +
   geom_point() +
   labs(x = NULL, colour = NULL, y = "Mean age at publication",
@@ -260,7 +262,7 @@ but the order is the same.
 
 ```{r}
 mean_ages_p_position <- age_cohorts %>% 
-  group_by(fos_displayname, year, author_position) %>% 
+  group_by(SDG_label, year, author_position) %>% 
   filter(current_age > 0, current_age <= 50) %>% 
   summarise(mean_age = mean(current_age, na.rm = TRUE)) %>% 
   collect()
@@ -273,7 +275,7 @@ mean_ages_p_position %>%
     first_author = "First author", last_author = "Last author",
     middle_author = "Middle author")) %>% 
   ggplot(aes(as_year(year), mean_age, 
-                                 colour = fos_displayname)) +
+                                 colour = SDG_label)) +
   geom_line() +
   geom_point() +
   facet_wrap(vars(author_position), nrow = 2) +
@@ -304,7 +306,7 @@ will be covered in another chapter.
 mean_ages_p_position %>% 
   pivot_wider(names_from = "author_position", values_from = "mean_age") %>% 
   mutate(age_diff = last_author - first_author) %>% 
-  ggplot(aes(as_year(year), age_diff, colour = fos_displayname)) +
+  ggplot(aes(as_year(year), age_diff, colour = SDG_label)) +
   geom_line() +
   geom_point() +
   coord_cartesian(ylim = c(0, 10)) +
@@ -337,7 +339,7 @@ papers_per_affiliation_per_fos <- papers %>%
   left_join(affils) %>% 
   group_by(authorid, paperid) %>% 
   mutate(frac_value = 1/n()) %>% 
-  group_by(affiliationid, year, fos_displayname) %>% 
+  group_by(affiliationid, year, SDG_label) %>% 
   summarise(n_frac_papers = sum(frac_value, na.rm = TRUE),
             n_frac_citations = sum(frac_value * citations_norm, na.rm = TRUE)) %>% 
   collect()
@@ -373,7 +375,7 @@ papers_per_affiliation_per_w_leiden %>%
     "# of citations (fractional)",
     "# of publications (fractional)"
   )) %>% 
-  ggplot(aes(fos_displayname, value, fill = in_leiden)) +
+  ggplot(aes(SDG_label, value, fill = in_leiden)) +
   facet_wrap(vars(indicator)) + 
   geom_boxplot() +
   scale_y_log10(labels = scales::comma) +
@@ -393,7 +395,7 @@ plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000,
   pdata <- df %>%
     filter(year == 2018, !is.na(impact_P))
   labels <- pdata %>%
-    group_by(fos_displayname) %>%
+    group_by(SDG_label) %>%
     summarise(cor = cor({{var}}, {{dv}}, use = "pairwise.complete.obs")) %>%
     mutate(x = x_pos, y = y_pos,
            label = glue::glue("r = {round(cor, 2)}"))
@@ -402,7 +404,7 @@ plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000,
     geom_point(alpha = .3) +
     scale_x_log10() +
     scale_y_log10(labels = scales::comma) +
-    facet_wrap(vars(fos_displayname)) +
+    facet_wrap(vars(SDG_label)) +
     geom_smooth() +
     geom_text(data = labels, aes(x = x, y = y, label = label))
 }
@@ -479,11 +481,11 @@ pdata <- papers_per_affiliation_per_w_leiden %>%
 ```{r}
 plot_over_time <- function(df, indicator, y_var) {
   df %>% 
-    group_by(fos_displayname, year, {{indicator}}) %>% 
+    group_by(SDG_label, year, {{indicator}}) %>% 
     mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
     ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
     geom_line() +
-    facet_wrap(vars(fos_displayname)) +
+    facet_wrap(vars(SDG_label)) +
     scale_y_log10() +
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL)
@@ -526,13 +528,13 @@ irrespective of size.
 ```{r}
 plot_proportions <- function(df, indicator, y_var) {
   df %>% 
-    group_by(fos_displayname, year, {{indicator}}) %>% 
+    group_by(SDG_label, year, {{indicator}}) %>% 
     summarise(n = sum({{y_var}}, na.rm = TRUE)) %>% 
-    group_by(fos_displayname, year) %>% 
+    group_by(SDG_label, year) %>% 
     mutate(prop = n/sum(n)) %>% 
     ggplot(aes(as_year(year), prop, colour = {{indicator}})) +
     geom_line() +
-    facet_wrap(vars(fos_displayname)) + 
+    facet_wrap(vars(SDG_label)) + 
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL) +
     scale_y_continuous(labels = scales::percent)
@@ -591,16 +593,16 @@ wb_2014_2018 <- wb_local %>%
 author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
 
 papers_w_affils <- papers %>% 
-  select(paperid, fos_displayname, year, citations_norm) %>% 
+  select(paperid, SDG_label, year, citations_norm) %>% 
   left_join(author_paper_affiliations_w_groups) %>% 
   right_join(affils) %>% 
-  select(paperid, fos_displayname, year, authorid, affiliationid, country,
+  select(paperid, SDG_label, year, authorid, affiliationid, country,
          paper_author_cat, author_position, citations_norm)
 ```
 
 ```{r, cache=TRUE}
 papers_per_country_fos_author_pos <- papers_w_affils %>% 
-  group_by(country, year, fos_displayname, author_position) %>% 
+  group_by(country, year, SDG_label, author_position) %>% 
   summarise(n = n(),
             tncs = sum(citations_norm, na.rm = TRUE),
             mncs = mean(citations_norm, na.rm = TRUE)) %>% 
@@ -630,7 +632,7 @@ papers_per_country_fos_author_pos_country %>%
   stat_dens2d_filter_g(geom = "text_repel", keep.fraction = .05) +
   scale_y_log10(labels = scales::comma) +
   scale_x_log10(labels = scales::comma) +
-  facet_wrap(vars(fos_displayname)) +
+  facet_wrap(vars(SDG_label)) +
   theme(legend.position = "top") +
   labs(x = "GDP per capita", y = "# of publications (full counting)",
        title = "Productivity of research by country & region", 
@@ -642,9 +644,9 @@ papers_per_country_fos_author_pos_country %>%
 papers_per_country_fos_author_pos_country %>% 
   ggplot(aes(author_position, n, fill = income_group)) +
   geom_boxplot() +
-  facet_wrap(vars(fos_displayname)) +
+  facet_wrap(vars(SDG_label)) +
   # facet_grid(rows = vars(author_position),
-  #            cols = vars(fos_displayname)) +
+  #            cols = vars(SDG_label)) +
   scale_y_log10() 
 
 ```
@@ -654,7 +656,7 @@ papers_per_country_fos_author_pos_country %>%
 plot_box <- function(df, var) {
   df %>% 
     filter(author_position == "first_author") %>% 
-    ggplot(aes(fos_displayname, {{var}}, fill = income_group)) +
+    ggplot(aes(SDG_label, {{var}}, fill = income_group)) +
     geom_boxplot() +
     scale_y_log10(labels = scales::comma)
 }
@@ -701,7 +703,7 @@ papers_per_country_fos_author_pos_country %>%
   geom_point(alpha = .8) + 
   # approach from https://github.com/slowkow/ggrepel/issues/17#issuecomment-364796450
   stat_dens2d_filter_g(geom = "text_repel", keep.fraction = .05) +
-  facet_wrap(vars(fos_displayname)) +
+  facet_wrap(vars(SDG_label)) +
   scale_y_log10() +
   scale_x_log10(labels = scales::comma) +
   theme(legend.position = "top") +
