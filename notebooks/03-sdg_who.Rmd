@@ -20,6 +20,7 @@ library(arrow)
 library(dbplot)
 library(ggrepel)
 library(ggpmisc)
+library(VennDiagram)
 source(here::here("R/helpers.R"))
 
 theme_set(theme_bw())
@@ -74,6 +75,38 @@ message("Successfully read all datasets!")
 
 
 # SDG over time
+## SDG overlap
+```{r, include=FALSE, cache=TRUE}
+sdg_labels_local <- vroom::vroom("../../sdg_labels.csv", delim = ",")
+
+set.seed(982374)
+sdg_sample <- slice_sample(sdg_labels_local, n = 1e+6)
+
+get_papers <- function(df, var) {
+  df %>% 
+    filter(SDG_label == var) %>% 
+    pull(paperid)
+}
+
+sdgs <- c("SDG_2", "SDG_3", "SDG_13")
+
+papers_list <- map(sdgs, ~get_papers(sdg_sample, .x))
+
+venn.diagram(
+  x = papers_list,
+  category.names = sdgs,
+  filename = '03-sdg_who_files/figure-html/venn_diagram.png',
+  imagetype = "png",
+  print.mode = "percent",
+  main = "Overlap within a sample of 1 million papers"
+)
+
+```
+
+![](03-sdg_who_files/figure-html/venn_diagram.png)
+
+
+
 ## Number of papers
 
 ```{r sdg_who_by_sdg_count}
@@ -608,6 +641,20 @@ papers_per_country_fos_author_pos <- papers_w_affils %>%
             mncs = mean(citations_norm, na.rm = TRUE)) %>% 
   collect()
 ```
+
+
+
+
+
+
+
+
+WE NEED TO FIX THE MATCHING BELOW!!!!!!
+
+
+
+
+
 
 
 ```{r}
