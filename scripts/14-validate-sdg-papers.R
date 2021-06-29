@@ -22,4 +22,4 @@ n_distinct(validation_sample$paperid)
 validation_sample %>%
   mutate(applies_to_SDG = "",
          link = paste0("https://academic.microsoft.com/paper/", paperid)) %>%
-  write_csv("data/processed/papers_to_validate.csv")
+  write_csv("data/processed/papers_to_validate_new.csv")
