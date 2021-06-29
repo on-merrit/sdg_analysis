@@ -224,15 +224,100 @@ aggregated towards each author. To make a claim about whether being prestigious
 makes you publish OA we would need to know the citations prior to publication.
 but this data is not available in MAG. It could be generated from the raw graph:
 counting the links to each paper per year. But probably out of scope for now.
-```{r}
 
+```{r}
+# get the ratio of OA publications by author
+author_oa <- author_paper_affiliations %>% 
+  left_join(papers) %>%
+  # restrict to unpaywall set
+  filter(!is.na(is_oa)) %>% 
+  group_by(authorid) %>% 
+  summarise(oa_pubs = sum(as.numeric(is_oa))) %>% 
+  left_join(author_metadata, .)
+
+author_oa <- author_oa %>% 
+  select(authorid, papercount, year_first_paper, n_citations_norm, 
+         n_unique_co_authors, mean_co_authors, oa_pubs) %>% 
+  mutate(oa_share = oa_pubs / papercount)
+
+author_oa %>% 
+  filter(papercount >= 5) %>% 
+  summarise(oa_cit = cor(oa_share, n_citations_norm),
+            oa_n_pap = cor(oa_share, papercount),
+            oa_u_co_auth = cor(oa_share, n_unique_co_authors),
+            oa_m_co_autho = cor(oa_share, mean_co_authors),
+            oa_age = cor(oa_share, year_first_paper))
 ```
+
+Two smallish effects: 
+
+- more overall publications are associated with a lower 
+share of OA publications
+- older academics have a higher OA share (in line with above)
+
+Citations and co-authors have no effect on this global level.
+
+This should be further broken down into disciplines, and if somehow possible
+across time.
+
+
 
 ## Citations
 ## Publications
 
-
 # Institutional prestige
+What is the question here? could simply take leiden ranking to investigate 
+connex between prestige and oa publication. Interesting could be cross level
+effects: are effects of age and gender (if they exist) different for more
+prestiguous institutions?
+
+maybe do this connex between prestige and OA first, then dig into further stuff
+BUT: special question here is the contribution towards the SDG stuff, and maybe
+within that the OA share.
+
+maybe also more interesting to look into the type of OA publication, not simply
+oa yes or no.
+
+```{r, cache=TRUE}
+papers_per_affiliation_per_fos <- papers %>% 
+  left_join(author_paper_affiliations) %>% 
+  left_join(affils) %>% 
+  group_by(authorid, paperid) %>% 
+  mutate(frac_value = 1/n()) %>% 
+  group_by(affiliationid, year, SDG_label) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE),
+            n_frac_oa_papers = sum(frac_value * as.numeric(is_oa), na.rm = TRUE),
+            n_frac_citations = sum(frac_value * citations_norm, na.rm = TRUE)) %>% 
+  collect()
+```
+
+
+```{r, cache=TRUE}
+leiden_small_local <- leiden %>%
+  filter(Field == "All sciences", Frac_counting == 1) %>%
+  select(University, Country, Period, P_top10, PP_top10, impact_P) %>% 
+  collect() %>% 
+  mutate(across(c(P_top10, PP_top10, impact_P), as.numeric),
+         last_year_of_period = str_extract(Period, "\\d{4}$"))
+
+affil_leiden_key <- read_csv2(
+  here::here("data/leiden matching/matching_leiden.csv")
+)
+
+papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local)
+```
+
+```{r}
+papers_per_affiliation_per_w_leiden %>% 
+  mutate(match_period = year == last_year_of_period) %>% 
+  filter(match_period) %>% 
+  mutate(oa_share = n_frac_oa_papers / n_frac_papers)
+```
+
+
 ## Citations
 ## Publications
 
