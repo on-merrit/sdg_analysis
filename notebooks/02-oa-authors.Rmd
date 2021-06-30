@@ -2,7 +2,9 @@
 title: "SDG OA author characteristics"
 author: "Thomas Klebel"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
@@ -172,7 +174,7 @@ age_oa_cohort %>%
        colour = NULL)
 ```
 
-```{r oa_authors_by_academic_age_by_SDG, fig.height=10, fig.width=10}
+```{r oa_authors_by_academic_age_by_SDG_2, fig.height=10, fig.width=10}
 age_oa_cohort %>%
   filter(age_cohort != "NA") %>% 
   ggplot(aes(as_year(year), oa_share, colour = age_cohort)) +
@@ -295,9 +297,10 @@ papers_per_affiliation_per_fos <- papers %>%
 ```{r, cache=TRUE}
 leiden_small_local <- leiden %>%
   filter(Field == "All sciences", Frac_counting == 1) %>%
-  select(University, Country, Period, P_top10, PP_top10, impact_P) %>% 
+  select(University, Country, Period, P_top10, PP_top10, impact_P, P_OA,
+         PP_OA) %>% 
   collect() %>% 
-  mutate(across(c(P_top10, PP_top10, impact_P), as.numeric),
+  mutate(across(c(P_top10, PP_top10, impact_P, P_OA, PP_OA), as.numeric),
          last_year_of_period = str_extract(Period, "\\d{4}$"))
 
 affil_leiden_key <- read_csv2(
@@ -311,17 +314,217 @@ papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
 ```
 
 ```{r}
-papers_per_affiliation_per_w_leiden %>% 
+affil_oa <- papers_per_affiliation_per_w_leiden %>% 
   mutate(match_period = year == last_year_of_period) %>% 
   filter(match_period) %>% 
   mutate(oa_share = n_frac_oa_papers / n_frac_papers)
 ```
 
 
-## Citations
-## Publications
+```{r}
+affil_oa %>% 
+  group_by(year) %>% 
+  filter(n_frac_papers > 50) %>% 
+  summarise(cor = cor(oa_share, PP_OA, use = "pairwise.complete.obs"))
+```
+
+This gives the overall picture.
+
+```{r}
+affil_oa %>% 
+  filter(year == 2018, n_frac_papers > 50) %>% 
+  ggplot(aes(PP_OA, oa_share)) +
+  geom_point() +
+  labs(x = "OA share (leiden)", y = "OA share SDG", caption = "Data for 2018")
+```
 
 
+Now by SDG
+
+```{r}
+affil_oa %>% 
+  group_by(year, SDG_label) %>% 
+  filter(n_frac_papers > 50) %>% 
+  summarise(cor = cor(oa_share, PP_OA, use = "pairwise.complete.obs")) %>% 
+  ggplot(aes(year, cor, colour = SDG_label)) +
+  geom_line() +
+  geom_point() +
+  labs(y = "Correlation between OA shares in SDG & Leiden", x = NULL, 
+       colour = NULL)
+```
+The association between overall OA level publications and SDG OA level is
+rising, in particular for SDG 13.
+
+## Now correlate with prestige
+
+```{r}
+affil_oa %>% 
+  group_by(year, SDG_label) %>% 
+  filter(n_frac_papers > 50) %>% 
+  summarise(cor = cor(oa_share, P_top10, use = "pairwise.complete.obs")) %>% 
+  ggplot(aes(year, cor, colour = SDG_label)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(limits = c(0, .6)) +
+  labs(y = "Correlation between OA shares in SDG & P_top10", x = NULL, 
+       colour = NULL)
+```
+
+
+```{r}
+affil_oa %>% 
+  group_by(year, SDG_label) %>% 
+  filter(n_frac_papers > 50) %>% 
+  summarise(cor = cor(oa_share, PP_top10, use = "pairwise.complete.obs")) %>% 
+  ggplot(aes(year, cor, colour = SDG_label)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(limits = c(0, .6)) +
+  labs(y = "Correlation between OA shares in SDG & PP_top10", x = NULL, 
+       colour = NULL)
+```
+
+
+Very interesting: while in 2008, the prestige of a university (measured both in
+absolute (P_top10) and relative (PP_top10) terms was associated with the share
+of OA publications within SDG, this association has been declining. Points to
+a proliferation of OA?
+This might be in opposition to our expectations, i.e. when we expected that OA
+is only feasible for well-resourced actors?
+
+Look at this in terms of types of OA, and with percentiles of the leiden ranks.
+
+
+### Percentile ranks
+
+```{r}
+pdata <- affil_oa %>% 
+  filter(!is.na(P_top10), n_frac_papers > 50) %>% 
+  group_by(Period) %>% 
+  mutate(across(c(P_top10, PP_top10, P_OA, PP_OA, impact_P), cut_quantiles)) 
+```
+
+```{r}
+plot_over_time <- function(df, indicator, y_var) {
+  df %>% 
+    group_by(SDG_label, year, {{indicator}}) %>% 
+    mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
+    ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
+    geom_line() +
+    facet_wrap(vars(SDG_label)) +
+    scale_y_continuous(labels = scales::percent) +
+    guides(colour = guide_legend(reverse = TRUE)) +
+    labs(x = NULL)
+}
+```
+
+
+```{r oa_who_productivity, fig.asp=.5, fig.width=8}
+pdata %>%
+  plot_over_time(indicator = P_top10, oa_share) +
+  labs(y = "Share of SDG papers which are OA")
+```
+
+
+```{r oa_who_impact, fig.asp=.5, fig.width=8}
+pdata %>%
+  plot_over_time(indicator = PP_top10, oa_share) +
+  labs(y = "Share of SDG papers which are OA")
+```
+
+## Types of OA
+```{r, cache=TRUE}
+step1 <- papers %>% 
+  left_join(author_paper_affiliations) %>% 
+  left_join(affils) %>% 
+  group_by(authorid, paperid) %>% 
+  mutate(frac_value = 1/n()) 
+
+oa_type_per_affiliation_per_sdg <- step1 %>% 
+  group_by(affiliationid, year, SDG_label) %>% 
+  count(provider_cat, wt = frac_value)
+
+totals <- step1 %>% 
+  group_by(affiliationid, year, SDG_label) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE))
+
+oa_type_per_affiliation_per_sdg <- oa_type_per_affiliation_per_sdg %>% 
+  left_join(totals)
+
+oa_type_per_affiliation_per_sdg_local <- oa_type_per_affiliation_per_sdg %>% 
+  filter(n_frac_papers > 50, !is.na(provider_cat)) %>% 
+  collect()
+
+```
+
+
+```{r}
+oa_type_affiliation_leiden <- oa_type_per_affiliation_per_sdg_local %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local) %>% 
+  # remove those institutions that are not in leiden ranking
+  filter(!is.na(University), year == as.numeric(last_year_of_period))
+```
+
+
+```{r fig.asp=.5, fig.width=8}
+oa_type_affiliation_leiden %>% 
+  filter(provider_cat != "Not OA") %>% 
+  mutate(oa_share = n/n_frac_papers) %>% 
+  group_by(year, SDG_label, provider_cat) %>% 
+  summarise(cor = cor(oa_share, P_top10, use = "pairwise.complete.obs")) %>% 
+  ggplot(aes(year, cor, colour = provider_cat)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  theme(legend.position = "top") +
+  labs(title = "Correlation between share of papers in category & P_top10",
+       colour = NULL)
+```
+
+What does this mean, especially the green negative correlation?
+
+```{r fig.asp=.5, fig.width=8}
+oa_type_affiliation_leiden %>% 
+  filter(provider_cat != "Not OA") %>% 
+  mutate(oa_share = n/n_frac_papers) %>% 
+  group_by(year, SDG_label, provider_cat) %>% 
+  summarise(cor = cor(oa_share, PP_top10, use = "pairwise.complete.obs")) %>% 
+  ggplot(aes(year, cor, colour = provider_cat)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  theme(legend.position = "top") +
+  labs(title = "Correlation between share of papers in category & PP_top10",
+       colour = NULL)
+```
+
+```{r}
+oa_type_affiliation_leiden %>% 
+  filter(provider_cat != "Not OA", year == 2018) %>% 
+  mutate(oa_share = n/n_frac_papers) %>% 
+  ggplot(aes(P_top10, oa_share, colour = provider_cat)) +
+  geom_point(size = .5, alpha = .5) +
+  scale_x_log10() +
+  geom_smooth() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = "Share of papers in category", colour = NULL,
+       title = "Association between type of OA and institutional prestige (2018)")
+```
+
+```{r}
+oa_type_affiliation_leiden %>% 
+  filter(year == 2018) %>% 
+  mutate(oa_share = n/n_frac_papers) %>% 
+  ggplot(aes(P_top10, oa_share, colour = provider_cat)) +
+  geom_point(size = .5, alpha = .5) +
+  scale_x_log10() +
+  geom_smooth() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = "Share of papers in category", colour = NULL,
+       title = "Association between type of OA and institutional prestige (2018)")
+```
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
