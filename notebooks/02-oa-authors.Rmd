@@ -8,7 +8,7 @@ output:
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, dpi = 300)
 
 # setup -----
 Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")

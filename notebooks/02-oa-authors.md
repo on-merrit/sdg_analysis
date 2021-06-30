@@ -79,58 +79,6 @@ age_oa <- age_trunc %>%
   collect()
 ```
 
-```
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-```
-
-```
-## Warning: Missing values are always removed in SQL.
-## Use `mean(x, na.rm = TRUE)` to silence this warning
-## This warning is displayed only once per session.
-```
-
-```
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-
-## Warning: ORDER BY is ignored in subqueries without LIMIT
-## ℹ Do you need to move arrange() later in the pipeline or use window_order() instead?
-```
-
 
 
 ```r
@@ -150,15 +98,7 @@ age_oa %>%
 
 ```r
 author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
-```
 
-```
-## Warning: Missing values are always removed in SQL.
-## Use `MAX(x, na.rm = TRUE)` to silence this warning
-## This warning is displayed only once per session.
-```
-
-```r
 age_base <- papers %>% 
   select(paperid, SDG_label, year, is_oa) %>% 
   left_join(author_paper_affiliations_w_groups) %>% 
@@ -241,18 +181,6 @@ age_oa_positions <- age_cohorts %>%
   collect()
 ```
 
-```
-## Warning: Missing values are always removed in SQL.
-## Use `MAX(x, na.rm = TRUE)` to silence this warning
-## This warning is displayed only once per session.
-```
-
-```
-## Warning: Missing values are always removed in SQL.
-## Use `mean(x, na.rm = TRUE)` to silence this warning
-## This warning is displayed only once per session.
-```
-
 
 ```r
 age_oa_positions %>%
@@ -299,12 +227,6 @@ author_oa <- author_paper_affiliations %>%
 
 ```
 ## Joining, by = "paperid"
-```
-
-```
-## Warning: Missing values are always removed in SQL.
-## Use `SUM(x, na.rm = TRUE)` to silence this warning
-## This warning is displayed only once per session.
 ```
 
 ```
@@ -355,45 +277,7 @@ aspect, i.e. should relate to before the paper was published.
 
 
 
-
-
-
 # Institutional prestige
-What is the question here? could simply take leiden ranking to investigate 
-connex between prestige and oa publication. Interesting could be cross level
-effects: are effects of age and gender (if they exist) different for more
-prestiguous institutions?
-
-maybe do this connex between prestige and OA first, then dig into further stuff
-BUT: special question here is the contribution towards the SDG stuff, and maybe
-within that the OA share.
-
-maybe also more interesting to look into the type of OA publication, not simply
-oa yes or no.
-
-
-```r
-papers_per_affiliation_per_fos <- papers %>% 
-  left_join(author_paper_affiliations) %>% 
-  left_join(affils) %>% 
-  group_by(authorid, paperid) %>% 
-  mutate(frac_value = 1/n()) %>% 
-  group_by(affiliationid, year, SDG_label) %>% 
-  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE),
-            n_frac_oa_papers = sum(frac_value * as.numeric(is_oa), na.rm = TRUE),
-            n_frac_citations = sum(frac_value * citations_norm, na.rm = TRUE)) %>% 
-  collect()
-```
-
-```
-## Joining, by = "paperid"
-```
-
-```
-## Joining, by = c("citationcount", "affiliationid")
-```
-
-
 
 ```r
 leiden_small_local <- leiden %>%
@@ -403,19 +287,7 @@ leiden_small_local <- leiden %>%
   collect() %>% 
   mutate(across(c(P_top10, PP_top10, impact_P, P_OA, PP_OA), as.numeric),
          last_year_of_period = str_extract(Period, "\\d{4}$"))
-```
 
-```
-## Warning in mask$eval_all_mutate(quo): NAs introduced by coercion
-
-## Warning in mask$eval_all_mutate(quo): NAs introduced by coercion
-
-## Warning in mask$eval_all_mutate(quo): NAs introduced by coercion
-
-## Warning in mask$eval_all_mutate(quo): NAs introduced by coercion
-```
-
-```r
 affil_leiden_key <- read_csv2(
   here::here("data/leiden matching/matching_leiden.csv")
 )
@@ -439,8 +311,48 @@ affil_leiden_key <- read_csv2(
 ## )
 ```
 
+
+
+
+
+What is the question here? could simply take leiden ranking to investigate 
+connex between prestige and oa publication. Interesting could be cross level
+effects: are effects of age and gender (if they exist) different for more
+prestiguous institutions?
+
+maybe do this connex between prestige and OA first, then dig into further stuff
+BUT: special question here is the contribution towards the SDG stuff, and maybe
+within that the OA share.
+
+maybe also more interesting to look into the type of OA publication, not simply
+oa yes or no.
+
+
 ```r
-papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
+papers_per_affiliation_per_sdg <- papers %>% 
+  left_join(author_paper_affiliations) %>% 
+  left_join(affils) %>% 
+  group_by(authorid, paperid) %>% 
+  mutate(frac_value = 1/n()) %>% 
+  group_by(affiliationid, year, SDG_label) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE),
+            n_frac_oa_papers = sum(frac_value * as.numeric(is_oa), na.rm = TRUE),
+            n_frac_citations = sum(frac_value * citations_norm, na.rm = TRUE)) %>% 
+  collect()
+```
+
+```
+## Joining, by = "paperid"
+```
+
+```
+## Joining, by = c("citationcount", "affiliationid")
+```
+
+
+
+```r
+papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_sdg %>%
   mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
   left_join(affil_leiden_key) %>%
   left_join(leiden_small_local)
@@ -461,6 +373,7 @@ affil_oa <- papers_per_affiliation_per_w_leiden %>%
   filter(match_period) %>% 
   mutate(oa_share = n_frac_oa_papers / n_frac_papers)
 ```
+
 
 
 
@@ -498,7 +411,7 @@ affil_oa %>%
   labs(x = "OA share (leiden)", y = "OA share SDG", caption = "Data for 2018")
 ```
 
-![](02-oa-authors_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
 
 Now by SDG
@@ -520,7 +433,7 @@ affil_oa %>%
 ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 ```
 
-![](02-oa-authors_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 The association between overall OA level publications and SDG OA level is
 rising, in particular for SDG 13.
 
@@ -544,7 +457,7 @@ affil_oa %>%
 ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 ```
 
-![](02-oa-authors_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 
 
@@ -565,7 +478,7 @@ affil_oa %>%
 ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 ```
 
-![](02-oa-authors_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 
 Very interesting: while in 2008, the prestige of a university (measured both in
@@ -611,7 +524,7 @@ pdata %>%
   labs(y = "Share of SDG papers which are OA")
 ```
 
-![](02-oa-authors_files/figure-html/oa_who_productivity-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/oa_who_impact_1-1.png)<!-- -->
 
 
 
@@ -621,7 +534,17 @@ pdata %>%
   labs(y = "Share of SDG papers which are OA")
 ```
 
-![](02-oa-authors_files/figure-html/oa_who_impact-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/oa_who_impact_2-1.png)<!-- -->
+
+
+```r
+pdata %>%
+  plot_over_time(indicator = impact_P, oa_share) +
+  labs(y = "Share of SDG papers which are OA",
+       title = "# of publications per university vs SDG OA")
+```
+
+![](02-oa-authors_files/figure-html/oa_who_productivity-1.png)<!-- -->
 
 ## Types of OA
 
@@ -704,7 +627,7 @@ oa_type_affiliation_leiden %>%
 ## `summarise()` has grouped output by 'year', 'SDG_label'. You can override using the `.groups` argument.
 ```
 
-![](02-oa-authors_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
 What does this mean, especially the green negative correlation?
 
@@ -728,7 +651,7 @@ oa_type_affiliation_leiden %>%
 ## `summarise()` has grouped output by 'year', 'SDG_label'. You can override using the `.groups` argument.
 ```
 
-![](02-oa-authors_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 
 ```r
@@ -752,7 +675,7 @@ p
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](02-oa-authors_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+![](02-oa-authors_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 - Share of papers which are journal and repository hosted is similar across
 institutions and SDGs
@@ -775,7 +698,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserve7126bc0e5d12c9aa
+preserve9d9bd09b15a97002
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
