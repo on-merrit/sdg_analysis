@@ -241,6 +241,18 @@ age_oa_positions <- age_cohorts %>%
   collect()
 ```
 
+```
+## Warning: Missing values are always removed in SQL.
+## Use `MAX(x, na.rm = TRUE)` to silence this warning
+## This warning is displayed only once per session.
+```
+
+```
+## Warning: Missing values are always removed in SQL.
+## Use `mean(x, na.rm = TRUE)` to silence this warning
+## This warning is displayed only once per session.
+```
+
 
 ```r
 age_oa_positions %>%
@@ -311,15 +323,16 @@ author_oa %>%
             oa_n_pap = cor(oa_share, papercount),
             oa_u_co_auth = cor(oa_share, n_unique_co_authors),
             oa_m_co_autho = cor(oa_share, mean_co_authors),
-            oa_age = cor(oa_share, year_first_paper))
+            oa_age = cor(oa_share, year_first_paper)) %>% 
+  collect() %>% 
+  knitr::kable()
 ```
 
-```
-## # Source: spark<?> [?? x 5]
-##    oa_cit oa_n_pap oa_u_co_auth oa_m_co_autho oa_age
-##     <dbl>    <dbl>        <dbl>         <dbl>  <dbl>
-## 1 -0.0492   -0.114      -0.0126        0.0136  0.266
-```
+
+
+|     oa_cit|   oa_n_pap| oa_u_co_auth| oa_m_co_autho|    oa_age|
+|----------:|----------:|------------:|-------------:|---------:|
+| -0.0491943| -0.1140835|   -0.0125805|     0.0135733| 0.2664612|
 
 Two smallish effects: 
 
@@ -332,10 +345,18 @@ Citations and co-authors have no effect on this global level.
 This should be further broken down into disciplines, and if somehow possible
 across time.
 
+Important note: the analysis of OA on the individual level will likely come from
+the paper perspective: factors influencing whether a given paper is OA.
+So different than the QSS paper, which looks at which author characteristics are
+associated with more OA publications. 
+
+Difficulty: time perspective. All variables would need to have a time-wise 
+aspect, i.e. should relate to before the paper was published.
 
 
-## Citations
-## Publications
+
+
+
 
 # Institutional prestige
 What is the question here? could simply take leiden ranking to investigate 
@@ -447,24 +468,24 @@ affil_oa <- papers_per_affiliation_per_w_leiden %>%
 affil_oa %>% 
   group_by(year) %>% 
   filter(n_frac_papers > 50) %>% 
-  summarise(cor = cor(oa_share, PP_OA, use = "pairwise.complete.obs"))
+  summarise(cor = cor(oa_share, PP_OA, use = "pairwise.complete.obs")) %>% 
+  knitr::kable()
 ```
 
-```
-## # A tibble: 10 x 2
-##     year   cor
-##    <int> <dbl>
-##  1  2009 0.668
-##  2  2010 0.668
-##  3  2011 0.693
-##  4  2012 0.637
-##  5  2013 0.710
-##  6  2014 0.696
-##  7  2015 0.704
-##  8  2016 0.750
-##  9  2017 0.775
-## 10  2018 0.796
-```
+
+
+| year|       cor|
+|----:|---------:|
+| 2009| 0.6684618|
+| 2010| 0.6678632|
+| 2011| 0.6931630|
+| 2012| 0.6374927|
+| 2013| 0.7103419|
+| 2014| 0.6956760|
+| 2015| 0.7043756|
+| 2016| 0.7502294|
+| 2017| 0.7753870|
+| 2018| 0.7962919|
 
 This gives the overall picture.
 
@@ -711,16 +732,20 @@ oa_type_affiliation_leiden %>%
 
 
 ```r
-oa_type_affiliation_leiden %>% 
+p <- oa_type_affiliation_leiden %>% 
   filter(provider_cat != "Not OA", year == 2018) %>% 
-  mutate(oa_share = n/n_frac_papers) %>% 
+  group_by(year, SDG_label, affiliationid) %>% 
+  mutate(oa_share = n/sum(n)) %>% 
   ggplot(aes(P_top10, oa_share, colour = provider_cat)) +
-  geom_point(size = .5, alpha = .5) +
+  geom_point(size = .7, alpha = .4) +
   scale_x_log10() +
   geom_smooth() +
+  facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
        title = "Association between type of OA and institutional prestige (2018)")
+p
 ```
 
 ```
@@ -729,25 +754,38 @@ oa_type_affiliation_leiden %>%
 
 ![](02-oa-authors_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
+- Share of papers which are journal and repository hosted is similar across
+institutions and SDGs
+- Lower ranked universities have a low fraction of repository only, but a higher
+fraction of journal only OA publications.
+- High ranked institutions do not have a high share of journal only publications
+
+Further investigating the split between low prestige universities in SDG 3:
 
 ```r
-oa_type_affiliation_leiden %>% 
-  filter(year == 2018) %>% 
-  mutate(oa_share = n/n_frac_papers) %>% 
-  ggplot(aes(P_top10, oa_share, colour = provider_cat)) +
-  geom_point(size = .5, alpha = .5) +
-  scale_x_log10() +
-  geom_smooth() +
-  scale_y_continuous(labels = scales::percent) +
-  labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between type of OA and institutional prestige (2018)")
+p <- oa_type_affiliation_leiden %>% 
+  filter(provider_cat != "Not OA", year == 2018, SDG_label == "SDG_3") %>% 
+  group_by(year, affiliationid) %>% 
+  mutate(oa_share = n/sum(n)) %>% 
+  ggplot(aes(P_top10, oa_share, colour = provider_cat, size = n_frac_papers)) +
+  geom_point(alpha = .4) +
+  scale_x_log10()
+
+p <- p + aes(label = Country, text = University)
+plotly::ggplotly(p)
 ```
 
-```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
-```
+preserve7126bc0e5d12c9aa
 
-![](02-oa-authors_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+Unclear where this split comes from. It is not related to size (in terms of 
+number of publications), and seems also unrelated to country/continent. 
+
+
+Further things to look at:
+
+- does this translate to certain types of journals, i.e. according to APC or IF?
+- how is this over time?
+
 
 
 
