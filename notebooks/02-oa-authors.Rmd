@@ -248,7 +248,9 @@ author_oa %>%
             oa_n_pap = cor(oa_share, papercount),
             oa_u_co_auth = cor(oa_share, n_unique_co_authors),
             oa_m_co_autho = cor(oa_share, mean_co_authors),
-            oa_age = cor(oa_share, year_first_paper))
+            oa_age = cor(oa_share, year_first_paper)) %>% 
+  collect() %>% 
+  knitr::kable()
 ```
 
 Two smallish effects: 
@@ -262,10 +264,18 @@ Citations and co-authors have no effect on this global level.
 This should be further broken down into disciplines, and if somehow possible
 across time.
 
+Important note: the analysis of OA on the individual level will likely come from
+the paper perspective: factors influencing whether a given paper is OA.
+So different than the QSS paper, which looks at which author characteristics are
+associated with more OA publications. 
+
+Difficulty: time perspective. All variables would need to have a time-wise 
+aspect, i.e. should relate to before the paper was published.
 
 
-## Citations
-## Publications
+
+
+
 
 # Institutional prestige
 What is the question here? could simply take leiden ranking to investigate 
@@ -325,7 +335,8 @@ affil_oa <- papers_per_affiliation_per_w_leiden %>%
 affil_oa %>% 
   group_by(year) %>% 
   filter(n_frac_papers > 50) %>% 
-  summarise(cor = cor(oa_share, PP_OA, use = "pairwise.complete.obs"))
+  summarise(cor = cor(oa_share, PP_OA, use = "pairwise.complete.obs")) %>% 
+  knitr::kable()
 ```
 
 This gives the overall picture.
