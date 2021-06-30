@@ -97,7 +97,7 @@ venn.diagram(
   category.names = sdgs,
   filename = '03-sdg_who_files/figure-html/venn_diagram.png',
   imagetype = "png",
-  print.mode = "percent",
+  print.mode = "raw",
   main = "Overlap within a sample of 1 million papers"
 )
 
@@ -114,7 +114,7 @@ fos_counts <- papers %>%
   count(SDG_label, year) %>% 
   collect()
   
-fos_counts %>% 
+p <- fos_counts %>% 
   drop_na() %>% 
   ggplot(aes(as_year(year), n, colour = SDG_label)) +
   geom_line() +
@@ -123,6 +123,7 @@ fos_counts %>%
                 breaks = c(10e+3, 30e+3, 1e+5, 1e+6)) +
   labs(x = NULL, y = "# of papers", colour = NULL,
        title = "Development of SDG areas over time") 
+plotly::ggplotly(p)
 ```
 
 We can observe a slight upward trend, that could be attributable to the overall
