@@ -500,31 +500,52 @@ oa_type_affiliation_leiden %>%
        colour = NULL)
 ```
 
-```{r}
-oa_type_affiliation_leiden %>% 
+```{r, fig.asp=.5, fig.width=10}
+p <- oa_type_affiliation_leiden %>% 
   filter(provider_cat != "Not OA", year == 2018) %>% 
-  mutate(oa_share = n/n_frac_papers) %>% 
+  group_by(year, SDG_label, affiliationid) %>% 
+  mutate(oa_share = n/sum(n)) %>% 
   ggplot(aes(P_top10, oa_share, colour = provider_cat)) +
-  geom_point(size = .5, alpha = .5) +
+  geom_point(size = .7, alpha = .4) +
   scale_x_log10() +
   geom_smooth() +
+  facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
        title = "Association between type of OA and institutional prestige (2018)")
+p
 ```
 
+- Share of papers which are journal and repository hosted is similar across
+institutions and SDGs
+- Lower ranked universities have a low fraction of repository only, but a higher
+fraction of journal only OA publications.
+- High ranked institutions do not have a high share of journal only publications
+
+Further investigating the split between low prestige universities in SDG 3:
 ```{r}
-oa_type_affiliation_leiden %>% 
-  filter(year == 2018) %>% 
-  mutate(oa_share = n/n_frac_papers) %>% 
-  ggplot(aes(P_top10, oa_share, colour = provider_cat)) +
-  geom_point(size = .5, alpha = .5) +
-  scale_x_log10() +
-  geom_smooth() +
-  scale_y_continuous(labels = scales::percent) +
-  labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between type of OA and institutional prestige (2018)")
+p <- oa_type_affiliation_leiden %>% 
+  filter(provider_cat != "Not OA", year == 2018, SDG_label == "SDG_3") %>% 
+  group_by(year, affiliationid) %>% 
+  mutate(oa_share = n/sum(n)) %>% 
+  ggplot(aes(P_top10, oa_share, colour = provider_cat, size = n_frac_papers)) +
+  geom_point(alpha = .4) +
+  scale_x_log10()
+
+p <- p + aes(label = Country, text = University)
+plotly::ggplotly(p)
 ```
+
+Unclear where this split comes from. It is not related to size (in terms of 
+number of publications), and seems also unrelated to country/continent. 
+
+
+Further things to look at:
+
+- does this translate to certain types of journals, i.e. according to APC or IF?
+- how is this over time?
+
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
