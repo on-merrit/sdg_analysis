@@ -274,10 +274,25 @@ aspect, i.e. should relate to before the paper was published.
 
 
 
-
-
-
 # Institutional prestige
+```{r, cache=TRUE}
+leiden_small_local <- leiden %>%
+  filter(Field == "All sciences", Frac_counting == 1) %>%
+  select(University, Country, Period, P_top10, PP_top10, impact_P, P_OA,
+         PP_OA) %>% 
+  collect() %>% 
+  mutate(across(c(P_top10, PP_top10, impact_P, P_OA, PP_OA), as.numeric),
+         last_year_of_period = str_extract(Period, "\\d{4}$"))
+
+affil_leiden_key <- read_csv2(
+  here::here("data/leiden matching/matching_leiden.csv")
+)
+```
+
+
+
+
+
 What is the question here? could simply take leiden ranking to investigate 
 connex between prestige and oa publication. Interesting could be cross level
 effects: are effects of age and gender (if they exist) different for more
@@ -291,7 +306,7 @@ maybe also more interesting to look into the type of OA publication, not simply
 oa yes or no.
 
 ```{r, cache=TRUE}
-papers_per_affiliation_per_fos <- papers %>% 
+papers_per_affiliation_per_sdg <- papers %>% 
   left_join(author_paper_affiliations) %>% 
   left_join(affils) %>% 
   group_by(authorid, paperid) %>% 
@@ -305,19 +320,7 @@ papers_per_affiliation_per_fos <- papers %>%
 
 
 ```{r, cache=TRUE}
-leiden_small_local <- leiden %>%
-  filter(Field == "All sciences", Frac_counting == 1) %>%
-  select(University, Country, Period, P_top10, PP_top10, impact_P, P_OA,
-         PP_OA) %>% 
-  collect() %>% 
-  mutate(across(c(P_top10, PP_top10, impact_P, P_OA, PP_OA), as.numeric),
-         last_year_of_period = str_extract(Period, "\\d{4}$"))
-
-affil_leiden_key <- read_csv2(
-  here::here("data/leiden matching/matching_leiden.csv")
-)
-
-papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
+papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_sdg %>%
   mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
   left_join(affil_leiden_key) %>%
   left_join(leiden_small_local)
@@ -329,6 +332,7 @@ affil_oa <- papers_per_affiliation_per_w_leiden %>%
   filter(match_period) %>% 
   mutate(oa_share = n_frac_oa_papers / n_frac_papers)
 ```
+
 
 
 ```{r}
@@ -430,17 +434,24 @@ plot_over_time <- function(df, indicator, y_var) {
 ```
 
 
-```{r oa_who_productivity, fig.asp=.5, fig.width=8}
+```{r oa_who_impact_1, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = P_top10, oa_share) +
   labs(y = "Share of SDG papers which are OA")
 ```
 
 
-```{r oa_who_impact, fig.asp=.5, fig.width=8}
+```{r oa_who_impact_2, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = PP_top10, oa_share) +
   labs(y = "Share of SDG papers which are OA")
+```
+
+```{r oa_who_productivity, fig.asp=.5, fig.width=8}
+pdata %>%
+  plot_over_time(indicator = impact_P, oa_share) +
+  labs(y = "Share of SDG papers which are OA",
+       title = "# of publications per university vs SDG OA")
 ```
 
 ## Types of OA
