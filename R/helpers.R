@@ -61,7 +61,6 @@ make_author_groups <- function(spark_author_paper_affiliations) {
 }
 
 # approach from https://stackoverflow.com/a/11728547/3149349
-
 cut_quantiles <- function(x) {
   cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE),
       labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")),
