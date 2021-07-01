@@ -1,7 +1,7 @@
 ---
 title: "OA Overview"
 author: "Thomas Klebel"
-date: "30 June, 2021"
+date: "01 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -75,6 +75,33 @@ categorisation.
 
 
 # OA per funder 
+
+```r
+funder_overview <- papers %>% 
+  # restrict to unpaywall
+  filter(!is.na(is_oa), !is.na(is_funded)) %>% 
+  group_by(is_funded, year, SDG_label) %>% 
+  summarise(mean_oa = mean(as.numeric(is_oa))) %>% 
+  collect()
+```
+
+
+```r
+funder_overview %>% 
+  ggplot(aes(as_year(year), mean_oa, colour = is_funded)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL, y = "% of publications which are OA", 
+       title = "OA by funding status") +
+  theme(legend.position = "top")
+```
+
+![](01-oa-overview_files/figure-html/sdg_oa_by_funding_status-1.png)<!-- -->
+
+
+
 
 ```r
 paper_oa_flag <- papers %>%
