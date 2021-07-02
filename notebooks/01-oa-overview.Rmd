@@ -198,15 +198,16 @@ for this in the Nature 2018 paper by Lariviere and Sugimoto.
 
 # OA by country
 ```{r, cache=TRUE}
-oa_per_affiliation <- paper_oa_flag %>%
+oa_per_affiliation <- oa_status %>%
   select(-SDG_label) %>%
   left_join(author_paper_affiliations) %>%
   right_join(affils)
+
 oa_per_affiliation_selected <- oa_per_affiliation %>%
   group_by(paperid) %>%
   mutate(frac_count = 1 / max(authorsequencenumber, na.rm = TRUE)) %>%
-  select(paperid, authorid, is_oa, provider_cat, year, country, frac_count) %>%
-  filter(!is.na(is_oa))
+  select(paperid, authorid, is_oa, provider_cat, year, country, frac_count) 
+
 oa_per_country <- oa_per_affiliation_selected %>%
   group_by(country, is_oa) %>%
   summarise(sum_frac_oa = sum(frac_count)) %>%
@@ -227,7 +228,8 @@ wb_local <- wb_indicators %>%
 
 proper_countries <- wb_countries %>% 
   filter(!is.na(`Currency Unit`)) %>% 
-  select(country_code = `Country Code`, short_name = `Short Name`)
+  select(country_code = `Country Code`, short_name = `Short Name`,
+         region = Region, income_group = `Income Group`)
 
 wb_2015_2018 <- wb_local %>% 
   select(country_code, country_name, indicator_name, value) %>% 
@@ -282,10 +284,12 @@ oa_with_gdp_per_cap <- oa_per_country %>%
   pivot_wider(names_from = indicator_code, values_from = value) %>%
   drop_na() %>%
   filter(is_oa)
+
 oa_with_gdp_per_cap %>%
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
-  geom_point() +
+  geom_point(aes(size = sum_frac_oa)) +
   geom_smooth() +
+  scale_size_continuous(trans = "sqrt") +
   ggrepel::geom_text_repel(aes(label = country_name)) +
   labs(x = "GDP per capita", y = "OA share") +
   scale_y_continuous(labels = scales::percent) +
@@ -398,6 +402,14 @@ anim_save(here::here("animations/oa_by_country_author_position.mp4"), p,
 <video width="960" height="720" controls>
   <source src="../animations/oa_by_country_author_position.mp4" type="video/mp4">
 </video>
+
+
+## Investigate country per SDG
+Avenues to follow:
+
+- only for first authors
+- focus on SDG 3, but look if sample is big enough in other areas
+- 2018
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
