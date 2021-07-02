@@ -17,6 +17,7 @@ library(tidyverse)
 library(arrow)
 library(gganimate)
 library(visdat)
+library(ggbeeswarm)
 source(here::here("R/helpers.R"))
 
 message("Connecting to spark...")
@@ -73,8 +74,7 @@ message("Successfully read all datasets!")
 # aggregate oa_status -----
 oa_status <- papers %>%
   filter(!is.na(is_oa)) %>%
-  select(paperid, SDG_label, year, is_oa, provider_cat) %>%
-  distinct()
+  select(paperid, SDG_label, year, is_oa, provider_cat) 
 
 
 oa_per_year <- oa_status %>%
@@ -199,14 +199,14 @@ for this in the Nature 2018 paper by Lariviere and Sugimoto.
 # OA by country
 ```{r, cache=TRUE}
 oa_per_affiliation <- oa_status %>%
-  select(-SDG_label) %>%
   left_join(author_paper_affiliations) %>%
   right_join(affils)
 
 oa_per_affiliation_selected <- oa_per_affiliation %>%
   group_by(paperid) %>%
   mutate(frac_count = 1 / max(authorsequencenumber, na.rm = TRUE)) %>%
-  select(paperid, authorid, is_oa, provider_cat, year, country, frac_count) 
+  select(paperid, authorid, is_oa, provider_cat, year, country, frac_count,
+         SDG_label) 
 
 oa_per_country <- oa_per_affiliation_selected %>%
   group_by(country, is_oa) %>%
@@ -411,6 +411,73 @@ Avenues to follow:
 - focus on SDG 3, but look if sample is big enough in other areas
 - 2018
 
+```{r}
+oa_per_affiliation <- oa_status %>%
+  left_join(author_paper_affiliations_w_groups) %>%
+  right_join(affils)
+
+oa_per_affil_firsts <- oa_per_affiliation %>% 
+  filter(author_position == "first_author", year %in% 2015:2018) %>% 
+  group_by(country, SDG_label) %>% 
+  summarise(prop_oa = mean(as.numeric(is_oa)),
+            n_papers = n()) %>% 
+  collect()
+```
+
+
+```{r}
+oa_per_affil_firsts_w_groups <- oa_per_affil_firsts %>% 
+  left_join(proper_countries, by = c("country" = "country_code"))
+```
+
+```{r}
+oa_per_affil_firsts_w_groups %>% 
+  filter(!is.na(income_group)) %>% 
+  mutate(income_group = fct_relevel(income_group, "High income", 
+                                    "Upper middle income", 
+                                    "Lower middle income", "Low income")) %>% 
+  ggplot(aes(SDG_label, prop_oa, fill = income_group)) +
+  geom_boxplot()
+```
+
+
+```{r fig.width=8, fig.height=5}
+oa_per_affil_firsts_w_groups %>% 
+  filter(!is.na(region)) %>% 
+  ggplot(aes(SDG_label, prop_oa, fill = region)) +
+  geom_boxplot(notch = TRUE)
+```
+
+This has the issue of treating Bermuda and USA equally (one data point in north
+america).
+
+```{r}
+oa_per_affil_firsts_w_groups %>% 
+  filter(!is.na(region)) %>% 
+  group_by(region, SDG_label) %>% 
+  summarise(mean_oa = weighted.mean(prop_oa, n_papers)) %>% 
+  ggplot(aes(SDG_label, mean_oa, colour = region, group = region)) +
+  geom_point() +
+  geom_line()
+```
+
+```{r}
+oa_per_affil_firsts_w_groups %>% 
+  filter(!is.na(region)) %>% 
+  group_by(region, SDG_label) %>% 
+  ggplot(aes(region, prop_oa, colour = region, group = region, size = n_papers)) +
+  geom_beeswarm() +
+  scale_y_continuous(labels = scales::percent) +
+  facet_wrap(vars(SDG_label)) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(x = NULL, y = "% of papers which are OA")
+
+```
+
+to develop further: how to visualise country differences?
+issue: low counts for many countries. maybe filter them out, maybe increase year
+span.
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
