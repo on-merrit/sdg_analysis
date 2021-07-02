@@ -1,0 +1,103 @@
+---
+title: "Who collaborates with whom?"
+author: "Thomas Klebel"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, dpi = 300)
+
+# setup -----
+Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
+library(sparklyr)
+library(tidyverse)
+library(arrow)
+library(ggbeeswarm)
+source(here::here("R/helpers.R"))
+
+message("Connecting to spark...")
+
+config <- spark_config()
+config$spark.executor.cores <- 15
+config$spark.executor.instances <- 5
+config$spark.executor.memory <- "60G"
+sc <- spark_connect(master = "yarn-client", config = config,
+                    app_name = "SDG_OA_authors")
+message("Connection to Spark successful!")
+
+message("Reading the datasets...")
+papers <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_papers_collated.csv",
+                         name = "papers")
+sdg_labels <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_labels.csv",
+                             name = "sdg_labels")
+# join the labels here, since we are doing everything by SDG
+papers <- papers %>% 
+  left_join(sdg_labels)
+
+affils <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
+                         name = "affils")
+author_metadata <- spark_read_csv(sc,
+                                  "/user/tklebel/sdg/data/sdg_author_data.csv",
+                                  name = "author_metadata")
+author_paper_affiliations <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
+  name = "author_paper_affiliations"
+)
+
+funded_projects <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
+  name = "funded_projects"
+)
+wb_indicators <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/world_bank_indicators.csv",
+  name = "wb_indicators")
+leiden <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/leiden_ranking.csv",
+                         name = "leiden")
+
+wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
+
+message("Successfully read all datasets!")
+```
+
+## Collaboration across countries
+Q: How are authorship roles distributed with international collaborations?
+
+Only take into account papers with more than one country on it.
+
+
+```{r}
+author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
+
+collaborative_papers <- papers %>% 
+  select(paperid, year) %>% 
+  left_join(author_paper_affiliations_w_groups) %>% 
+  left_join(affils) %>% 
+  group_by(paperid) %>% 
+  # check if we have country for all authors
+  mutate(country_available = sum(as.numeric(is.na(country))) == 0) %>% 
+  filter(country_available, paper_author_cat != "single") %>% 
+  select(paperid, year, country, paper_author_cat, author_position)
+```
+
+```{r}
+collaborative_papers %>% 
+  group_by(country) %>% 
+  count(author_position)
+
+# then join with WDI, then plot by income region and geographical region
+```
+
+
+
+```{r shut-down, echo=FALSE, message=FALSE}
+message("Done. Shutting down...")
+spark_disconnect(sc)
+```
