@@ -1,54 +1,18 @@
 ---
 title: "05-gender-overview"
 author: "Thomas Klebel"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+date: "08 July, 2021"
 output: 
   html_document:
     keep_md: true
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(sparklyr)
-library(tidyverse)
-library(arrow)
 
-source(here::here("R/helpers.R"))
-
-theme_set(theme_bw())
-
-unique_names <- read_csv(here::here("data/processed/unique_names.csv"))
-genderized_names <- read_csv(here::here("data/processed/genderized_names.csv"))
-
-
-
-message("Connecting to spark...")
-
-Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
-config <- spark_config()
-config$spark.executor.cores <- 15
-config$spark.executor.instances <- 3
-config$spark.executor.memory <- "60G"
-sc <- spark_connect(master = "yarn-client", config = config,
-                    app_name = "SDG_OA_authors")
-message("Connection to Spark successful!")
-
-message("Reading the datasets...")
-author_metadata <- spark_read_csv(sc,
-                                  "/user/tklebel/sdg/data/sdg_author_data.csv",
-                                  name = "author_metadata")
-gender_key <- spark_read_csv(sc,
-                             "/user/tklebel/sdg/data/gender_key.csv",
-                             name = "gender_key")
-genders <- spark_read_csv(sc,
-                          "/user/tklebel/sdg/data/genderized_names.csv",
-                          name = "genderized_names")
-
-```
 
 
 # How many names were genderized?
-```{r}
+
+```r
 unique_names %>% 
   left_join(genderized_names, by = c("first_name" = "name")) %>% 
   summarise(n = n(),
@@ -56,8 +20,16 @@ unique_names %>%
             prop_genderized = n_genderized/n)
 ```
 
+```
+## # A tibble: 1 x 3
+##        n n_genderized prop_genderized
+##    <int>        <int>           <dbl>
+## 1 509731       290469           0.570
+```
 
-```{r, cache=TRUE}
+
+
+```r
 sampling_grid <- expand_grid(counts = 1:100,
                              prob = seq(.5, 1, by = .1))
 
@@ -75,10 +47,35 @@ res <- sampling_grid %>%
 res %>% 
   head(20) %>% 
   knitr::kable()
-
 ```
 
-```{r}
+
+
+| counts| prob| resulting_n|
+|------:|----:|-----------:|
+|      1|  0.5|      290469|
+|      1|  0.6|      270409|
+|      1|  0.7|      247486|
+|      1|  0.8|      226638|
+|      1|  0.9|      197611|
+|      1|  1.0|      147415|
+|      2|  0.5|      235801|
+|      2|  0.6|      215741|
+|      2|  0.7|      192818|
+|      2|  0.8|      171970|
+|      2|  0.9|      142943|
+|      2|  1.0|       92747|
+|      3|  0.5|      204945|
+|      3|  0.6|      191188|
+|      3|  0.7|      168265|
+|      3|  0.8|      147417|
+|      3|  0.9|      118390|
+|      3|  1.0|       68194|
+|      4|  0.5|      184723|
+|      4|  0.6|      170966|
+
+
+```r
 pdata <- res %>% 
   mutate(prop = resulting_n/nrow(genderized_names))
 
@@ -89,11 +86,16 @@ p <- pdata %>%
 p
 ```
 
+![](05-gender_overview_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
-```{r}
+
+
+```r
 p +
   coord_cartesian(xlim = c(0, 20))
 ```
+
+![](05-gender_overview_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 In terms of unique names, setting count higher than abou 3-5 already leads to 
 way less names being covered. From this I would maybe choose to include names
@@ -102,7 +104,8 @@ result in only including about 50% of the genderized names.
 
 However: how does this translate to actual authors in our dataset?
 
-```{r}
+
+```r
 joined_genders <- gender_key %>% 
   left_join(genders, by = c("first_name" = "name"))
 
@@ -112,16 +115,33 @@ genderize_overview <- joined_genders %>%
             n_genderized = sum(as.numeric(!is.na(gender)))) %>% 
   mutate(prop_genderized = n_genderized/n) %>% 
   collect()
+```
+
+```
+## Warning: Missing values are always removed in SQL.
+## Use `SUM(x, na.rm = TRUE)` to silence this warning
+## This warning is displayed only once per session.
+```
+
+```r
 genderize_overview
 ```
 
+```
+## # A tibble: 1 x 3
+##          n n_genderized prop_genderized
+##      <int>        <dbl>           <dbl>
+## 1 13999384     11059364           0.790
+```
+
 We got a reply from the API on
-`r scales::percent(genderize_overview$prop_genderized)` of the authors, which is
+79% of the authors, which is
 quite ok.
 
 Let's see now how this translates if we start setting thresholds.
 
-```{r}
+
+```r
 eval_res <- joined_genders %>% 
   filter(!is.na(gender)) %>% 
   mutate(c1_p7 = probability >= .7,
@@ -138,14 +158,29 @@ eval_res <- joined_genders %>%
   summarise(n = n(),
             across(matches("^c\\d"), .fns = sum)) %>% 
   collect()
-  
-
 ```
 
-```{r}
+
+```r
 eval_res %>% 
   pivot_longer(matches("^c\\d")) %>% 
   mutate(prop = value/n)
+```
+
+```
+## # A tibble: 10 x 4
+##           n name     value  prop
+##       <int> <chr>    <dbl> <dbl>
+##  1 11059364 c1_p7  9827345 0.889
+##  2 11059364 c1_p8  9117562 0.824
+##  3 11059364 c1_p9  8342958 0.754
+##  4 11059364 c3_p7  9539831 0.863
+##  5 11059364 c3_p75 9223300 0.834
+##  6 11059364 c3_p8  8830048 0.798
+##  7 11059364 c3_p9  8055444 0.728
+##  8 11059364 c5_p7  9391004 0.849
+##  9 11059364 c5_p8  8708995 0.787
+## 10 11059364 c5_p9  7934391 0.717
 ```
 
 
@@ -181,7 +216,4 @@ county information. However, this might bump our usage right up to 10mio request
 of full names with countries).
 
 
-```{r shut-down, echo=FALSE, message=FALSE}
-message("Done. Shutting down...")
-spark_disconnect(sc)
-```
+
