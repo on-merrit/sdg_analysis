@@ -592,17 +592,60 @@ gender_base <- papers %>%
 
 ```{r}
 gender_rate <- gender_base %>% 
-  group_by(SDG_lable, year, gender) %>% 
+  filter(!is.na(is_oa)) %>% # restrict to unpaywall set only
+  group_by(SDG_label, year, gender) %>% 
   count(is_oa) %>% 
   mutate(prop = n/sum(n)) %>% 
   collect()
 ```
 Visalíse oa rate per gender over time
 
+```{r}
+gender_rate %>% 
+  filter(is_oa, gender != "unknown", year < 2019) %>% 
+  ggplot(aes(as_year(year), prop, colour = gender)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label))
+```
+
+This does not show big differences. At least in health, papers by women tend to
+have slightly higher OA rates. 
+
+But: what are we showing here? What is the y axis exactly? Should we maybe show
+how the number of female authors, or how the gender split in the authors of a 
+given paper is related to OA? would make more sense than overall.
+Do this only for a specific year.
+
+It will also be more productive to visualise this for first and last authors
+only.
 
 
-Also visualise it only for first/last authors
+First, lets look at this in terms of papers
+```{r}
+# only do this for papers where we have gender for all authors
+gender_ratio_p_paper <- gender_base %>% 
+  select(paperid, gender) %>% 
+  group_by(paperid) %>% 
+  mutate(all_genderized = sum(as.numeric(gender == "unknown")) == 0) %>% 
+  filter(all_genderized) %>% 
+  count(gender) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  filter(gender == "female") %>% 
+  rename(female_proportion = prop)
 
+n_cases <- gender_ratio_p_paper %>% ungroup() %>% count() %>% collect() %>% pull(n)
+
+gender_sample <- gender_ratio_p_paper %>% 
+  left_join(gender_base) %>% 
+  sdf_sample(1000/n_cases, replacement = FALSE) %>% 
+  collect()
+```
+
+```{r}
+gender_sample %>% 
+  ggplot(aes())
+```
 
 
 
