@@ -1,0 +1,95 @@
+---
+title: "05-gender-overview"
+author: "Thomas Klebel"
+date: "8 7 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sparklyr)
+library(tidyverse)
+library(arrow)
+
+source(here::here("R/helpers.R"))
+
+theme_set(theme_bw())
+
+unique_names <- read_csv(here::here("data/processed/unique_names.csv"))
+genderized_names <- read_csv(here::here("data/processed/genderized_names.csv"))
+
+
+
+message("Connecting to spark...")
+
+Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
+config <- spark_config()
+config$spark.executor.cores <- 15
+config$spark.executor.instances <- 3
+config$spark.executor.memory <- "60G"
+sc <- spark_connect(master = "yarn-client", config = config,
+                    app_name = "SDG_OA_authors")
+message("Connection to Spark successful!")
+
+message("Reading the datasets...")
+author_metadata <- spark_read_csv(sc,
+                                  "/user/tklebel/sdg/data/sdg_author_data.csv",
+                                  name = "author_metadata")
+
+```
+
+
+# How many names were genderized?
+```{r}
+uniqe_names %>% 
+  left_join(genderized_names, by = c("first_name" = "name")) %>% 
+  summarise(n = n(),
+            n_genderized = sum(!is.na(gender)),
+            prop_genderized = n_genderized/n)
+```
+
+
+```{r, cache=TRUE}
+sampling_grid <- expand_grid(counts = 1:100,
+                             prob = seq(.5, 1, by = .1))
+
+
+get_n <- function(df, counts, prob) {
+  df %>% 
+    filter(count >= counts, probability >= prob) %>% 
+    nrow()
+}
+
+
+res <- sampling_grid %>% 
+  mutate(resulting_n = map2_int(counts, prob, ~get_n(genderized_names, .x, .y)))
+
+res %>% 
+  head(20) %>% 
+  knitr::kable()
+
+```
+
+```{r}
+pdata <- res %>% 
+  mutate(prop = resulting_n/nrow(genderized_names))
+
+pdata %>% 
+  ggplot(aes(counts, prop, colour = as.factor(prob))) +
+  geom_point() +
+  scale_y_continuous(labels = scales::percent)
+p
+```
+
+
+```{r}
+p +
+  coord_cartesian(xlim = c(0, 20))
+```
+
+In terms of unique names, setting count higher than abou 3-5 already leads to 
+way less names being covered. From this I would maybe choose to include names
+that appear more than three times and have at least 80% probability. This would
+result in only including about 50% of the genderized names.
+
+However: how does this translate to actual authors in our dataset?
