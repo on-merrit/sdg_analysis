@@ -42,6 +42,17 @@ affils <- spark_read_csv(sc,
 author_metadata <- spark_read_csv(sc,
                                   "/user/tklebel/sdg/data/sdg_author_data.csv",
                                   name = "author_metadata")
+# join genders with author data
+genders <- spark_read_csv(sc,
+                          "/user/tklebel/sdg/data/merged_genderized_names.csv",
+                          name = "genders") %>% 
+  select(-first_name)
+
+author_metadata <- author_metadata %>% 
+  left_join(genders, by = "authorid")
+
+
+
 author_paper_affiliations <- spark_read_csv(
   sc,
   "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
@@ -567,6 +578,31 @@ Further things to look at:
 
 - does this translate to certain types of journals, i.e. according to APC or IF?
 - how is this over time?
+
+
+# Gender analysis
+```{r}
+gender_base <- papers %>% 
+  select(paperid, SDG_label, year, is_oa) %>% 
+  left_join(author_paper_affiliations_w_groups) %>% 
+  left_join(author_metadata) %>% 
+  select(paperid, SDG_label, year, author_position, authorid, 
+         is_oa, paper_author_cat, gender)
+```
+
+```{r}
+gender_rate <- gender_base %>% 
+  group_by(SDG_lable, year, gender) %>% 
+  count(is_oa) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect()
+```
+Visalíse oa rate per gender over time
+
+
+
+Also visualise it only for first/last authors
+
 
 
 
