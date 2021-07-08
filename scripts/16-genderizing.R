@@ -52,3 +52,52 @@ result <- list.files("data/processed/genderized_names/", full.names = TRUE) %>%
 result %>%
   write_csv("data/processed/genderized_names.csv")
 
+
+# implement the genderization ----
+library(sparklyr)
+library(arrow)
+
+unique_names <- read_csv(here::here("data/processed/unique_names.csv"))
+genderized_names <- read_csv(here::here("data/processed/genderized_names.csv"))
+
+
+message("Connecting to spark...")
+
+Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
+config <- spark_config()
+config$spark.executor.cores <- 15
+config$spark.executor.instances <- 3
+config$spark.executor.memory <- "60G"
+sc <- spark_connect(master = "yarn-client", config = config,
+                    app_name = "SDG_OA_authors")
+message("Connection to Spark successful!")
+
+message("Reading the datasets...")
+gender_key <- spark_read_csv(sc,
+                             "/user/tklebel/sdg/data/gender_key.csv",
+                             name = "gender_key")
+genders <- spark_read_csv(sc,
+                          "/user/tklebel/sdg/data/genderized_names.csv",
+                          name = "genderized_names")
+
+
+# values chosen:
+# - counts >= 3
+# - probability >= .75
+# (see notebook on why)
+
+selected_genders <- genders %>%
+  filter(count >= 3,
+         probability >= .75) %>%
+  select(name, gender)
+
+final_genders <- gender_key %>%
+  select(authorid, first_name) %>%
+  left_join(selected_genders, by = c("first_name" = "name")) %>%
+  mutate(gender = if_else(is.na(gender), "unknown", gender))
+
+final_genders %>%
+  spark_write_csv("/user/tklebel/sdg/data/merged_genderized_names.csv")
+
+# TRY THIS OUT HERE
+
