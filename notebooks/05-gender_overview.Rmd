@@ -1,8 +1,10 @@
 ---
 title: "05-gender-overview"
 author: "Thomas Klebel"
-date: "8 7 2021"
-output: html_document
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -35,6 +37,12 @@ message("Reading the datasets...")
 author_metadata <- spark_read_csv(sc,
                                   "/user/tklebel/sdg/data/sdg_author_data.csv",
                                   name = "author_metadata")
+gender_key <- spark_read_csv(sc,
+                             "/user/tklebel/sdg/data/gender_key.csv",
+                             name = "gender_key")
+genders <- spark_read_csv(sc,
+                          "/user/tklebel/sdg/data/genderized_names.csv",
+                          name = "genderized_names")
 
 ```
 
@@ -93,3 +101,87 @@ that appear more than three times and have at least 80% probability. This would
 result in only including about 50% of the genderized names.
 
 However: how does this translate to actual authors in our dataset?
+
+```{r}
+joined_genders <- gender_key %>% 
+  left_join(genders, by = c("first_name" = "name"))
+
+
+genderize_overview <- joined_genders %>% 
+  summarise(n = n(),
+            n_genderized = sum(as.numeric(!is.na(gender)))) %>% 
+  mutate(prop_genderized = n_genderized/n) %>% 
+  collect()
+genderize_overview
+```
+
+We got a reply from the API on
+`r scales::percent(genderize_overview$prop_genderized)` of the authors, which is
+quite ok.
+
+Let's see now how this translates if we start setting thresholds.
+
+```{r}
+eval_res <- joined_genders %>% 
+  filter(!is.na(gender)) %>% 
+  mutate(c1_p7 = probability >= .7,
+         c1_p8 = probability >= .8,
+         c1_p9 = probability >= .9,
+         c3_p7 = count >= 3 & c1_p7,
+         c3_p75 = count >= 3 & probability >= .75,
+         c3_p8 = count >= 3 & c1_p8,
+         c3_p9 = count >= 3 & c1_p9,
+         c5_p7 = count >= 5 & c1_p7,
+         c5_p8 = count >= 5 & c1_p8,
+         c5_p9 = count >= 5 & c1_p9) %>% 
+  mutate(across(matches("^c\\d"), as.numeric)) %>% 
+  summarise(n = n(),
+            across(matches("^c\\d"), .fns = sum)) %>% 
+  collect()
+  
+
+```
+
+```{r}
+eval_res %>% 
+  pivot_longer(matches("^c\\d")) %>% 
+  mutate(prop = value/n)
+```
+
+
+Looking at some of the papers we collected, we would potentially end up with a
+low number of authors that have been assigned a gender (lit seems to be at 
+80-90%). Since we only got a reply from the API on about 80% of the authors,
+if we multiply this with say 85% or 80% we end up at 64-68% of all authors having
+an assigned gender.
+
+Potential explanations:
+
+- large scale approach, much larger than other papers in terms of number of 
+papers and authors.
+- More geterogenous sample, with lots of asian names -> comparison study shows
+that asian names are far less well predicted.
+
+We should therefore (for the paper at least) include a sensitivity analysis,
+looking into the split in terms of gender prediction between countries/regions.
+
+From the above table, let us take the following numbers:
+
+- counts = 3
+- probability = .75
+
+This leads to gender assigned for about 66% of all authors.
+
+
+Maybe we also didn't use the API to its full potential. What we could do:
+run the full names through findGivenNames (to avoid the issue of choosing the
+wrong part of the name), then genderize the strings. We could also include 
+county information. However, this might bump our usage right up to 10mio requests
+(we have 14mio authors, which will likely be at or above 10mio unique combinations
+of full names with countries).
+
+
+```{r shut-down, echo=FALSE, message=FALSE}
+message("Done. Shutting down...")
+spark_disconnect(sc)
+```
