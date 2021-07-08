@@ -48,3 +48,7 @@ result <- list.files("data/processed/genderized_names/", full.names = TRUE) %>%
     count = col_double(),
     country_id = col_character()
   ))
+
+result %>%
+  write_csv("data/processed/genderized_names.csv")
+
