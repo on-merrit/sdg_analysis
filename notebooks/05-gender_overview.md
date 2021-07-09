@@ -1,7 +1,7 @@
 ---
 title: "05-gender-overview"
 author: "Thomas Klebel"
-date: "08 July, 2021"
+date: "09 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -214,6 +214,33 @@ wrong part of the name), then genderize the strings. We could also include
 county information. However, this might bump our usage right up to 10mio requests
 (we have 14mio authors, which will likely be at or above 10mio unique combinations
 of full names with countries).
+
+
+# Final properties
+
+```r
+author_metadata %>% 
+  count(gender) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect() %>% 
+  knitr::kable()
+```
+
+```
+## Warning: Missing values are always removed in SQL.
+## Use `SUM(x, na.rm = TRUE)` to silence this warning
+## This warning is displayed only once per session.
+```
+
+
+
+|gender  |       n|      prop|
+|:-------|-------:|---------:|
+|unknown | 4775885| 0.3411497|
+|NA      |     199| 0.0000142|
+|female  | 3822128| 0.2730212|
+|male    | 5401172| 0.3858150|
+
 
 
 

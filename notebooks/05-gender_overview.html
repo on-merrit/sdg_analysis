@@ -165,7 +165,7 @@ pre code {
 
 <h1 class="title toc-ignore">05-gender-overview</h1>
 <h4 class="author">Thomas Klebel</h4>
-<h4 class="date">08 July, 2021</h4>
+<h4 class="date">09 July, 2021</h4>
 
 </div>
 
@@ -388,6 +388,48 @@ genderize_overview &lt;- joined_genders %&gt;%
 </ul>
 <p>This leads to gender assigned for about 66% of all authors.</p>
 <p>Maybe we also didn't use the API to its full potential. What we could do: run the full names through findGivenNames (to avoid the issue of choosing the wrong part of the name), then genderize the strings. We could also include county information. However, this might bump our usage right up to 10mio requests (we have 14mio authors, which will likely be at or above 10mio unique combinations of full names with countries).</p>
+</div>
+<div id="final-properties" class="section level1">
+<h1>Final properties</h1>
+<pre class="r"><code>author_metadata %&gt;% 
+  count(gender) %&gt;% 
+  mutate(prop = n/sum(n)) %&gt;% 
+  collect() %&gt;% 
+  knitr::kable()</code></pre>
+<pre><code>## Warning: Missing values are always removed in SQL.
+## Use `SUM(x, na.rm = TRUE)` to silence this warning
+## This warning is displayed only once per session.</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">gender</th>
+<th align="right">n</th>
+<th align="right">prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">unknown</td>
+<td align="right">4775885</td>
+<td align="right">0.3411497</td>
+</tr>
+<tr class="even">
+<td align="left">NA</td>
+<td align="right">199</td>
+<td align="right">0.0000142</td>
+</tr>
+<tr class="odd">
+<td align="left">female</td>
+<td align="right">3822128</td>
+<td align="right">0.2730212</td>
+</tr>
+<tr class="even">
+<td align="left">male</td>
+<td align="right">5401172</td>
+<td align="right">0.3858150</td>
+</tr>
+</tbody>
+</table>
 </div>
 
 
