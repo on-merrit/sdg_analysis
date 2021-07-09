@@ -88,13 +88,28 @@ collaborative_papers <- papers %>%
 ```
 
 ```{r}
-collaborative_papers %>% 
+collaboration_by_country <- collaborative_papers %>% 
   group_by(country) %>% 
-  count(author_position)
+  count(author_position) %>% 
+  collect()
 
-# then join with WDI, then plot by income region and geographical region
+# then join with WDI, 
+collaborative_countries <- collaboration_by_country %>% 
+  left_join(wb_countries, by = c("country" = "Country Code"))
 ```
 
+```{r}
+# then plot by income region and geographical region
+collaborative_countries %>% 
+  ggplot(aes(Region, mean_oa, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+
+Didnt I have a figure on this already? Just per country, not per region?
+Yes, lines 320-337 in 01-oa-overview.Rmd
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
