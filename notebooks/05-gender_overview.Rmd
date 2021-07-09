@@ -30,16 +30,26 @@ config$spark.executor.cores <- 15
 config$spark.executor.instances <- 3
 config$spark.executor.memory <- "60G"
 sc <- spark_connect(master = "yarn-client", config = config,
-                    app_name = "SDG_OA_authors")
+                    app_name = "gender_overview")
 message("Connection to Spark successful!")
 
 message("Reading the datasets...")
 author_metadata <- spark_read_csv(sc,
                                   "/user/tklebel/sdg/data/sdg_author_data.csv",
                                   name = "author_metadata")
+# join genders with author data
+genders_selected <- spark_read_csv(sc,
+                          "/user/tklebel/sdg/data/merged_genderized_names.csv",
+                          name = "genders") %>% 
+  select(-first_name)
+
+author_metadata <- author_metadata %>% 
+  left_join(genders_selected, by = "authorid")
+
 gender_key <- spark_read_csv(sc,
                              "/user/tklebel/sdg/data/gender_key.csv",
                              name = "gender_key")
+
 genders <- spark_read_csv(sc,
                           "/user/tklebel/sdg/data/genderized_names.csv",
                           name = "genderized_names")
@@ -179,6 +189,17 @@ wrong part of the name), then genderize the strings. We could also include
 county information. However, this might bump our usage right up to 10mio requests
 (we have 14mio authors, which will likely be at or above 10mio unique combinations
 of full names with countries).
+
+
+# Final properties
+```{r}
+author_metadata %>% 
+  count(gender) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect() %>% 
+  knitr::kable()
+```
+
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
