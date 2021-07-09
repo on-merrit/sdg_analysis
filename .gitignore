@@ -5,3 +5,7 @@
 
 
 *cache*
+genderizing_log
+
+data/external/WDICountry.csv
+data/external/leiden_ranking.csv
