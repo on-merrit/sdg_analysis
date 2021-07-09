@@ -560,7 +560,7 @@ fraction of journal only OA publications.
 - High ranked institutions do not have a high share of journal only publications
 
 Further investigating the split between low prestige universities in SDG 3:
-```{r}
+```{r, dpi = 150}
 p <- oa_type_affiliation_leiden %>% 
   filter(provider_cat != "Not OA", year == 2018, SDG_label == "SDG_3") %>% 
   group_by(year, affiliationid) %>% 
@@ -902,7 +902,7 @@ p +
 ```
 
 
-```{r}
+```{r, dpi=150}
 p <- pdata_w_leiden %>% 
   slice_sample(n = 5000) %>% 
   ggplot(aes(P_top10, oa_share, colour = gender)) +
