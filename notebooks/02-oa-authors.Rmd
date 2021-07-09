@@ -723,7 +723,7 @@ Maybe we should control for country here, since also the genderization might be
 better in some countries. Maybe also for institutional ranking
 
 
-```{r}
+```{r, cache=TRUE}
 gender_country <- papers_p_author %>% 
   left_join(affils, by = c("lastknownaffiliationid" = "affiliationid")) %>% 
   group_by(country, gender, authorid) %>% 
@@ -734,7 +734,6 @@ gender_country <- papers_p_author %>%
   summarise(mean_oa = mean(oa_share),
             mean_papers = mean(n_papers)) %>% 
   collect()
-  
 ```
 
 ```{r}
@@ -769,6 +768,152 @@ Two caveates:
 - what are the case numbers within the countries? Maybe they are low
 - We are boxplotting means for countries, not the distribution for the
 whole data of the region. This should be changed.
+
+Further: what are our inclusion criteria? Maybe we should drop authors with less
+than 5 publications? Or even more?
+
+
+
+
+```{r, cache=TRUE}
+gender_country2 <- papers_p_author %>% 
+  left_join(affils, by = c("lastknownaffiliationid" = "affiliationid")) %>% 
+  group_by(country, lastknownaffiliationid, gender, authorid) %>% 
+  summarise(n_papers = n(),
+            oa_share = sum(as.numeric(is_oa))/n()) %>% 
+  filter(n_papers >= 5) %>% # only consider authors with more than one publication
+  group_by(gender, country, lastknownaffiliationid) %>% 
+  summarise(mean_oa = mean(oa_share),
+            mean_papers = mean(n_papers)) %>% 
+  collect()
+```
+
+```{r}
+pdata <- gender_country2 %>% 
+  left_join(wb_countries, by = c("country" = "Country Code"))
+```
+
+
+```{r}
+pdata %>% 
+  ggplot(aes(Region, mean_oa, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+```{r}
+pdata %>% 
+  ggplot(aes(`Income Group`, mean_oa, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+The two above figures are per affiliation and gender, not per individual.
+
+
+Now for the individuals
+
+
+
+```{r, cache=TRUE}
+gender_country3 <- papers_p_author %>% 
+  left_join(affils, by = c("lastknownaffiliationid" = "affiliationid")) %>% 
+  group_by(country, lastknownaffiliationid, gender, authorid) %>% 
+  summarise(n_papers = n(),
+            oa_share = sum(as.numeric(is_oa))/n()) %>% 
+  filter(n_papers >= 5) %>% # only consider authors with more than one publication
+  sdf_sample(fraction = .1, replacement = FALSE, seed = 7863232) %>% 
+  collect()
+```
+
+```{r}
+pdata <- gender_country3 %>% 
+  left_join(wb_countries, by = c("country" = "Country Code"))
+```
+
+
+```{r}
+pdata %>% 
+  ggplot(aes(Region, oa_share, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+```{r}
+pdata %>% 
+  ggplot(aes(`Income Group`, oa_share, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+Also when plotting individuals the pattern is stable: females tend to publish 
+more OA. 
+
+Caveat:
+
+- number of cases for LIC is low.
+
+```{r}
+pdata %>% 
+  filter(`Income Group` == "Low income") %>% 
+  count(gender)
+```
+
+
+```{r}
+pdata %>% 
+  ggplot(aes(`Income Group`, oa_share, fill = gender)) +
+  geom_boxplot(notch = TRUE) +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+
+
+Last facet: how does gender interact with institutional prestige in terms of OA?
+
+
+```{r}
+pdata_w_leiden <- pdata %>%
+  select(lastknownaffiliationid, gender, authorid, n_papers, oa_share) %>% 
+  mutate(lastknownaffiliationid = as.numeric(lastknownaffiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key, by = c("lastknownaffiliationid" = "affiliationid")) %>%
+  left_join(leiden_small_local) %>% 
+  filter(last_year_of_period == "2018")
+```
+
+
+```{r}
+p <- pdata_w_leiden %>% 
+  ggplot(aes(P_top10, oa_share, colour = gender)) +
+  geom_smooth() +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  labs(y = "% of an author's papers which are OA")
+p
+```
+
+```{r}
+p +
+  scale_x_log10()
+```
+
+
+```{r}
+p <- pdata_w_leiden %>% 
+  slice_sample(n = 5000) %>% 
+  ggplot(aes(P_top10, oa_share, colour = gender)) +
+  geom_jitter(alpha = .2) +
+  geom_smooth() +
+  scale_x_log10() +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  labs(y = "% of an author's papers which are OA")
+plotly::ggplotly(p)
+```
+
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
