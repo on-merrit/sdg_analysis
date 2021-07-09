@@ -1,7 +1,7 @@
 ---
 title: "SDG OA author characteristics"
 author: "Thomas Klebel"
-date: "30 June, 2021"
+date: "09 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -698,7 +698,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserve9d9bd09b15a97002
+preserve51b0304f7b5db918
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -708,6 +708,453 @@ Further things to look at:
 
 - does this translate to certain types of journals, i.e. according to APC or IF?
 - how is this over time?
+
+
+# Gender analysis
+
+```r
+gender_base <- papers %>% 
+  select(paperid, SDG_label, year, is_oa) %>% 
+  left_join(author_paper_affiliations_w_groups) %>% 
+  left_join(author_metadata) %>% 
+  select(paperid, SDG_label, year, author_position, authorid, 
+         is_oa, paper_author_cat, gender)
+```
+
+```
+## Joining, by = "paperid"
+```
+
+```
+## Joining, by = "authorid"
+```
+
+
+```r
+gender_rate <- gender_base %>% 
+  filter(!is.na(is_oa)) %>% # restrict to unpaywall set only
+  group_by(SDG_label, year, gender) %>% 
+  count(is_oa) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect()
+```
+Visalíse oa rate per gender over time
+
+
+```r
+gender_rate %>% 
+  filter(is_oa, gender != "unknown", year < 2019) %>% 
+  ggplot(aes(as_year(year), prop, colour = gender)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label))
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
+
+This does not show big differences. At least in health, papers by women tend to
+have slightly higher OA rates. 
+
+But: what are we showing here? What is the y axis exactly? Should we maybe show
+how the number of female authors, or how the gender split in the authors of a 
+given paper is related to OA? would make more sense than overall.
+Do this only for a specific year.
+
+It will also be more productive to visualise this for first and last authors
+only.
+
+
+First, lets look at this in terms of papers
+
+```r
+# only do this for papers where we have gender for all authors
+gender_ratio_p_paper <- gender_base %>% 
+  select(paperid, gender) %>% 
+  group_by(paperid) %>% 
+  mutate(all_genderized = sum(as.numeric(gender == "unknown")) == 0) %>% 
+  filter(all_genderized) %>% 
+  count(gender) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ungroup()
+
+n_rows <- gender_ratio_p_paper %>% count() %>% collect() %>% pull(n)
+
+gender_sample <- gender_ratio_p_paper %>% 
+  sdf_sample(fraction = 1e+6/n_rows, replacement = FALSE, seed = 786243876) %>% 
+  left_join(papers) %>% 
+  # it could be interesting though to look at this via regression -> then keep
+  # more variables
+  select(paperid:prop, year, is_oa, SDG_label) %>% 
+  filter(!is.na(is_oa)) %>% 
+  collect()
+```
+
+```
+## Joining, by = "paperid"
+```
+
+```r
+pdata <- gender_sample %>% 
+  distinct() %>% 
+  pivot_wider(names_from = "gender", values_from = "prop") %>% 
+  mutate(female = case_when(is.na(female) ~ 1 - male,
+                            TRUE ~ female))
+```
+
+
+```r
+pdata %>% 
+  ggplot(aes(is_oa, female)) +
+  geom_boxplot(width = .7) +
+  # geom_jitter() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = "% of female authors on paper", x = "Publication is OA?")
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+
+At first there was a difference in SDG3, but with a bigger set, this went away.
+So we ought to conclude: there is no difference in OA outcomes when considering
+the general makeup of the gender split on papers.
+
+Look at this over time and for first/last authors only.
+
+
+Also: summarise per authors: do female authors have more or less OA 
+publications? Isnt that the same as above? maybe not
+
+
+
+```r
+paper_oa_flag <- papers %>%
+  filter(!is.na(is_oa)) %>% 
+  select(paperid, year, is_oa)
+
+papers_p_author <- author_metadata %>% 
+  left_join(author_paper_affiliations) %>% 
+  select(authorid, paperid, gender, lastknownaffiliationid) %>% 
+  left_join(paper_oa_flag)
+```
+
+```
+## Joining, by = "authorid"
+```
+
+```
+## Joining, by = "paperid"
+```
+
+```r
+papers_p_author %>% 
+  group_by(authorid, gender) %>% 
+  summarise(n_papers = n(),
+            oa_share = sum(as.numeric(is_oa))/n()) %>% 
+  group_by(gender) %>% 
+  summarise(mean_oa = mean(oa_share),
+            mean_papers = mean(n_papers))
+```
+
+```
+## # Source: spark<?> [?? x 3]
+##   gender  mean_oa mean_papers
+##   <chr>     <dbl>       <dbl>
+## 1 unknown   0.445        2.48
+## 2 <NA>     NA          199   
+## 3 female    0.484        3.34
+## 4 male      0.471        4.57
+```
+
+Also from this perspective, there is not much difference, at least with 
+full counting. 
+
+There is no reason to suspect causal effect of gender on OA. Effect of gender 
+would 
+likely be the result of other effects that are related to gender.
+
+
+```r
+papers_p_author %>% 
+  group_by(authorid, gender) %>% 
+  summarise(n_papers = n(),
+            oa_share = sum(as.numeric(is_oa))/n()) %>% 
+  filter(n_papers > 1) %>% # only consider authors with more than one publication
+  group_by(gender) %>% 
+  summarise(mean_oa = mean(oa_share),
+            mean_papers = mean(n_papers))
+```
+
+```
+## # Source: spark<?> [?? x 3]
+##   gender  mean_oa mean_papers
+##   <chr>     <dbl>       <dbl>
+## 1 unknown   0.415        6.44
+## 2 <NA>     NA          199   
+## 3 female    0.461        6.75
+## 4 male      0.438        9.39
+```
+
+
+From this perspective, we can see some differences: female authors having 
+slightly higher OA rates than males, which in turn are higher than unknowns.
+
+Maybe we should control for country here, since also the genderization might be
+better in some countries. Maybe also for institutional ranking
+
+
+
+```r
+gender_country <- papers_p_author %>% 
+  left_join(affils, by = c("lastknownaffiliationid" = "affiliationid")) %>% 
+  group_by(country, gender, authorid) %>% 
+  summarise(n_papers = n(),
+            oa_share = sum(as.numeric(is_oa))/n()) %>% 
+  filter(n_papers > 1) %>% # only consider authors with more than one publication
+  group_by(gender, country) %>% 
+  summarise(mean_oa = mean(oa_share),
+            mean_papers = mean(n_papers)) %>% 
+  collect()
+```
+
+
+```r
+pdata <- gender_country %>% 
+  left_join(wb_countries, by = c("country" = "Country Code"))
+```
+
+
+
+```r
+pdata %>% 
+  ggplot(aes(Region, mean_oa, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+
+
+```r
+pdata %>% 
+  ggplot(aes(`Income Group`, mean_oa, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+
+From this there seem to be gender differences: Especially in LIC, females tend
+to have higher OA rates. Why?
+
+South Asia seems like a counter point. 
+
+Two caveates: 
+
+- what are the case numbers within the countries? Maybe they are low
+- We are boxplotting means for countries, not the distribution for the
+whole data of the region. This should be changed.
+
+Further: what are our inclusion criteria? Maybe we should drop authors with less
+than 5 publications? Or even more?
+
+
+
+
+
+```r
+gender_country2 <- papers_p_author %>% 
+  left_join(affils, by = c("lastknownaffiliationid" = "affiliationid")) %>% 
+  group_by(country, lastknownaffiliationid, gender, authorid) %>% 
+  summarise(n_papers = n(),
+            oa_share = sum(as.numeric(is_oa))/n()) %>% 
+  filter(n_papers >= 5) %>% # only consider authors with more than one publication
+  group_by(gender, country, lastknownaffiliationid) %>% 
+  summarise(mean_oa = mean(oa_share),
+            mean_papers = mean(n_papers)) %>% 
+  collect()
+```
+
+
+```r
+pdata <- gender_country2 %>% 
+  left_join(wb_countries, by = c("country" = "Country Code"))
+```
+
+
+
+```r
+pdata %>% 
+  ggplot(aes(Region, mean_oa, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+
+
+```r
+pdata %>% 
+  ggplot(aes(`Income Group`, mean_oa, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+
+The two above figures are per affiliation and gender, not per individual.
+
+
+Now for the individuals
+
+
+
+
+```r
+gender_country3 <- papers_p_author %>% 
+  left_join(affils, by = c("lastknownaffiliationid" = "affiliationid")) %>% 
+  group_by(country, lastknownaffiliationid, gender, authorid) %>% 
+  summarise(n_papers = n(),
+            oa_share = sum(as.numeric(is_oa))/n()) %>% 
+  filter(n_papers >= 5) %>% # only consider authors with more than one publication
+  sdf_sample(fraction = .1, replacement = FALSE, seed = 7863232) %>% 
+  collect()
+```
+
+
+```r
+pdata <- gender_country3 %>% 
+  left_join(wb_countries, by = c("country" = "Country Code"))
+```
+
+
+
+```r
+pdata %>% 
+  ggplot(aes(Region, oa_share, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
+
+
+```r
+pdata %>% 
+  ggplot(aes(`Income Group`, oa_share, fill = gender)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
+
+Also when plotting individuals the pattern is stable: females tend to publish 
+more OA. 
+
+Caveat:
+
+- number of cases for LIC is low.
+
+
+```r
+pdata %>% 
+  filter(`Income Group` == "Low income") %>% 
+  count(gender)
+```
+
+```
+## # A tibble: 3 x 2
+##   gender      n
+##   <chr>   <int>
+## 1 female     61
+## 2 male      202
+## 3 unknown    61
+```
+
+
+
+```r
+pdata %>% 
+  ggplot(aes(`Income Group`, oa_share, fill = gender)) +
+  geom_boxplot(notch = TRUE) +
+  coord_flip() +
+  labs(x = NULL)
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
+
+
+
+Last facet: how does gender interact with institutional prestige in terms of OA?
+
+
+
+```r
+pdata_w_leiden <- pdata %>%
+  select(lastknownaffiliationid, gender, authorid, n_papers, oa_share) %>% 
+  mutate(lastknownaffiliationid = as.numeric(lastknownaffiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key, by = c("lastknownaffiliationid" = "affiliationid")) %>%
+  left_join(leiden_small_local) %>% 
+  filter(last_year_of_period == "2018")
+```
+
+```
+## Joining, by = c("University", "Country")
+```
+
+
+
+```r
+p <- pdata_w_leiden %>% 
+  ggplot(aes(P_top10, oa_share, colour = gender)) +
+  geom_smooth() +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  labs(y = "% of an author's papers which are OA")
+p
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
+
+
+```r
+p +
+  scale_x_log10()
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+![](02-oa-authors_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
+
+
+
+```r
+p <- pdata_w_leiden %>% 
+  slice_sample(n = 5000) %>% 
+  ggplot(aes(P_top10, oa_share, colour = gender)) +
+  geom_jitter(alpha = .2) +
+  geom_smooth() +
+  scale_x_log10() +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  labs(y = "% of an author's papers which are OA")
+plotly::ggplotly(p)
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+preserve3855c2bca29c493e
 
 
 
