@@ -1,6 +1,6 @@
 library(gganimate)
 
-future::plan("multisession", workers = 4L)
+future::plan("multisession", workers = 10)
 
 p <- pdata %>%
   # filter(author_position == "first_author") %>%
