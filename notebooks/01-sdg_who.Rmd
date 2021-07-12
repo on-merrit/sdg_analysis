@@ -103,7 +103,7 @@ venn.diagram(
 
 ```
 
-![](03-sdg_who_files/figure-html/venn_diagram.png)
+![](01-sdg_who_files/figure-html/venn_diagram.png)
 
 
 
