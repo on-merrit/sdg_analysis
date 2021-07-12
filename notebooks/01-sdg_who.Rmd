@@ -76,7 +76,7 @@ message("Successfully read all datasets!")
 
 # SDG over time
 ## SDG overlap
-```{r, include=FALSE, cache=TRUE}
+```{r, eval=FALSE, cache=TRUE}
 sdg_labels_local <- vroom::vroom("../../sdg_labels.csv", delim = ",")
 
 set.seed(982374)
