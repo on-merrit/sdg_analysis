@@ -18,6 +18,8 @@ library(arrow)
 library(ggbeeswarm)
 source(here::here("R/helpers.R"))
 
+theme_set(theme_bw())
+
 message("Connecting to spark...")
 
 config <- spark_config()
@@ -25,7 +27,7 @@ config$spark.executor.cores <- 15
 config$spark.executor.instances <- 5
 config$spark.executor.memory <- "60G"
 sc <- spark_connect(master = "yarn-client", config = config,
-                    app_name = "SDG_OA_authors")
+                    app_name = "sdg_with_whom")
 message("Connection to Spark successful!")
 
 message("Reading the datasets...")
@@ -40,34 +42,21 @@ papers <- papers %>%
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
                          name = "affils")
-author_metadata <- spark_read_csv(sc,
-                                  "/user/tklebel/sdg/data/sdg_author_data.csv",
-                                  name = "author_metadata")
 author_paper_affiliations <- spark_read_csv(
   sc,
   "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
   name = "author_paper_affiliations"
 )
 
-funded_projects <- spark_read_csv(
-  sc,
-  "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
-  name = "funded_projects"
-)
-wb_indicators <- spark_read_csv(
-  sc,
-  "/user/tklebel/sdg/data/world_bank_indicators.csv",
-  name = "wb_indicators")
-leiden <- spark_read_csv(sc,
-                         "/user/tklebel/sdg/data/leiden_ranking.csv",
-                         name = "leiden")
 
 wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
+wb_countries_selected <- wb_countries %>% 
+  select(`Country Code`, `Short Name`, Region, `Income Group`)
 
 message("Successfully read all datasets!")
 ```
 
-## Collaboration across countries
+# Collaboration across countries
 Q: How are authorship roles distributed with international collaborations?
 
 Only take into account papers with more than one country on it.
@@ -83,7 +72,7 @@ collaborative_papers <- papers %>%
   group_by(paperid) %>% 
   # check if we have country for all authors
   mutate(country_available = sum(as.numeric(is.na(country))) == 0) %>% 
-  filter(country_available, paper_author_cat != "single") %>% 
+  filter(country_available, paper_author_cat == "multi") %>% 
   select(paperid, year, country, paper_author_cat, author_position)
 ```
 
@@ -95,23 +84,88 @@ collaboration_by_country <- collaborative_papers %>%
 
 # then join with WDI, 
 collaborative_countries <- collaboration_by_country %>% 
-  left_join(wb_countries, by = c("country" = "Country Code"))
+  left_join(wb_countries_selected, by = c("country" = "Country Code"))
+
+# only keep countries where each position has at least 5 papers
+collaborative_countries <- collaborative_countries %>% 
+  group_by(country) %>% 
+  mutate(include = all(n >= 5)) %>% 
+  ungroup()
 ```
 
 ```{r}
 # then plot by income region and geographical region
+plot_countries <- function(df, facet) {
+  pdata <- df %>% 
+    group_by({{facet}}) %>% 
+    add_proportion(n, order_var = author_position,
+                   order_string = "first") %>% 
+    drop_na() %>% 
+    mutate(author_position = fct_relevel(author_position, "first_author", 
+                                         after = 2))
+  
+  pdata %>% 
+    ggplot(aes(fct_reorder({{facet}}, order), prop, fill = author_position)) +
+    geom_col(width = .7) +
+    scale_y_continuous(labels = scales::percent) +
+    coord_flip() +
+    labs(x = NULL, y = "% of authorship positions", fill = NULL,
+         caption = "Only considering papers with at least three authors.") +
+    theme(legend.position = "top") +
+    guides(fill = guide_legend(reverse = TRUE))
+}
+
+
+plot_countries(collaborative_countries, Region) +
+  labs(title = "Authorship positions by geographic region")
+
+```
+
+```{r}
+plot_countries(collaborative_countries, `Income Group`) +
+  labs(title = "Authorship positions by country income")
+```
+
+Overall, there are no big differences. The hypothesis that LIC are driven 
+towards certain positions is not observable from this view. Maybe this is true
+if we look at papers which have been published in certain journals, i.e. in 
+higher prestige journals. Because the underlying hypothesis would have been:
+authorship positions from LIC for papers led by WEIRD researchers.
+
+But maybe this underlying hypothesis is very biased and dismissive of researchers
+from other continents?
+
+
+```{r, dpi = 120, fig.height=15}
+p <- collaborative_countries %>% 
+  filter(include) %>% 
+  plot_countries(`Short Name`) +
+  labs(title = "Authorship position by country", 
+       subtitle = "")
+plotly::ggplotly(p)
+```
+This again is only considering papers with at least three authors and countries
+with at least 5 papers per position.
+
+```{r, fig.height=25, fig.width=9}
 collaborative_countries %>% 
-  ggplot(aes(Region, mean_oa, fill = gender)) +
-  geom_boxplot() +
-  coord_flip() +
-  labs(x = NULL)
+  mutate(Region = fct_relevel(Region, "North America", "South Asia", after = 5)) %>% 
+  filter(include) %>% 
+  plot_countries(`Short Name`) +
+  facet_wrap(vars(Region), scales = "free_y", ncol = 2)
+
 ```
 
 
-Didnt I have a figure on this already? Just per country, not per region?
-Yes, lines 320-337 in 01-oa-overview.Rmd
+# Remaining questions to cover
 
---> Extract code from there.
+- Collaboration "network": which countries most commonly collaborate with which?
+  + four levels:
+    - within affiliations
+    - between affiliations
+    - between countries (by affiliations)
+    - between regions
+- The above figures, but split by SDG. Caveat: potentially low case numbers.
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
