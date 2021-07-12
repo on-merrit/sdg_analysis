@@ -45,7 +45,7 @@ papers <- papers %>%
   left_join(sdg_labels)
 
 affils <- spark_read_csv(sc,
-                         "/user/tklebel/sdg/data/affiliations_with_country.csv",
+                         "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
                          name = "affils")
 author_metadata <- spark_read_csv(sc,
                                   "/user/tklebel/sdg/data/sdg_author_data.csv",
@@ -644,20 +644,6 @@ papers_per_country_fos_author_pos <- papers_w_affils %>%
 ```
 
 
-
-
-
-
-
-
-WE NEED TO FIX THE MATCHING BELOW!!!!!!
-
-
-
-
-
-
-
 ```{r}
 papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos %>% 
   filter(year == 2018) %>% 
@@ -761,8 +747,6 @@ papers_per_country_fos_author_pos_country %>%
        colour = NULL)
 ```
 
-
-# Gender
 
 
 
