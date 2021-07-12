@@ -111,6 +111,8 @@ collaborative_countries %>%
 Didnt I have a figure on this already? Just per country, not per region?
 Yes, lines 320-337 in 01-oa-overview.Rmd
 
+--> Extract code from there.
+
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
