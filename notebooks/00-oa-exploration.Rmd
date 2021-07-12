@@ -235,8 +235,9 @@ wb_2015_2018 <- wb_local %>%
   select(country_code, country_name, indicator_name, value) %>% 
   pivot_wider(names_from = "indicator_name", values_from = "value") %>% 
   right_join(proper_countries)
+
 cor_matrix <- wb_2015_2018 %>% 
-  select(-starts_with("country"), -short_name) %>% 
+  select(-starts_with("country"), -short_name, -region, -income_group) %>% 
   cor(use = "pairwise.complete.obs")
 ```
 
