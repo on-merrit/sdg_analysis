@@ -9,3 +9,5 @@ genderizing_log
 
 data/external/WDICountry.csv
 data/external/leiden_ranking.csv
+data/processed/genderized_names_backup.csv
+data/processed/all_affils.csv
