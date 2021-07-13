@@ -696,7 +696,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserveff8fd9adf56895d9
+preserve872c324c82fb7e76
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -886,9 +886,9 @@ papers_p_author %>%
 ## # Source: spark<?> [?? x 3]
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
-## 1 unknown   0.445        2.48
-## 2 male      0.471        4.57
-## 3 female    0.484        3.34
+## 1 unknown   0.449        2.53
+## 2 male      0.472        4.75
+## 3 female    0.484        3.40
 ## 4 <NA>     NA          199
 ```
 
@@ -915,10 +915,10 @@ papers_p_author %>%
 ## # Source: spark<?> [?? x 3]
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
-## 1 female    0.461        6.75
-## 2 <NA>     NA          199   
-## 3 unknown   0.415        6.44
-## 4 male      0.438        9.39
+## 1 male      0.439        9.65
+## 2 unknown   0.419        6.40
+## 3 female    0.462        6.82
+## 4 <NA>     NA          199
 ```
 
 
@@ -1181,7 +1181,7 @@ plotly::ggplotly(p)
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-preserveb05fc10b37d0603f
+preserve17da29b0feac423e
 
 
 
