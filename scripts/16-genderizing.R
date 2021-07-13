@@ -82,13 +82,15 @@ genders <- spark_read_csv(sc,
 
 
 # values chosen:
-# - counts >= 3
-# - probability >= .75
-# (see notebook on why)
+# - counts >= 5
+# - probability >= .85
+# decision was revised after speaking to Tony: favour precision over inclusion
+# since we are mainly interested in the split in OA, not overall gender trends
+# in publishing
 
 selected_genders <- genders %>%
-  filter(count >= 3,
-         probability >= .75) %>%
+  filter(count >= 5,
+         probability >= .85) %>%
   select(name, gender)
 
 final_genders <- gender_key %>%
@@ -97,7 +99,18 @@ final_genders <- gender_key %>%
   mutate(gender = if_else(is.na(gender), "unknown", gender))
 
 final_genders %>%
-  spark_write_csv("/user/tklebel/sdg/data/merged_genderized_names.csv")
+  spark_write_csv("/user/tklebel/sdg/data/merged_genderized_names.csv",
+                  mode = "overwrite")
 
-# TRY THIS OUT HERE
 
+final_genders %>%
+  count(gender) %>%
+  mutate(prop = n / sum(n))
+## Source: spark<?> [?? x 3]
+#> gender          n  prop
+#> <chr>       <int> <dbl>
+#> 1 male    4863467 0.347
+#> 2 unknown 5630311 0.402
+#> 3 female  3505606 0.250
+
+spark_disconnect(sc)
