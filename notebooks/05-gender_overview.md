@@ -1,7 +1,7 @@
 ---
 title: "05-gender-overview"
 author: "Thomas Klebel"
-date: "09 July, 2021"
+date: "13 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -10,7 +10,7 @@ output:
 
 
 
-# How many names were genderized?
+# How many unique names were genderized?
 
 ```r
 unique_names %>% 
@@ -102,6 +102,7 @@ way less names being covered. From this I would maybe choose to include names
 that appear more than three times and have at least 80% probability. This would
 result in only including about 50% of the genderized names.
 
+
 However: how does this translate to actual authors in our dataset?
 
 
@@ -111,9 +112,12 @@ joined_genders <- gender_key %>%
 
 
 genderize_overview <- joined_genders %>% 
-  summarise(n = n(),
+  summarise(n_authors = n(),
+            n_first_names = sum(as.numeric(!is.na(first_name))),
             n_genderized = sum(as.numeric(!is.na(gender)))) %>% 
-  mutate(prop_genderized = n_genderized/n) %>% 
+  mutate(prop_first_names = n_first_names/n_authors,
+         prop_genderized_first_names = n_genderized/n_first_names,
+         prop_genderized_total = n_genderized/n_authors) %>% 
   collect()
 ```
 
@@ -124,18 +128,18 @@ genderize_overview <- joined_genders %>%
 ```
 
 ```r
-genderize_overview
+genderize_overview %>% 
+  knitr::kable()
 ```
 
-```
-## # A tibble: 1 x 3
-##          n n_genderized prop_genderized
-##      <int>        <dbl>           <dbl>
-## 1 13999384     11059364           0.790
-```
+
+
+| n_authors| n_first_names| n_genderized| prop_first_names| prop_genderized_first_names| prop_genderized_total|
+|---------:|-------------:|------------:|----------------:|---------------------------:|---------------------:|
+|  13999384|      11474798|     11059364|        0.8196645|                    0.963796|             0.7899893|
 
 We got a reply from the API on
-79% of the authors, which is
+ of the authors, which is
 quite ok.
 
 Let's see now how this translates if we start setting thresholds.
@@ -236,10 +240,10 @@ author_metadata %>%
 
 |gender  |       n|      prop|
 |:-------|-------:|---------:|
+|male    | 5401172| 0.3858150|
+|female  | 3822128| 0.2730212|
 |unknown | 4775885| 0.3411497|
 |NA      |     199| 0.0000142|
-|female  | 3822128| 0.2730212|
-|male    | 5401172| 0.3858150|
 
 
 

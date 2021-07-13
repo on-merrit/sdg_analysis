@@ -57,7 +57,7 @@ genders <- spark_read_csv(sc,
 ```
 
 
-# How many names were genderized?
+# How many unique names were genderized?
 ```{r}
 unique_names %>% 
   left_join(genderized_names, by = c("first_name" = "name")) %>% 
@@ -110,6 +110,7 @@ way less names being covered. From this I would maybe choose to include names
 that appear more than three times and have at least 80% probability. This would
 result in only including about 50% of the genderized names.
 
+
 However: how does this translate to actual authors in our dataset?
 
 ```{r}
@@ -118,11 +119,15 @@ joined_genders <- gender_key %>%
 
 
 genderize_overview <- joined_genders %>% 
-  summarise(n = n(),
+  summarise(n_authors = n(),
+            n_first_names = sum(as.numeric(!is.na(first_name))),
             n_genderized = sum(as.numeric(!is.na(gender)))) %>% 
-  mutate(prop_genderized = n_genderized/n) %>% 
+  mutate(prop_first_names = n_first_names/n_authors,
+         prop_genderized_first_names = n_genderized/n_first_names,
+         prop_genderized_total = n_genderized/n_authors) %>% 
   collect()
-genderize_overview
+genderize_overview %>% 
+  knitr::kable()
 ```
 
 We got a reply from the API on

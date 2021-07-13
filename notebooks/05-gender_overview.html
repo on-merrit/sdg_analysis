@@ -165,13 +165,13 @@ pre code {
 
 <h1 class="title toc-ignore">05-gender-overview</h1>
 <h4 class="author">Thomas Klebel</h4>
-<h4 class="date">09 July, 2021</h4>
+<h4 class="date">13 July, 2021</h4>
 
 </div>
 
 
-<div id="how-many-names-were-genderized" class="section level1">
-<h1>How many names were genderized?</h1>
+<div id="how-many-unique-names-were-genderized" class="section level1">
+<h1>How many unique names were genderized?</h1>
 <pre class="r"><code>unique_names %&gt;% 
   left_join(genderized_names, by = c(&quot;first_name&quot; = &quot;name&quot;)) %&gt;% 
   summarise(n = n(),
@@ -328,19 +328,49 @@ p</code></pre>
 
 
 genderize_overview &lt;- joined_genders %&gt;% 
-  summarise(n = n(),
+  summarise(n_authors = n(),
+            n_first_names = sum(as.numeric(!is.na(first_name))),
             n_genderized = sum(as.numeric(!is.na(gender)))) %&gt;% 
-  mutate(prop_genderized = n_genderized/n) %&gt;% 
+  mutate(prop_first_names = n_first_names/n_authors,
+         prop_genderized_first_names = n_genderized/n_first_names,
+         prop_genderized_total = n_genderized/n_authors) %&gt;% 
   collect()</code></pre>
 <pre><code>## Warning: Missing values are always removed in SQL.
 ## Use `SUM(x, na.rm = TRUE)` to silence this warning
 ## This warning is displayed only once per session.</code></pre>
-<pre class="r"><code>genderize_overview</code></pre>
-<pre><code>## # A tibble: 1 x 3
-##          n n_genderized prop_genderized
-##      &lt;int&gt;        &lt;dbl&gt;           &lt;dbl&gt;
-## 1 13999384     11059364           0.790</code></pre>
-<p>We got a reply from the API on 79% of the authors, which is quite ok.</p>
+<pre class="r"><code>genderize_overview %&gt;% 
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="10%"></col>
+<col width="13%"></col>
+<col width="12%"></col>
+<col width="16%"></col>
+<col width="26%"></col>
+<col width="20%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">n_authors</th>
+<th align="right">n_first_names</th>
+<th align="right">n_genderized</th>
+<th align="right">prop_first_names</th>
+<th align="right">prop_genderized_first_names</th>
+<th align="right">prop_genderized_total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">13999384</td>
+<td align="right">11474798</td>
+<td align="right">11059364</td>
+<td align="right">0.8196645</td>
+<td align="right">0.963796</td>
+<td align="right">0.7899893</td>
+</tr>
+</tbody>
+</table>
+<p>We got a reply from the API on of the authors, which is quite ok.</p>
 <p>Let's see now how this translates if we start setting thresholds.</p>
 <pre class="r"><code>eval_res &lt;- joined_genders %&gt;% 
   filter(!is.na(gender)) %&gt;% 
@@ -409,6 +439,16 @@ genderize_overview &lt;- joined_genders %&gt;%
 </thead>
 <tbody>
 <tr class="odd">
+<td align="left">male</td>
+<td align="right">5401172</td>
+<td align="right">0.3858150</td>
+</tr>
+<tr class="even">
+<td align="left">female</td>
+<td align="right">3822128</td>
+<td align="right">0.2730212</td>
+</tr>
+<tr class="odd">
 <td align="left">unknown</td>
 <td align="right">4775885</td>
 <td align="right">0.3411497</td>
@@ -417,16 +457,6 @@ genderize_overview &lt;- joined_genders %&gt;%
 <td align="left">NA</td>
 <td align="right">199</td>
 <td align="right">0.0000142</td>
-</tr>
-<tr class="odd">
-<td align="left">female</td>
-<td align="right">3822128</td>
-<td align="right">0.2730212</td>
-</tr>
-<tr class="even">
-<td align="left">male</td>
-<td align="right">5401172</td>
-<td align="right">0.3858150</td>
 </tr>
 </tbody>
 </table>
