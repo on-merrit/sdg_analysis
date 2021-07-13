@@ -58,6 +58,9 @@ author_paper_affiliations <- spark_read_csv(
   "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
   name = "author_paper_affiliations"
 )
+author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
+
+
 funded_projects <- spark_read_csv(
   sc,
   "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
@@ -145,7 +148,6 @@ age_oa %>%
 
 # Group into first, last, and middle author
 ```{r, cache=TRUE}
-author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
 
 age_base <- papers %>% 
   select(paperid, SDG_label, year, is_oa) %>% 
@@ -624,7 +626,32 @@ It will also be more productive to visualise this for first and last authors
 only.
 
 
-First, lets look at this in terms of papers
+Split for author positions
+
+```{r}
+gender_rate_p_position <- gender_base %>% 
+  filter(!is.na(is_oa), gender != "unknown") %>% # restrict to unpaywall set only
+  group_by(SDG_label, year, gender, author_position) %>% 
+  count(is_oa) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect()
+```
+
+```{r, fig.width=10, fig.height=7}
+gender_rate_p_position %>% 
+  filter(is_oa, year < 2019) %>% 
+  ggplot(aes(as_year(year), prop, colour = gender)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(rows = vars(SDG_label),
+             cols = vars(author_position))
+```
+
+Also here there is no difference. What does this show? The proportion of papers
+which are OA per gender, SDG, author position and year. 
+
+
+Then, lets look at this in terms of papers
 ```{r}
 # only do this for papers where we have gender for all authors
 gender_ratio_p_paper <- gender_base %>% 
