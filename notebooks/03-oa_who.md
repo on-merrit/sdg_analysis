@@ -1,7 +1,7 @@
 ---
 title: "SDG OA author characteristics"
 author: "Thomas Klebel"
-date: "12 July, 2021"
+date: "13 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -97,8 +97,6 @@ age_oa %>%
 # Group into first, last, and middle author
 
 ```r
-author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
-
 age_base <- papers %>% 
   select(paperid, SDG_label, year, is_oa) %>% 
   left_join(author_paper_affiliations_w_groups) %>% 
@@ -698,7 +696,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserve05dbceaa7669fb1c
+preserveff8fd9adf56895d9
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -764,7 +762,36 @@ It will also be more productive to visualise this for first and last authors
 only.
 
 
-First, lets look at this in terms of papers
+Split for author positions
+
+
+```r
+gender_rate_p_position <- gender_base %>% 
+  filter(!is.na(is_oa), gender != "unknown") %>% # restrict to unpaywall set only
+  group_by(SDG_label, year, gender, author_position) %>% 
+  count(is_oa) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect()
+```
+
+
+```r
+gender_rate_p_position %>% 
+  filter(is_oa, year < 2019) %>% 
+  ggplot(aes(as_year(year), prop, colour = gender)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(rows = vars(SDG_label),
+             cols = vars(author_position))
+```
+
+![](03-oa_who_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+
+Also here there is no difference. What does this show? The proportion of papers
+which are OA per gender, SDG, author position and year. 
+
+
+Then, lets look at this in terms of papers
 
 ```r
 # only do this for papers where we have gender for all authors
@@ -812,7 +839,7 @@ pdata %>%
   labs(y = "% of female authors on paper", x = "Publication is OA?")
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 At first there was a difference in SDG3, but with a bigger set, this went away.
 So we ought to conclude: there is no difference in OA outcomes when considering
@@ -859,9 +886,9 @@ papers_p_author %>%
 ## # Source: spark<?> [?? x 3]
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
-## 1 female    0.484        3.34
+## 1 unknown   0.445        2.48
 ## 2 male      0.471        4.57
-## 3 unknown   0.445        2.48
+## 3 female    0.484        3.34
 ## 4 <NA>     NA          199
 ```
 
@@ -889,9 +916,9 @@ papers_p_author %>%
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
 ## 1 female    0.461        6.75
-## 2 male      0.438        9.39
+## 2 <NA>     NA          199   
 ## 3 unknown   0.415        6.44
-## 4 <NA>     NA          199
+## 4 male      0.438        9.39
 ```
 
 
@@ -932,7 +959,7 @@ pdata %>%
   labs(x = NULL)
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
 
 
 ```r
@@ -943,7 +970,7 @@ pdata %>%
   labs(x = NULL)
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
 
 From this there seem to be gender differences: Especially in LIC, females tend
 to have higher OA rates. Why?
@@ -992,7 +1019,7 @@ pdata %>%
   labs(x = NULL)
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
 
 
 ```r
@@ -1003,7 +1030,7 @@ pdata %>%
   labs(x = NULL)
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
 
 The two above figures are per affiliation and gender, not per individual.
 
@@ -1040,7 +1067,7 @@ pdata %>%
   labs(x = NULL)
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
 
 
 ```r
@@ -1051,7 +1078,7 @@ pdata %>%
   labs(x = NULL)
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
 
 Also when plotting individuals the pattern is stable: females tend to publish 
 more OA. 
@@ -1071,9 +1098,9 @@ pdata %>%
 ## # A tibble: 3 x 2
 ##   gender      n
 ##   <chr>   <int>
-## 1 female     52
-## 2 male      193
-## 3 unknown    67
+## 1 female     53
+## 2 male      192
+## 3 unknown    69
 ```
 
 
@@ -1086,7 +1113,7 @@ pdata %>%
   labs(x = NULL)
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
 
 
 
@@ -1122,7 +1149,7 @@ p
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-47-1.png)<!-- -->
 
 
 ```r
@@ -1134,7 +1161,7 @@ p +
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
 
 
 
@@ -1154,7 +1181,7 @@ plotly::ggplotly(p)
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-preserve4fd2e9bf86f6a424
+preserveb05fc10b37d0603f
 
 
 
