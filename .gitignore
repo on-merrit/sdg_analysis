@@ -11,3 +11,6 @@ data/external/WDICountry.csv
 data/external/leiden_ranking.csv
 data/processed/genderized_names_backup.csv
 data/processed/all_affils.csv
+data/external/mag_2021_journals.txt
+
+scripts/11192_2020_3540_MOESM3_ESM.r
