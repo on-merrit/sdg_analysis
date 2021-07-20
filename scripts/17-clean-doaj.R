@@ -1,30 +1,7 @@
 library(tidyverse)
-library(scholar)
 library(quantmod)
-# remotes::install_github("ikashnitsky/sjrdata")
-library(sjrdata)
-
 
 # load datasets -----
-journals <- read_tsv("data/external/mag_2021_journals.txt",
-                     col_types = cols(
-                       journalid = col_double(),
-                       rank = col_double(),
-                       normalizedname = col_character(),
-                       displayname = col_character(),
-                       issn = col_character(),
-                       publisher = col_character(),
-                       webpage = col_character(),
-                       papercount = col_double(),
-                       paperfamilycount = col_double(),
-                       citationcount = col_double(),
-                       createddate = col_date(format = "")
-                     ),
-                    col_names = c(
-                      "journalid", "rank", "normalizedname", "displayname",
-                      "issn", "publisher", "webpage", "papercount",
-                      "paperfamilycount", "citationcount", "createddate"
-                    ))
 
 doaj <- read_csv("data/external/journalcsv__doaj_20210719_0635_utf8.csv")
 
@@ -134,11 +111,3 @@ doaj_converted <- doaj_converted %>%
 
 doaj_converted %>%
   write_csv("data/processed/doaj_cleaned.csv")
-
-
-# explore journals ----
-# how many haven issn
-journals %>%
-  summarise(n_missing = sum(is.na(issn)),
-            prop = n_missing/n())
-
