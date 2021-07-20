@@ -1,7 +1,4 @@
 library(tidyverse)
-# remotes::install_github("ikashnitsky/sjrdata")
-library(sjrdata)
-
 
 journals <- read_tsv("data/external/mag_2021_journals.txt",
                      col_types = cols(
