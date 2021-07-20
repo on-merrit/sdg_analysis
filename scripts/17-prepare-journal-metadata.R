@@ -30,7 +30,7 @@ doaj <- read_csv("data/external/journalcsv__doaj_20210719_0635_utf8.csv")
 
 doaj_selected <- doaj %>%
   select(journal_title = `Journal title`, alt_title = `Alternative title`,
-         issn = `Journal ISSN (print version)`,
+         pissn = `Journal ISSN (print version)`,
          eissn = `Journal EISSN (online version)`,
          language = `Languages in which the journal accepts manuscripts`,
          publisher = Publisher, country_of_pub = `Country of publisher`,
@@ -124,9 +124,9 @@ doaj_apc <- doaj %>%
 # fix a few coding error from DOAJ
 doaj_converted <- doaj_converted %>%
   mutate(APC_in_dollar = case_when(
-    issn == "1819-5229"~ 150,
+    pissn == "1819-5229"~ 150,
     journal_title == "Tsaqafah" ~ 0,
-    issn == "1979-7788" ~ 0,
+    pissn == "1979-7788" ~ 0,
     TRUE ~ APC_in_dollar),
          APC = case_when(APC_in_dollar == 0 ~ FALSE,
                          TRUE ~ APC))
@@ -134,7 +134,6 @@ doaj_converted <- doaj_converted %>%
 
 doaj_converted %>%
   write_csv("data/processed/doaj_cleaned.csv")
-
 
 
 # explore journals ----
