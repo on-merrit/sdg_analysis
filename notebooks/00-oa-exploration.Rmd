@@ -211,7 +211,8 @@ oa_per_affiliation_selected <- oa_per_affiliation %>%
 oa_per_country <- oa_per_affiliation_selected %>%
   group_by(country, is_oa) %>%
   summarise(sum_frac_oa = sum(frac_count)) %>%
-  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa)) %>%
+  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
+         sum_frac_total = sum(sum_frac_oa)) %>%
   collect()
 ```
 
@@ -287,14 +288,24 @@ oa_with_gdp_per_cap <- oa_per_country %>%
   filter(is_oa)
 
 oa_with_gdp_per_cap %>%
+  filter(sum_frac_total >= 100) %>%
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
-  geom_point(aes(size = sum_frac_oa)) +
-  geom_smooth() +
-  scale_size_continuous(trans = "sqrt") +
-  ggrepel::geom_text_repel(aes(label = country_name)) +
-  labs(x = "GDP per capita", y = "OA share") +
+  geom_point(aes(size = sum_frac_total, colour = sum_frac_total)) +
+  geom_smooth(alpha = .3) +
+  ggrepel::geom_text_repel(aes(label = country_name), seed = 66324613) +
+  labs(x = "GDP per capita", y = "% of publications which are OA",
+       colour = "# of publications", size = "# of publications") +
+  scale_size_continuous(trans = "sqrt", labels = scales::comma) +
   scale_y_continuous(labels = scales::percent) +
-  scale_x_log10()
+  scale_x_log10(breaks = c(1e+03, 5e+03, 1e+04, 5e+04, 1e+05),
+                labels = scales::comma) +
+  scale_colour_viridis_c(
+    trans = "log", 
+    # https://stackoverflow.com/a/20901094/3149349
+    labels = scales::trans_format("identity", 
+                                  format = function(x) scales::comma(round(x)))) +
+  theme_bw() 
+  
 ```
 
 
@@ -430,6 +441,17 @@ oa_per_affil_firsts <- oa_per_affiliation %>%
 oa_per_affil_firsts_w_groups <- oa_per_affil_firsts %>% 
   left_join(proper_countries, by = c("country" = "country_code"))
 ```
+
+
+---------------------
+
+TODO here:
+
+do not visualise countries with boxplot, but sample from the data and plot, or
+use dbplot variante.
+
+
+-----------------------
 
 ```{r}
 oa_per_affil_firsts_w_groups %>% 
