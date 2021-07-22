@@ -1,6 +1,7 @@
 library(tidyverse)
 # remotes::install_github("ikashnitsky/sjrdata")
 library(sjrdata)
+library(eulerr)
 
 journals <- read_csv("data/processed/mag_journals_w_doaj.csv")
 
@@ -142,3 +143,23 @@ all_journals_joined %>%
 #   all doaj
 #   all sjr
 #   overlaps
+#   have to create a file like this: https://github.com/nicholasmfraser/biorxiv/blob/3/data/analysis/matching_overlap.csv
+#   means: need to look at all doaj, all sjr, all mag
+#   but: didnt attempt overlap between doaj and sjr - don't think I can do a
+#   proper venn diagram here
+
+
+all_journals_joined %>%
+  summarise(mag_doaj_sjr = sum(!is.na(APC) & !is.na(title)),
+            mag_doaj = sum(!is.na(APC)),
+            mag_sjr = sum(!is.na(title)),
+            mag = n()) %>%
+  pivot_longer(everything()) %>%
+  mutate(prop = value / max(value))
+#> # A tibble: 4 x 3
+#> name           value   prop
+#> <chr>          <int>  <dbl>
+#> 1 mag_doaj_sjr  3383 0.0690
+#> 2 mag_doaj      6192 0.126
+#> 3 mag_sjr      22220 0.453
+#> 4 mag          49010 1
