@@ -39,17 +39,17 @@ papers <- papers %>%
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
                          name = "affils")
-author_metadata <- spark_read_csv(sc,
-                                  "/user/tklebel/sdg/data/sdg_author_data.csv",
-                                  name = "author_metadata")
-# join genders with author data
-genders <- spark_read_csv(sc,
-                          "/user/tklebel/sdg/data/merged_genderized_names.csv",
-                          name = "genders") %>% 
-  select(-first_name)
-
-author_metadata <- author_metadata %>% 
-  left_join(genders, by = "authorid")
+# author_metadata <- spark_read_csv(sc,
+#                                   "/user/tklebel/sdg/data/sdg_author_data.csv",
+#                                   name = "author_metadata")
+# # join genders with author data
+# genders <- spark_read_csv(sc,
+#                           "/user/tklebel/sdg/data/merged_genderized_names.csv",
+#                           name = "genders") %>% 
+#   select(-first_name)
+# 
+# author_metadata <- author_metadata %>% 
+#   left_join(genders, by = "authorid")
 
 
 
@@ -61,17 +61,17 @@ author_paper_affiliations <- spark_read_csv(
 author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
 
 
-funded_projects <- spark_read_csv(
-  sc,
-  "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
-  name = "funded_projects"
-)
-wb_indicators <- spark_read_csv(
-  sc,
-  "/user/tklebel/sdg/data/world_bank_indicators.csv",
-  name = "wb_indicators")
-
-wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
+# funded_projects <- spark_read_csv(
+#   sc,
+#   "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
+#   name = "funded_projects"
+# )
+# wb_indicators <- spark_read_csv(
+#   sc,
+#   "/user/tklebel/sdg/data/world_bank_indicators.csv",
+#   name = "wb_indicators")
+# 
+# wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
 
 leiden <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/leiden_ranking.csv",
@@ -231,11 +231,11 @@ step1_apc_prices <- papers %>%
   # the rest of MAG? at least it does not contain some journals for which we
   # have papers
   filter(!is.na(APC)) %>% 
-  # keep only last authors for now
-  filter(author_position == "last_author")
+  # keep only last and first authors
+  filter(author_position %in% c("last_author", "first_author"))
 
 mean_apc_per_affiliation_per_sdg <- step1_apc_prices %>% 
-  group_by(affiliationid, SDG_label) %>% 
+  group_by(affiliationid, SDG_label, author_position) %>% 
   summarise(mean_apc = mean(APC_in_dollar),
             n_papers = n())
 
@@ -251,15 +251,21 @@ apc_val_affiliation_leiden <- mean_apc_per_affiliation_per_sdg_local %>%
   left_join(leiden_small_local) %>% 
   # remove those institutions that are not in leiden ranking
   filter(!is.na(University), Period == "2015–2018")
+
+firsts <- apc_val_affiliation_leiden %>% 
+  filter(author_position == "first_author")
+
+lasts <- apc_val_affiliation_leiden %>% 
+  filter(author_position == "last_author")
 ```
 
 ```{r, fig.width=8, fig.height=5}
-labels <- apc_val_affiliation_leiden %>% 
+labels <- lasts %>% 
   group_by(SDG_label) %>% 
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-apc_val_affiliation_leiden %>% 
+lasts %>% 
   ggplot(aes(P_top10, mean_apc)) +
   geom_point(aes(colour = n_papers), alpha = .4) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
@@ -270,7 +276,8 @@ apc_val_affiliation_leiden %>%
   theme_bw() +
   theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
   labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution")
+       colour = "Number of papers per institution",
+       caption = "Last authors only")
 ```
 
 Inclusion criterion was for an institution to have at least 20 papers per last
@@ -278,3 +285,25 @@ author. in SDG 13 the lower ranked institutions do not have that.
 
 In general, higher prestige is related to higher APCs. The effect is strongest 
 for SDG 2, with a steep incline at the lowest ranking universities.
+
+
+```{r, fig.width=8, fig.height=5}
+labels <- firsts %>% 
+  group_by(SDG_label) %>% 
+  summarise(cor = cor(mean_apc, P_top10)) %>% 
+  mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
+
+firsts %>% 
+  ggplot(aes(P_top10, mean_apc)) +
+  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_smooth(show.legend = FALSE, colour = "grey30") +
+  geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
+  facet_wrap(vars(SDG_label), nrow = 1) +
+  scale_x_log10() +
+  scale_colour_viridis_c(trans = "log10") +
+  theme_bw() +
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
+  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
+       colour = "Number of papers per institution",
+       caption = "First authors only")
+```
