@@ -10,14 +10,7 @@ output:
 
 
 
-Are researchers from lower ranking universities publishing with higher or 
-lower APCs? In journals with higher or lower IF?
-
-# OA with or without APC
-
-Repeat figure from OA Who about university ranking and publishing types, but
-this time with APC yes, no, and IF mean.
-
+# APC by sdg
 
 ```r
 step1 <- papers %>% 
@@ -45,10 +38,63 @@ step1 <- papers %>%
 ```
 
 ```r
-# step1 %>% select(journalid, APC, APC_in_dollar) %>% filter(APC != "NA")
-#
-# step1 %>% filter(is.na(APC)) %>% head(20) %>% collect()
+apc_per_sdg <- step1 %>% 
+  mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
+  group_by(SDG_label) %>% 
+  count(APC) %>% 
+  collect()
+```
 
+
+
+```r
+apc_per_sdg %>% 
+  group_by(SDG_label) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  mutate(APC = factor(APC, levels = c("Not in DOAJ", "FALSE", "TRUE"),
+                      labels = c("Not in DOAJ", "No", "Yes"))) %>%
+  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = APC)) +
+  geom_col(width = .7) +
+  scale_x_continuous(labels = scales::percent) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = "Publishing involved an APC",
+       caption = "2015-2018") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
+
+```r
+apc_per_sdg %>% 
+  filter(APC != "Not in DOAJ") %>% 
+  group_by(SDG_label) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  mutate(APC = factor(APC, levels = c("FALSE", "TRUE"),
+                      labels = c("No", "Yes"))) %>%
+  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = APC)) +
+  geom_col(width = .7) +
+  scale_x_continuous(labels = scales::percent) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = "Publishing involved an APC",
+       caption = "2015-2018") +
+  theme(legend.position = "top")  +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+Are researchers from lower ranking universities publishing with higher or 
+lower APCs? In journals with higher or lower IF?
+
+# OA with or without APC
+
+Repeat figure from OA Who about university ranking and publishing types, but
+this time with APC yes, no, and IF mean.
+
+
+```r
 apc_per_affiliation_per_sdg <- step1 %>% 
   mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
   group_by(affiliationid, SDG_label) %>% 
@@ -97,6 +143,7 @@ apc_affiliation_leiden <- apc_per_affiliation_per_sdg_local %>%
 ## Joining, by = c("University", "Country")
 ```
 
+The figure below uses fractional counting.
 
 
 ```r
@@ -111,7 +158,8 @@ p <- apc_affiliation_leiden %>%
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not")
+       title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not",
+       caption = "Fractional counting")
 p
 ```
 
@@ -119,7 +167,7 @@ p
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 Very interesting: really high universities publish less in DAOJ journals. Why is
 that? which types of journals are these? This is especially true in medicine.
@@ -140,7 +188,8 @@ p2 <- apc_affiliation_leiden %>%
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between institutional prestige (2015-2018) and\nwhether APCs are ionvolved or not")
+       title = "Association between institutional prestige (2015-2018) and\nwhether APCs are ionvolved or not",
+       caption = "Fractional counting")
 p2
 ```
 
@@ -148,7 +197,7 @@ p2
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 We can conclude:
 
@@ -169,7 +218,7 @@ What do we learn?
 
 
 # APC prices
-We need to do this only for first and last authors, right?
+The figures below use full counting, but for first and last authors separately.
 
 ```r
 step1_apc_prices <- papers %>% 
@@ -184,8 +233,8 @@ step1_apc_prices <- papers %>%
   # the rest of MAG? at least it does not contain some journals for which we
   # have papers
   filter(!is.na(APC)) %>% 
-  # keep only last authors for now
-  filter(author_position == "last_author")
+  # keep only last and first authors
+  filter(author_position %in% c("last_author", "first_author"))
 ```
 
 ```
@@ -198,7 +247,7 @@ step1_apc_prices <- papers %>%
 
 ```r
 mean_apc_per_affiliation_per_sdg <- step1_apc_prices %>% 
-  group_by(affiliationid, SDG_label) %>% 
+  group_by(affiliationid, SDG_label, author_position) %>% 
   summarise(mean_apc = mean(APC_in_dollar),
             n_papers = n())
 
@@ -225,14 +274,22 @@ apc_val_affiliation_leiden <- mean_apc_per_affiliation_per_sdg_local %>%
 ## Joining, by = c("University", "Country")
 ```
 
+```r
+firsts <- apc_val_affiliation_leiden %>% 
+  filter(author_position == "first_author")
+
+lasts <- apc_val_affiliation_leiden %>% 
+  filter(author_position == "last_author")
+```
+
 
 ```r
-labels <- apc_val_affiliation_leiden %>% 
+labels <- lasts %>% 
   group_by(SDG_label) %>% 
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-apc_val_affiliation_leiden %>% 
+lasts %>% 
   ggplot(aes(P_top10, mean_apc)) +
   geom_point(aes(colour = n_papers), alpha = .4) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
@@ -243,17 +300,47 @@ apc_val_affiliation_leiden %>%
   theme_bw() +
   theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
   labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution")
+       colour = "Number of papers per institution",
+       caption = "Full counting; last authors only")
 ```
 
 ```
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 Inclusion criterion was for an institution to have at least 20 papers per last
 author. in SDG 13 the lower ranked institutions do not have that.
 
 In general, higher prestige is related to higher APCs. The effect is strongest 
 for SDG 2, with a steep incline at the lowest ranking universities.
+
+
+
+```r
+labels <- firsts %>% 
+  group_by(SDG_label) %>% 
+  summarise(cor = cor(mean_apc, P_top10)) %>% 
+  mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
+
+firsts %>% 
+  ggplot(aes(P_top10, mean_apc)) +
+  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_smooth(show.legend = FALSE, colour = "grey30") +
+  geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
+  facet_wrap(vars(SDG_label), nrow = 1) +
+  scale_x_log10() +
+  scale_colour_viridis_c(trans = "log10") +
+  theme_bw() +
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
+  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
+       colour = "Number of papers per institution",
+       caption = "Full counting; first authors only")
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
