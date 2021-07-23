@@ -1,0 +1,209 @@
+---
+title: "Relationship between OA publishing, APCs and IF"
+author: "Thomas Klebel"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, dpi = 300)
+
+# setup -----
+Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
+library(sparklyr)
+library(tidyverse)
+library(arrow)
+source(here::here("R/helpers.R"))
+
+message("Connecting to spark...")
+
+config <- spark_config()
+config$spark.executor.cores <- 15
+config$spark.executor.instances <- 5
+config$spark.executor.memory <- "60G"
+sc <- spark_connect(master = "yarn-client", config = config,
+                    app_name = "SDG_OA_authors")
+message("Connection to Spark successful!")
+
+message("Reading the datasets...")
+papers <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_papers_collated.csv",
+                         name = "papers")
+sdg_labels <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_labels.csv",
+                             name = "sdg_labels")
+# join the labels here, since we are doing everything by SDG
+papers <- papers %>% 
+  left_join(sdg_labels)
+
+affils <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
+                         name = "affils")
+author_metadata <- spark_read_csv(sc,
+                                  "/user/tklebel/sdg/data/sdg_author_data.csv",
+                                  name = "author_metadata")
+# join genders with author data
+genders <- spark_read_csv(sc,
+                          "/user/tklebel/sdg/data/merged_genderized_names.csv",
+                          name = "genders") %>% 
+  select(-first_name)
+
+author_metadata <- author_metadata %>% 
+  left_join(genders, by = "authorid")
+
+
+
+author_paper_affiliations <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
+  name = "author_paper_affiliations"
+)
+author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
+
+
+funded_projects <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
+  name = "funded_projects"
+)
+wb_indicators <- spark_read_csv(
+  sc,
+  "/user/tklebel/sdg/data/world_bank_indicators.csv",
+  name = "wb_indicators")
+
+wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
+
+leiden <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/leiden_ranking.csv",
+                         name = "leiden")
+
+journals <- spark_read_csv(sc,
+                         "/user/tklebel/sdg/data/mag_journals_w_doaj_w_sjr.csv",
+                         name = "journals")
+
+
+leiden_small_local <- leiden %>%
+  filter(Field == "All sciences", Frac_counting == 1) %>%
+  select(University, Country, Period, P_top10, PP_top10, impact_P, P_OA,
+         PP_OA) %>% 
+  collect() %>% 
+  mutate(across(c(P_top10, PP_top10, impact_P, P_OA, PP_OA), as.numeric),
+         last_year_of_period = str_extract(Period, "\\d{4}$"))
+
+affil_leiden_key <- read_csv2(
+  here::here("data/leiden matching/matching_leiden.csv")
+)
+
+message("Successfully read all datasets!")
+```
+
+
+Are researchers from lower ranking universities publishing with higher or 
+lower APCs? In journals with higher or lower IF?
+
+Repeat figure from OA Who about university ranking and publishing types, but
+this time with APC yes, no, and IF mean.
+
+```{r, cache=TRUE}
+step1 <- papers %>% 
+  # we can only look at journals, since doaj only is for journals
+  # also only look at fairly recent papers
+  filter(!is.na(journalid), year %in% 2015:2018) %>% 
+  left_join(author_paper_affiliations) %>% 
+  left_join(affils) %>% 
+  left_join(journals, by = "journalid") %>% 
+  # need to filter out some NAs, since the journal table seems to be older than
+  # the rest of MAG? at least it does not contain some journals for which we
+  # have papers
+  filter(!is.na(APC)) %>% 
+  group_by(authorid, paperid) %>% 
+  mutate(frac_value = 1/n()) 
+
+# step1 %>% select(journalid, APC, APC_in_dollar) %>% filter(APC != "NA")
+#
+# step1 %>% filter(is.na(APC)) %>% head(20) %>% collect()
+
+apc_per_affiliation_per_sdg <- step1 %>% 
+  mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
+  group_by(affiliationid, SDG_label) %>% 
+  count(APC, wt = frac_value)
+
+# apc_per_affiliation_per_sdg %>% ungroup() %>% count(APC)
+
+totals <- step1 %>% 
+  group_by(affiliationid, SDG_label) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE))
+
+apc_per_affiliation_per_sdg <- apc_per_affiliation_per_sdg %>% 
+  left_join(totals)
+
+apc_per_affiliation_per_sdg_local <- apc_per_affiliation_per_sdg %>% 
+  filter(n_frac_papers > 50) %>% 
+  collect()
+```
+
+
+
+
+
+
+```{r}
+apc_affiliation_leiden <- apc_per_affiliation_per_sdg_local %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local) %>% 
+  # remove those institutions that are not in leiden ranking
+  filter(!is.na(University), Period == "2015–2018")
+```
+
+
+```{r}
+p <- apc_affiliation_leiden %>% 
+  group_by(SDG_label, affiliationid) %>% 
+  mutate(apc_share = n/sum(n)) %>% 
+  ggplot(aes(P_top10, apc_share, colour = APC)) +
+  geom_point(size = .7, alpha = .4) +
+  scale_x_log10() +
+  geom_smooth() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "top") +
+  labs(y = "Share of papers in category", colour = NULL,
+       title = "Association between institutional prestige (2015-2018) and whether APCs are involved or not")
+p
+```
+
+
+```{r}
+p2 <- apc_affiliation_leiden %>% 
+  filter(APC != "Not in DOAJ") %>%
+  group_by(SDG_label, affiliationid) %>% 
+  mutate(apc_share = n/sum(n)) %>% 
+  ggplot(aes(P_top10, apc_share, colour = APC)) +
+  geom_point(size = .7, alpha = .4) +
+  scale_x_log10() +
+  geom_smooth() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "top") +
+  labs(y = "Share of papers in category", colour = NULL,
+       title = "Association between institutional prestige (2015-2018) and whether APCs are ionvolved or not")
+p2
+```
+
+We can conclude:
+
+- higher prestige institutions generally publish a larger share of their research
+in OA journals that involve an APC
+
+Next question: Is this also visible in terms of APC prices?
+Then: how does this relate to IF?
+
+And: is the APC (yes/no) divide also visible on regional level? Alternative 
+explanation: lower ranked affiliations publish locally, and these local journals
+might not have APCs. It still means: those researchers are not able to participate
+in the high-ranking journal game.
+
+Maybe correspondence analysis to relate these? IF in quartiles from SJR
+
+What do we learn? 
