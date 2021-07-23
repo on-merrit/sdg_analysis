@@ -108,7 +108,8 @@ this time with APC yes, no, and IF mean.
 step1 <- papers %>% 
   # we can only look at journals, since doaj only is for journals
   # also only look at fairly recent papers
-  filter(!is.na(journalid), year %in% 2015:2018) %>% 
+  # also only look at papers which actually are OA
+  filter(!is.na(journalid), year %in% 2015:2018, is_oa) %>% 
   left_join(author_paper_affiliations) %>% 
   left_join(affils) %>% 
   left_join(journals, by = "journalid") %>% 
@@ -169,9 +170,13 @@ p <- apc_affiliation_leiden %>%
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between institutional prestige (2015-2018) and whether APCs are involved or not")
+       title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not")
 p
 ```
+
+Very interesting: really high universities publish less in DAOJ journals. Why is
+that? which types of journals are these? This is especially true in medicine.
+Maybe there is something specific going on here?
 
 
 ```{r}
@@ -187,7 +192,7 @@ p2 <- apc_affiliation_leiden %>%
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between institutional prestige (2015-2018) and whether APCs are ionvolved or not")
+       title = "Association between institutional prestige (2015-2018) and\nwhether APCs are ionvolved or not")
 p2
 ```
 
