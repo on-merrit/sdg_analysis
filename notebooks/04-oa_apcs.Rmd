@@ -159,6 +159,7 @@ apc_affiliation_leiden <- apc_per_affiliation_per_sdg_local %>%
   filter(!is.na(University), Period == "2015–2018")
 ```
 
+The figure below uses fractional counting.
 
 ```{r}
 p <- apc_affiliation_leiden %>% 
@@ -217,7 +218,7 @@ What do we learn?
 
 
 # APC prices
-We need to do this only for first and last authors, right?
+The figures below use full counting, but for first and last authors separately.
 ```{r, cache=TRUE}
 step1_apc_prices <- papers %>% 
   # we can only look at journals, since doaj only is for journals
