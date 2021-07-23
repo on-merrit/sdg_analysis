@@ -98,14 +98,7 @@ message("Successfully read all datasets!")
 ```
 
 
-Are researchers from lower ranking universities publishing with higher or 
-lower APCs? In journals with higher or lower IF?
-
-# OA with or without APC
-
-Repeat figure from OA Who about university ranking and publishing types, but
-this time with APC yes, no, and IF mean.
-
+# APC by sdg
 ```{r, cache=TRUE}
 step1 <- papers %>% 
   # we can only look at journals, since doaj only is for journals
@@ -118,14 +111,58 @@ step1 <- papers %>%
   # need to filter out some NAs, since the journal table seems to be older than
   # the rest of MAG? at least it does not contain some journals for which we
   # have papers
-  filter(!is.na(APC)) %>% 
-  group_by(authorid, paperid) %>% 
-  mutate(frac_value = 1/n()) 
+  filter(!is.na(APC)) 
 
-# step1 %>% select(journalid, APC, APC_in_dollar) %>% filter(APC != "NA")
-#
-# step1 %>% filter(is.na(APC)) %>% head(20) %>% collect()
+apc_per_sdg <- step1 %>% 
+  mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
+  group_by(SDG_label) %>% 
+  count(APC) %>% 
+  collect()
+```
 
+
+```{r}
+apc_per_sdg %>% 
+  group_by(SDG_label) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  mutate(APC = factor(APC, levels = c("Not in DOAJ", "FALSE", "TRUE"),
+                      labels = c("Not in DOAJ", "No", "Yes"))) %>%
+  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = APC)) +
+  geom_col(width = .7) +
+  scale_x_continuous(labels = scales::percent) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = "Publishing involved an APC",
+       caption = "2015-2018") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+
+```{r}
+apc_per_sdg %>% 
+  filter(APC != "Not in DOAJ") %>% 
+  group_by(SDG_label) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  mutate(APC = factor(APC, levels = c("FALSE", "TRUE"),
+                      labels = c("No", "Yes"))) %>%
+  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = APC)) +
+  geom_col(width = .7) +
+  scale_x_continuous(labels = scales::percent) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = "Publishing involved an APC",
+       caption = "2015-2018") +
+  theme(legend.position = "top")  +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+
+Are researchers from lower ranking universities publishing with higher or 
+lower APCs? In journals with higher or lower IF?
+
+# OA with or without APC
+
+Repeat figure from OA Who about university ranking and publishing types, but
+this time with APC yes, no, and IF mean.
+
+```{r, cache=TRUE}
 apc_per_affiliation_per_sdg <- step1 %>% 
   mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
   group_by(affiliationid, SDG_label) %>% 
@@ -173,7 +210,8 @@ p <- apc_affiliation_leiden %>%
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not")
+       title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not",
+       caption = "Fractional counting")
 p
 ```
 
@@ -195,7 +233,8 @@ p2 <- apc_affiliation_leiden %>%
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between institutional prestige (2015-2018) and\nwhether APCs are ionvolved or not")
+       title = "Association between institutional prestige (2015-2018) and\nwhether APCs are ionvolved or not",
+       caption = "Fractional counting")
 p2
 ```
 
@@ -278,7 +317,7 @@ lasts %>%
   theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
   labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
        colour = "Number of papers per institution",
-       caption = "Last authors only")
+       caption = "Full counting; last authors only")
 ```
 
 Inclusion criterion was for an institution to have at least 20 papers per last
@@ -306,5 +345,5 @@ firsts %>%
   theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
   labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
        colour = "Number of papers per institution",
-       caption = "First authors only")
+       caption = "Full counting; first authors only")
 ```
