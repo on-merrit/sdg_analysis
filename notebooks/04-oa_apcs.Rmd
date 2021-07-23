@@ -111,7 +111,9 @@ step1 <- papers %>%
   # need to filter out some NAs, since the journal table seems to be older than
   # the rest of MAG? at least it does not contain some journals for which we
   # have papers
-  filter(!is.na(APC)) 
+  filter(!is.na(APC)) %>% 
+  group_by(authorid, paperid) %>% 
+  mutate(frac_value = 1/n()) 
 
 apc_per_sdg <- step1 %>% 
   mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
