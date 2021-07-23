@@ -101,6 +101,8 @@ message("Successfully read all datasets!")
 Are researchers from lower ranking universities publishing with higher or 
 lower APCs? In journals with higher or lower IF?
 
+# OA with or without APC
+
 Repeat figure from OA Who about university ranking and publishing types, but
 this time with APC yes, no, and IF mean.
 
@@ -212,3 +214,67 @@ in the high-ranking journal game.
 Maybe correspondence analysis to relate these? IF in quartiles from SJR
 
 What do we learn? 
+
+
+# APC prices
+We need to do this only for first and last authors, right?
+```{r, cache=TRUE}
+step1_apc_prices <- papers %>% 
+  # we can only look at journals, since doaj only is for journals
+  # also only look at fairly recent papers
+  # also only look at papers which actually are OA
+  filter(!is.na(journalid), year %in% 2015:2018, is_oa) %>% 
+  left_join(author_paper_affiliations_w_groups) %>% 
+  left_join(affils) %>% 
+  left_join(journals, by = "journalid") %>% 
+  # need to filter out some NAs, since the journal table seems to be older than
+  # the rest of MAG? at least it does not contain some journals for which we
+  # have papers
+  filter(!is.na(APC)) %>% 
+  # keep only last authors for now
+  filter(author_position == "last_author")
+
+mean_apc_per_affiliation_per_sdg <- step1_apc_prices %>% 
+  group_by(affiliationid, SDG_label) %>% 
+  summarise(mean_apc = mean(APC_in_dollar),
+            n_papers = n())
+
+mean_apc_per_affiliation_per_sdg_local <- mean_apc_per_affiliation_per_sdg %>% 
+  filter(n_papers > 20) %>% 
+  collect()
+```
+
+```{r}
+apc_val_affiliation_leiden <- mean_apc_per_affiliation_per_sdg_local %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local) %>% 
+  # remove those institutions that are not in leiden ranking
+  filter(!is.na(University), Period == "2015–2018")
+```
+
+```{r, fig.width=8, fig.height=5}
+labels <- apc_val_affiliation_leiden %>% 
+  group_by(SDG_label) %>% 
+  summarise(cor = cor(mean_apc, P_top10)) %>% 
+  mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
+
+apc_val_affiliation_leiden %>% 
+  ggplot(aes(P_top10, mean_apc)) +
+  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_smooth(show.legend = FALSE, colour = "grey30") +
+  geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
+  facet_wrap(vars(SDG_label), nrow = 1) +
+  scale_x_log10() +
+  scale_colour_viridis_c(trans = "log10") +
+  theme_bw() +
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
+  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
+       colour = "Number of papers per institution")
+```
+
+Inclusion criterion was for an institution to have at least 20 papers per last
+author. in SDG 13 the lower ranked institutions do not have that.
+
+In general, higher prestige is related to higher APCs. The effect is strongest 
+for SDG 2, with a steep incline at the lowest ranking universities.
