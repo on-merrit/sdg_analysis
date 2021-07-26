@@ -1,7 +1,7 @@
 ---
 title: "OA Overview"
 author: "Thomas Klebel"
-date: "12 July, 2021"
+date: "26 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -184,7 +184,8 @@ oa_per_affiliation_selected <- oa_per_affiliation %>%
 oa_per_country <- oa_per_affiliation_selected %>%
   group_by(country, is_oa) %>%
   summarise(sum_frac_oa = sum(frac_count)) %>%
-  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa)) %>%
+  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
+         sum_frac_total = sum(sum_frac_oa)) %>%
   collect()
 ```
 
@@ -277,14 +278,23 @@ oa_with_gdp_per_cap <- oa_per_country %>%
   filter(is_oa)
 
 oa_with_gdp_per_cap %>%
+  filter(sum_frac_total >= 100) %>%
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
-  geom_point(aes(size = sum_frac_oa)) +
-  geom_smooth() +
-  scale_size_continuous(trans = "sqrt") +
-  ggrepel::geom_text_repel(aes(label = country_name)) +
-  labs(x = "GDP per capita", y = "OA share") +
+  geom_point(aes(size = sum_frac_total, colour = sum_frac_total)) +
+  geom_smooth(alpha = .3) +
+  ggrepel::geom_text_repel(aes(label = country_name), seed = 66324613) +
+  labs(x = "GDP per capita", y = "% of publications which are OA",
+       colour = "# of publications", size = "# of publications") +
+  scale_size_continuous(trans = "sqrt", labels = scales::comma) +
   scale_y_continuous(labels = scales::percent) +
-  scale_x_log10()
+  scale_x_log10(breaks = c(1e+03, 5e+03, 1e+04, 5e+04, 1e+05),
+                labels = scales::comma) +
+  scale_colour_viridis_c(
+    trans = "log", 
+    # https://stackoverflow.com/a/20901094/3149349
+    labels = scales::trans_format("identity", 
+                                  format = function(x) scales::comma(round(x)))) +
+  theme_bw() 
 ```
 
 ```
@@ -292,6 +302,82 @@ oa_with_gdp_per_cap %>%
 ```
 
 ![](00-oa-exploration_files/figure-html/oa_sdg_per_country_gdp_p_cap-1.png)<!-- -->
+
+
+
+```r
+make_buckets <- function(df) {
+  df %>% 
+    mutate(year_bucket = case_when(year %in% 2009:2013 ~ "2009-2013",
+                                   year %in% 2014:2018 ~ "2014-2018",
+                                   TRUE ~ NA)) %>% 
+    filter(!is.na(year_bucket))
+  
+}
+
+oa_per_country_year <- oa_per_affiliation_selected %>%
+  make_buckets() %>% 
+  group_by(country, year_bucket, is_oa) %>%
+  summarise(sum_frac_oa = sum(frac_count)) %>%
+  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
+         sum_frac_total = sum(sum_frac_oa)) %>%
+  collect()
+
+
+wb_buckets <- wb_indicators %>%
+  make_buckets() %>% 
+  group_by(country_name, country_code, indicator_code, indicator_name, 
+           year_bucket) %>% 
+  summarise(value = mean(value, na.rm = TRUE)) %>% 
+  collect()
+
+
+
+oa_with_gdp_per_cap <- oa_per_country_year %>%
+  left_join(wb_buckets, by = c("country" = "country_code", "year_bucket")) %>%
+  select(-indicator_name) %>%
+  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.PCAP.KD")) %>%
+  pivot_wider(names_from = indicator_code, values_from = value) %>%
+  drop_na() %>%
+  filter(is_oa)
+```
+
+
+```r
+oa_with_gdp_per_cap %>%
+  filter(sum_frac_total >= 100) %>%
+  ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
+  geom_point(aes(size = sum_frac_total, colour = sum_frac_total)) +
+  geom_smooth(alpha = .3) +
+  ggrepel::geom_text_repel(aes(label = country_name), seed = 66324613) +
+  labs(x = "GDP per capita", y = "% of publications which are OA",
+       colour = "# of publications", size = "# of publications") +
+  scale_size_continuous(trans = "sqrt", labels = scales::comma) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10(breaks = c(1e+03, 5e+03, 1e+04, 5e+04, 1e+05),
+                labels = scales::comma) +
+  scale_colour_viridis_c(
+    trans = "log", 
+    # https://stackoverflow.com/a/20901094/3149349
+    labels = scales::trans_format("identity", 
+                                  format = function(x) scales::comma(round(x)))) +
+  theme_bw() +
+  facet_wrap(vars(year_bucket), nrow = 2)
+```
+
+```
+## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
+```
+
+![](00-oa-exploration_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+things to do here: 
+
+- include countries only if the yare above X pubs for both years.
+- visualise with arrows:
+  - only need this: https://stackoverflow.com/questions/38008863/how-to-draw-a-nice-arrow-in-ggplot2
+  - need x and y from first bucket, xend and yend from second bucket
+  - everyone will go up, so maybe show relative to mean increase?
 
 
 # OA by country with author groups
@@ -352,7 +438,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preserve896e5fcf81daa724
+preserved8ee66e016e17f83
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -468,6 +554,17 @@ oa_per_affil_firsts_w_groups <- oa_per_affil_firsts %>%
 ```
 
 
+---------------------
+
+TODO here:
+
+do not visualise countries with boxplot, but sample from the data and plot, or
+use dbplot variante.
+
+
+-----------------------
+
+
 ```r
 oa_per_affil_firsts_w_groups %>% 
   filter(!is.na(income_group)) %>% 
@@ -478,7 +575,7 @@ oa_per_affil_firsts_w_groups %>%
   geom_boxplot()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 
 
@@ -501,7 +598,7 @@ oa_per_affil_firsts_w_groups %>%
 ## notch went outside hinges. Try setting notch=FALSE.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 This has the issue of treating Bermuda and USA equally (one data point in north
 america).
@@ -521,7 +618,7 @@ oa_per_affil_firsts_w_groups %>%
 ## `summarise()` has grouped output by 'region'. You can override using the `.groups` argument.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 
 ```r
@@ -537,7 +634,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 to develop further: how to visualise country differences?
 issue: low counts for many countries. maybe filter them out, maybe increase year
