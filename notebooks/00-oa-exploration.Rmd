@@ -282,7 +282,7 @@ oa_with_r_d_gdp %>%
 oa_with_gdp_per_cap <- oa_per_country %>%
   left_join(wb_local, by = c("country" = "country_code")) %>%
   select(-indicator_name) %>%
-  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.PCAP.KD")) %>%
+  filter(indicator_code %in% c("NY.GDP.PCAP.KD")) %>%
   pivot_wider(names_from = indicator_code, values_from = value) %>%
   drop_na() %>%
   filter(is_oa)
