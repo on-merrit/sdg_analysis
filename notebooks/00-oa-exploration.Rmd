@@ -42,6 +42,7 @@ papers <- papers %>%
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
                          name = "affils")
+
 author_metadata <- spark_read_csv(sc,
                                   "/user/tklebel/sdg/data/sdg_author_data.csv",
                                   name = "author_metadata")
@@ -50,6 +51,9 @@ author_paper_affiliations <- spark_read_csv(
   "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
   name = "author_paper_affiliations"
 )
+author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
+
+
 funded_projects <- spark_read_csv(
   sc,
   "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
@@ -508,8 +512,6 @@ Where are biggest increases?
 
 # OA by country with author groups
 ```{r, cache=TRUE}
-author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
-
 oa_per_affiliation <- paper_oa_flag %>%
   select(-SDG_label) %>%
   left_join(author_paper_affiliations_w_groups) %>%
@@ -633,6 +635,36 @@ oa_per_affil_firsts <- oa_per_affiliation %>%
   collect()
 ```
 
+New approach by sampling based on country. Sampling could be avoided, if the 
+"proper countries" df was in spark. Then could aggregate directly.
+
+
+```{r}
+oa_per_country_sampled <- oa_per_affiliation %>% 
+  filter(author_position == "first_author", year %in% 2015:2018) 
+  
+
+oa_per_country_sampled_local <- sdf_sample(oa_per_country_sampled,
+                                           fraction = .1, replacement = FALSE, 
+                                           seed = 7634876) %>% 
+  select(SDG_label, is_oa, country) %>% 
+  collect()
+```
+
+
+```{r}
+oa_per_country_sampled_local %>% 
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
+  group_by(SDG_label, region) %>% 
+  count(is_oa) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  ggplot(aes(prop, region, fill = is_oa)) +
+  geom_col() +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after =  3)),
+             nrow = 2) +
+  theme(legend.position = c(.8, .2))
+```
+
 
 ```{r}
 oa_per_affil_firsts_w_groups <- oa_per_affil_firsts %>% 
@@ -646,6 +678,9 @@ TODO here:
 
 do not visualise countries with boxplot, but sample from the data and plot, or
 use dbplot variante.
+
+  Actually: this are two distinct things. One shows how countries vary in a given
+  regions, the other shows, how the total of the regions compares.
 
 
 -----------------------
