@@ -336,7 +336,7 @@ wb_buckets <- wb_indicators %>%
 oa_with_gdp_per_cap <- oa_per_country_year %>%
   left_join(wb_buckets, by = c("country" = "country_code", "year_bucket")) %>%
   select(-indicator_name) %>%
-  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.PCAP.KD")) %>%
+  filter(indicator_code %in% c("NY.GDP.PCAP.KD")) %>% # removing "GB.XPD.RSDV.GD.ZS" because of missing values
   pivot_wider(names_from = indicator_code, values_from = value) %>%
   drop_na() %>%
   filter(is_oa)
@@ -345,7 +345,10 @@ oa_with_gdp_per_cap <- oa_per_country_year %>%
 
 ```r
 oa_with_gdp_per_cap %>%
-  filter(sum_frac_total >= 100) %>%
+  group_by(country) %>% 
+  mutate(all_in = all(sum_frac_total > 100)) %>% 
+  filter(all_in) %>% 
+  # filter(sum_frac_total >= 100) %>%
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
   geom_point(aes(size = sum_frac_total, colour = sum_frac_total)) +
   geom_smooth(alpha = .3) +
@@ -371,13 +374,58 @@ oa_with_gdp_per_cap %>%
 
 ![](00-oa-exploration_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
-things to do here: 
 
-- include countries only if the yare above X pubs for both years.
-- visualise with arrows:
-  - only need this: https://stackoverflow.com/questions/38008863/how-to-draw-a-nice-arrow-in-ggplot2
-  - need x and y from first bucket, xend and yend from second bucket
-  - everyone will go up, so maybe show relative to mean increase?
+
+```r
+pdata <- oa_with_gdp_per_cap %>%
+  group_by(country) %>% 
+  mutate(all_in = all(sum_frac_total > 100)) %>% 
+  filter(all_in) %>% 
+  ungroup() %>% 
+  select(country_name, year_bucket, prop_oa,
+         gdp = NY.GDP.PCAP.KD) %>% 
+  arrange(country_name) %>% 
+  pivot_wider(names_from = year_bucket, values_from = c(prop_oa, gdp)) %>% 
+  mutate(oa_increase = if_else(`prop_oa_2009-2013` < `prop_oa_2014-2018`, TRUE,
+                               FALSE),
+         oa_diff = `prop_oa_2014-2018` - `prop_oa_2009-2013`)
+  
+
+p <- ggplot(pdata, aes(x = `gdp_2009-2013`, y = `prop_oa_2009-2013`,
+             xend = `gdp_2014-2018`, yend = `prop_oa_2014-2018`)) +
+  geom_segment(arrow = arrow(length = unit(.15, "inches")),
+               lineend = "round", linejoin = "round",
+               size = 1) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10(breaks = c(1e+03, 5e+03, 1e+04, 5e+04, 1e+05),
+                labels = scales::comma) +
+  theme_bw() +
+  labs(x = "GDP per capita", y = "% of publications which are OA")
+
+p +
+  aes(colour = oa_increase)
+```
+
+![](00-oa-exploration_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
+Only very few countries dropping in terms of OA.
+
+
+```r
+p +
+  aes(colour = oa_diff*100) +
+  scale_color_gradient2(mid = "grey75", low = "red") +
+  labs(colour = "Change in percentage points",
+       title = "Change in OA from 2009-2013 to 2014-2018") +
+  theme(legend.position = "top") 
+```
+
+![](00-oa-exploration_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
+Where are biggest increases?
+
+- No clear picture. Increases at the top of OA % are lower. 
+- Some LIC made big jumps, but not all of them. Big jumps also happening in HIC.
 
 
 # OA by country with author groups
@@ -438,7 +486,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preserved8ee66e016e17f83
+preservedc4771253fdc52ab
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -575,7 +623,7 @@ oa_per_affil_firsts_w_groups %>%
   geom_boxplot()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 
 
@@ -598,7 +646,7 @@ oa_per_affil_firsts_w_groups %>%
 ## notch went outside hinges. Try setting notch=FALSE.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 This has the issue of treating Bermuda and USA equally (one data point in north
 america).
@@ -618,7 +666,7 @@ oa_per_affil_firsts_w_groups %>%
 ## `summarise()` has grouped output by 'region'. You can override using the `.groups` argument.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
 
 
 ```r
@@ -634,7 +682,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 to develop further: how to visualise country differences?
 issue: low counts for many countries. maybe filter them out, maybe increase year
