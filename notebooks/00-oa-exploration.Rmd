@@ -340,16 +340,19 @@ wb_buckets <- wb_indicators %>%
 oa_with_gdp_per_cap <- oa_per_country_year %>%
   left_join(wb_buckets, by = c("country" = "country_code", "year_bucket")) %>%
   select(-indicator_name) %>%
-  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.PCAP.KD")) %>%
+  filter(indicator_code %in% c("NY.GDP.PCAP.KD")) %>% # removing "GB.XPD.RSDV.GD.ZS" because of missing values
   pivot_wider(names_from = indicator_code, values_from = value) %>%
   drop_na() %>%
   filter(is_oa)
 
 ```
 
-```{r, fig.height=12, fig.width=12}
+```{r, fig.height=14, fig.width=14}
 oa_with_gdp_per_cap %>%
-  filter(sum_frac_total >= 100) %>%
+  group_by(country) %>% 
+  mutate(all_in = all(sum_frac_total > 100)) %>% 
+  filter(all_in) %>% 
+  # filter(sum_frac_total >= 100) %>%
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
   geom_point(aes(size = sum_frac_total, colour = sum_frac_total)) +
   geom_smooth(alpha = .3) +
@@ -371,7 +374,6 @@ oa_with_gdp_per_cap %>%
 
 things to do here: 
 
-- include countries only if the yare above X pubs for both years.
 - visualise with arrows:
   - only need this: https://stackoverflow.com/questions/38008863/how-to-draw-a-nice-arrow-in-ggplot2
   - need x and y from first bucket, xend and yend from second bucket
