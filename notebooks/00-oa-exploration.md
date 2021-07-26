@@ -272,29 +272,30 @@ oa_with_r_d_gdp %>%
 oa_with_gdp_per_cap <- oa_per_country %>%
   left_join(wb_local, by = c("country" = "country_code")) %>%
   select(-indicator_name) %>%
-  filter(indicator_code %in% c("GB.XPD.RSDV.GD.ZS", "NY.GDP.PCAP.KD")) %>%
+  filter(indicator_code %in% c("NY.GDP.PCAP.KD")) %>%
   pivot_wider(names_from = indicator_code, values_from = value) %>%
   drop_na() %>%
   filter(is_oa)
 
-oa_with_gdp_per_cap %>%
+p <- oa_with_gdp_per_cap %>%
   filter(sum_frac_total >= 100) %>%
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
-  geom_point(aes(size = sum_frac_total, colour = sum_frac_total)) +
-  geom_smooth(alpha = .3) +
-  ggrepel::geom_text_repel(aes(label = country_name), seed = 66324613) +
+  geom_point(aes(size = sum_frac_total)) +
   labs(x = "GDP per capita", y = "% of publications which are OA",
-       colour = "# of publications", size = "# of publications") +
+       size = "# of publications") +
   scale_size_continuous(trans = "sqrt", labels = scales::comma) +
   scale_y_continuous(labels = scales::percent) +
-  scale_x_log10(breaks = c(1e+03, 5e+03, 1e+04, 5e+04, 1e+05),
+  scale_x_log10(breaks = c(1e+03, 2e+03, 5e+03, 1e+04, 2e+04, 5e+04, 1e+05),
                 labels = scales::comma) +
-  scale_colour_viridis_c(
-    trans = "log", 
-    # https://stackoverflow.com/a/20901094/3149349
-    labels = scales::trans_format("identity", 
-                                  format = function(x) scales::comma(round(x)))) +
   theme_bw() 
+
+p1 <- p +
+  aes(colour = region)
+p1 +
+    geom_smooth(aes(colour = NULL), alpha = .3, show.legend = FALSE,
+                colour = "grey30") +
+  labs(colour = "World region")
 ```
 
 ```
@@ -303,6 +304,81 @@ oa_with_gdp_per_cap %>%
 
 ![](00-oa-exploration_files/figure-html/oa_sdg_per_country_gdp_p_cap-1.png)<!-- -->
 
+
+```r
+plotly::ggplotly(p1)
+```
+
+preserve3e5e1492332a70d5
+
+
+
+```r
+p + 
+  geom_smooth(alpha = .3, show.legend = FALSE) +
+  aes(colour  = sum_frac_total) +
+  ggrepel::geom_text_repel(aes(label = country_name, colour = NULL),
+                           seed = 66324613) +
+  scale_colour_viridis_c(
+    trans = "log", 
+    # https://stackoverflow.com/a/20901094/3149349
+    labels = scales::trans_format("identity", 
+                                  format = function(x) scales::comma(round(x)))) 
+```
+
+```
+## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
+```
+
+![](00-oa-exploration_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+### split by SDG
+
+```r
+oa_per_country_per_SDG <- oa_per_affiliation_selected %>%
+  group_by(country, SDG_label, is_oa) %>%
+  summarise(sum_frac_oa = sum(frac_count)) %>%
+  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
+         sum_frac_total = sum(sum_frac_oa)) %>%
+  collect()
+
+oa_sdg__with_gdp_per_cap <- oa_per_country_per_SDG %>%
+  left_join(wb_local, by = c("country" = "country_code")) %>%
+  select(-indicator_name) %>%
+  filter(indicator_code %in% c("NY.GDP.PCAP.KD")) %>%
+  pivot_wider(names_from = indicator_code, values_from = value) %>%
+  drop_na() %>%
+  filter(is_oa)
+```
+
+
+```r
+oa_sdg__with_gdp_per_cap %>%
+  filter(sum_frac_total >= 100) %>%
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
+  ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
+  geom_point(aes(size = sum_frac_total, colour = region)) +
+  geom_smooth(alpha = .3, show.legend = FALSE, colour = "grey30") +
+  labs(x = "GDP per capita", y = "% of publications which are OA",
+       colour = "World region", size = "# of publications") +
+  scale_size_continuous(trans = "sqrt", labels = scales::comma) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10(breaks = c(1e+03, 2e+03, 5e+03, 1e+04, 2e+04, 5e+04, 1e+05),
+                labels = scales::comma) +
+  theme_bw() +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3)), nrow = 2) +
+  theme(legend.position = c(.8, .2))
+```
+
+```
+## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
+```
+
+![](00-oa-exploration_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
+Pattern is stable across all three SDGs. 
+
+Maybe reposition the legend here: https://stackoverflow.com/questions/52060601/ggplot-multiple-legends-arrangement
 
 
 ```r
@@ -372,7 +448,7 @@ oa_with_gdp_per_cap %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
 
 
@@ -406,7 +482,7 @@ p +
   aes(colour = oa_increase)
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 Only very few countries dropping in terms of OA.
 
@@ -420,7 +496,7 @@ p +
   theme(legend.position = "top") 
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 Where are biggest increases?
 
@@ -486,7 +562,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preservedc4771253fdc52ab
+preserve8aa417b7b209f9c0
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -623,7 +699,7 @@ oa_per_affil_firsts_w_groups %>%
   geom_boxplot()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
 
 
@@ -646,7 +722,7 @@ oa_per_affil_firsts_w_groups %>%
 ## notch went outside hinges. Try setting notch=FALSE.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 This has the issue of treating Bermuda and USA equally (one data point in north
 america).
@@ -666,7 +742,7 @@ oa_per_affil_firsts_w_groups %>%
 ## `summarise()` has grouped output by 'region'. You can override using the `.groups` argument.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 ```r
@@ -682,7 +758,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 to develop further: how to visualise country differences?
 issue: low counts for many countries. maybe filter them out, maybe increase year
