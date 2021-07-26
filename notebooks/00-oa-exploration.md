@@ -309,7 +309,7 @@ p1 +
 plotly::ggplotly(p1)
 ```
 
-preserve09373495d44d7ae6
+preserve700b46e4ca1da8f4
 
 
 
@@ -533,8 +533,6 @@ Where are biggest increases?
 # OA by country with author groups
 
 ```r
-author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
-
 oa_per_affiliation <- paper_oa_flag %>%
   select(-SDG_label) %>%
   left_join(author_paper_affiliations_w_groups) %>%
@@ -588,7 +586,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preservefc63ab9337f05e58
+preserve58cf218da2eb2501
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -696,6 +694,40 @@ oa_per_affil_firsts <- oa_per_affiliation %>%
   collect()
 ```
 
+New approach by sampling based on country. Sampling could be avoided, if the 
+"proper countries" df was in spark. Then could aggregate directly.
+
+
+
+```r
+oa_per_country_sampled <- oa_per_affiliation %>% 
+  filter(author_position == "first_author", year %in% 2015:2018) 
+  
+
+oa_per_country_sampled_local <- sdf_sample(oa_per_country_sampled,
+                                           fraction = .1, replacement = FALSE, 
+                                           seed = 7634876) %>% 
+  select(SDG_label, is_oa, country) %>% 
+  collect()
+```
+
+
+
+```r
+oa_per_country_sampled_local %>% 
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
+  group_by(SDG_label, region) %>% 
+  count(is_oa) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  ggplot(aes(prop, region, fill = is_oa)) +
+  geom_col() +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after =  3)),
+             nrow = 2) +
+  theme(legend.position = c(.8, .2))
+```
+
+![](00-oa-exploration_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+
 
 
 ```r
@@ -711,6 +743,9 @@ TODO here:
 do not visualise countries with boxplot, but sample from the data and plot, or
 use dbplot variante.
 
+  Actually: this are two distinct things. One shows how countries vary in a given
+  regions, the other shows, how the total of the regions compares.
+
 
 -----------------------
 
@@ -725,7 +760,7 @@ oa_per_affil_firsts_w_groups %>%
   geom_boxplot()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 
 
@@ -748,7 +783,7 @@ oa_per_affil_firsts_w_groups %>%
 ## notch went outside hinges. Try setting notch=FALSE.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 This has the issue of treating Bermuda and USA equally (one data point in north
 america).
@@ -768,7 +803,7 @@ oa_per_affil_firsts_w_groups %>%
 ## `summarise()` has grouped output by 'region'. You can override using the `.groups` argument.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 
 ```r
@@ -784,7 +819,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 to develop further: how to visualise country differences?
 issue: low counts for many countries. maybe filter them out, maybe increase year
