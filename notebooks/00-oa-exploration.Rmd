@@ -308,7 +308,7 @@ p1 +
   labs(colour = "World region")
 ```
 
-```{r}
+```{r, dpi=150}
 plotly::ggplotly(p1)
 ```
 
