@@ -278,7 +278,7 @@ oa_with_r_d_gdp %>%
 ```
 
 
-```{r oa_sdg_per_country_gdp_p_cap, fig.width=12, fig.height=8}
+```{r oa_sdg_per_country_gdp_p_cap, fig.width=9}
 oa_with_gdp_per_cap <- oa_per_country %>%
   left_join(wb_local, by = c("country" = "country_code")) %>%
   select(-indicator_name) %>%
@@ -287,25 +287,43 @@ oa_with_gdp_per_cap <- oa_per_country %>%
   drop_na() %>%
   filter(is_oa)
 
-oa_with_gdp_per_cap %>%
+p <- oa_with_gdp_per_cap %>%
   filter(sum_frac_total >= 100) %>%
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
-  geom_point(aes(size = sum_frac_total, colour = sum_frac_total)) +
-  geom_smooth(alpha = .3) +
-  ggrepel::geom_text_repel(aes(label = country_name), seed = 66324613) +
+  geom_point(aes(size = sum_frac_total)) +
   labs(x = "GDP per capita", y = "% of publications which are OA",
-       colour = "# of publications", size = "# of publications") +
+       size = "# of publications") +
   scale_size_continuous(trans = "sqrt", labels = scales::comma) +
   scale_y_continuous(labels = scales::percent) +
-  scale_x_log10(breaks = c(1e+03, 5e+03, 1e+04, 5e+04, 1e+05),
+  scale_x_log10(breaks = c(1e+03, 2e+03, 5e+03, 1e+04, 2e+04, 5e+04, 1e+05),
                 labels = scales::comma) +
+  theme_bw() 
+
+p1 <- p +
+  aes(colour = region)
+p1 +
+    geom_smooth(aes(colour = NULL), alpha = .3, show.legend = FALSE,
+                colour = "grey30") +
+  labs(colour = "World region")
+```
+
+```{r}
+plotly::ggplotly(p1)
+```
+
+
+```{r, fig.width=12, fig.height=8}
+p + 
+  geom_smooth(alpha = .3, show.legend = FALSE) +
+  aes(colour  = sum_frac_total) +
+  ggrepel::geom_text_repel(aes(label = country_name, colour = NULL),
+                           seed = 66324613) +
   scale_colour_viridis_c(
     trans = "log", 
     # https://stackoverflow.com/a/20901094/3149349
     labels = scales::trans_format("identity", 
-                                  format = function(x) scales::comma(round(x)))) +
-  theme_bw() 
-  
+                                  format = function(x) scales::comma(round(x)))) 
 ```
 
 
