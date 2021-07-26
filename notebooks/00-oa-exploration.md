@@ -309,7 +309,7 @@ p1 +
 plotly::ggplotly(p1)
 ```
 
-preserve3e5e1492332a70d5
+preserve09373495d44d7ae6
 
 
 
@@ -419,36 +419,62 @@ oa_with_gdp_per_cap <- oa_per_country_year %>%
 ```
 
 
+
 ```r
-oa_with_gdp_per_cap %>%
+pdata <- oa_with_gdp_per_cap %>%
   group_by(country) %>% 
   mutate(all_in = all(sum_frac_total > 100)) %>% 
   filter(all_in) %>% 
-  # filter(sum_frac_total >= 100) %>%
-  ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
-  geom_point(aes(size = sum_frac_total, colour = sum_frac_total)) +
-  geom_smooth(alpha = .3) +
-  ggrepel::geom_text_repel(aes(label = country_name), seed = 66324613) +
-  labs(x = "GDP per capita", y = "% of publications which are OA",
-       colour = "# of publications", size = "# of publications") +
-  scale_size_continuous(trans = "sqrt", labels = scales::comma) +
-  scale_y_continuous(labels = scales::percent) +
-  scale_x_log10(breaks = c(1e+03, 5e+03, 1e+04, 5e+04, 1e+05),
-                labels = scales::comma) +
-  scale_colour_viridis_c(
-    trans = "log", 
-    # https://stackoverflow.com/a/20901094/3149349
-    labels = scales::trans_format("identity", 
-                                  format = function(x) scales::comma(round(x)))) +
-  theme_bw() +
-  facet_wrap(vars(year_bucket), nrow = 2)
+  ungroup() %>% 
+  select(country, year_bucket, prop_oa,
+         gdp = NY.GDP.PCAP.KD) %>% 
+  pivot_wider(names_from = year_bucket, values_from = c(prop_oa, gdp)) %>% 
+  mutate(oa_increase = if_else(`prop_oa_2009-2013` < `prop_oa_2014-2018`, TRUE,
+                               FALSE),
+         oa_diff = `prop_oa_2014-2018` - `prop_oa_2009-2013`) %>% 
+  left_join(proper_countries, by = c("country" = "country_code"))
 ```
 
-```
-## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
+
+
+```r
+pdata %>% 
+  ggplot(aes(oa_diff, fct_reorder(region, oa_diff))) +
+  geom_boxplot(outlier.alpha = 0, width = .7) +
+  geom_jitter(height = .11) +
+  scale_x_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
+  labs(x = "Percentage point increase in OA publications", 
+       y = NULL,
+       title = "Change in OA publication propensity across regions",
+       subtitle = "Time window: 2009-2013 vs 2014-2018") +
+  theme_bw()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+
+
+```r
+pdata %>% 
+  ggplot(
+    aes(oa_diff, 
+        factor(income_group, 
+               levels = c("Low income", "Lower middle income",
+                          "Upper middle income", "High income"))
+        )
+    ) +
+  geom_boxplot(outlier.alpha = 0, width = .7) +
+  geom_jitter(height = .11) +
+  scale_x_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
+  labs(x = "Percentage point increase in OA publications", 
+       y = NULL,
+       title = "Change in OA publication propensity across income groups",
+       subtitle = "Time window: 2009-2013 vs 2014-2018") +
+  theme_bw()
+```
+
+![](00-oa-exploration_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+
+
 
 
 
@@ -482,7 +508,7 @@ p +
   aes(colour = oa_increase)
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 Only very few countries dropping in terms of OA.
 
@@ -496,7 +522,7 @@ p +
   theme(legend.position = "top") 
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 Where are biggest increases?
 
@@ -562,7 +588,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preserve8aa417b7b209f9c0
+preservefc63ab9337f05e58
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -699,7 +725,7 @@ oa_per_affil_firsts_w_groups %>%
   geom_boxplot()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 
@@ -722,7 +748,7 @@ oa_per_affil_firsts_w_groups %>%
 ## notch went outside hinges. Try setting notch=FALSE.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 This has the issue of treating Bermuda and USA equally (one data point in north
 america).
@@ -742,7 +768,7 @@ oa_per_affil_firsts_w_groups %>%
 ## `summarise()` has grouped output by 'region'. You can override using the `.groups` argument.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 
 ```r
@@ -758,7 +784,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 to develop further: how to visualise country differences?
 issue: low counts for many countries. maybe filter them out, maybe increase year
