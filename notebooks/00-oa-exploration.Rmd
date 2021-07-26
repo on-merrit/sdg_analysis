@@ -372,12 +372,52 @@ oa_with_gdp_per_cap %>%
   facet_wrap(vars(year_bucket), nrow = 2)
 ```
 
-things to do here: 
 
-- visualise with arrows:
-  - only need this: https://stackoverflow.com/questions/38008863/how-to-draw-a-nice-arrow-in-ggplot2
-  - need x and y from first bucket, xend and yend from second bucket
-  - everyone will go up, so maybe show relative to mean increase?
+```{r, fig.height=7, fig.width=10}
+pdata <- oa_with_gdp_per_cap %>%
+  group_by(country) %>% 
+  mutate(all_in = all(sum_frac_total > 100)) %>% 
+  filter(all_in) %>% 
+  ungroup() %>% 
+  select(country_name, year_bucket, prop_oa,
+         gdp = NY.GDP.PCAP.KD) %>% 
+  arrange(country_name) %>% 
+  pivot_wider(names_from = year_bucket, values_from = c(prop_oa, gdp)) %>% 
+  mutate(oa_increase = if_else(`prop_oa_2009-2013` < `prop_oa_2014-2018`, TRUE,
+                               FALSE),
+         oa_diff = `prop_oa_2014-2018` - `prop_oa_2009-2013`)
+  
+
+p <- ggplot(pdata, aes(x = `gdp_2009-2013`, y = `prop_oa_2009-2013`,
+             xend = `gdp_2014-2018`, yend = `prop_oa_2014-2018`)) +
+  geom_segment(arrow = arrow(length = unit(.15, "inches")),
+               lineend = "round", linejoin = "round",
+               size = 1) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10(breaks = c(1e+03, 5e+03, 1e+04, 5e+04, 1e+05),
+                labels = scales::comma) +
+  theme_bw() +
+  labs(x = "GDP per capita", y = "% of publications which are OA")
+
+p +
+  aes(colour = oa_increase)
+```
+
+Only very few countries dropping in terms of OA.
+
+```{r, fig.height=7, fig.width=11}
+p +
+  aes(colour = oa_diff*100) +
+  scale_color_gradient2(mid = "grey75", low = "red") +
+  labs(colour = "Change in percentage points",
+       title = "Change in OA from 2009-2013 to 2014-2018") +
+  theme(legend.position = "top") 
+```
+
+Where are biggest increases?
+
+- No clear picture. Increases at the top of OA % are lower. 
+- Some LIC made big jumps, but not all of them. Big jumps also happening in HIC.
 
 
 # OA by country with author groups
