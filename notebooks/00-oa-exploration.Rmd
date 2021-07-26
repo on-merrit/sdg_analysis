@@ -326,6 +326,45 @@ p +
                                   format = function(x) scales::comma(round(x)))) 
 ```
 
+### split by SDG
+```{r}
+oa_per_country_per_SDG <- oa_per_affiliation_selected %>%
+  group_by(country, SDG_label, is_oa) %>%
+  summarise(sum_frac_oa = sum(frac_count)) %>%
+  mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
+         sum_frac_total = sum(sum_frac_oa)) %>%
+  collect()
+
+oa_sdg__with_gdp_per_cap <- oa_per_country_per_SDG %>%
+  left_join(wb_local, by = c("country" = "country_code")) %>%
+  select(-indicator_name) %>%
+  filter(indicator_code %in% c("NY.GDP.PCAP.KD")) %>%
+  pivot_wider(names_from = indicator_code, values_from = value) %>%
+  drop_na() %>%
+  filter(is_oa)
+```
+
+```{r, fig.height=6, fig.width=9}
+oa_sdg__with_gdp_per_cap %>%
+  filter(sum_frac_total >= 100) %>%
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
+  ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
+  geom_point(aes(size = sum_frac_total, colour = region)) +
+  geom_smooth(alpha = .3, show.legend = FALSE, colour = "grey30") +
+  labs(x = "GDP per capita", y = "% of publications which are OA",
+       colour = "World region", size = "# of publications") +
+  scale_size_continuous(trans = "sqrt", labels = scales::comma) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_log10(breaks = c(1e+03, 2e+03, 5e+03, 1e+04, 2e+04, 5e+04, 1e+05),
+                labels = scales::comma) +
+  theme_bw() +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3)), nrow = 2) +
+  theme(legend.position = c(.8, .2))
+```
+
+Pattern is stable across all three SDGs. 
+
+Maybe reposition the legend here: https://stackoverflow.com/questions/52060601/ggplot-multiple-legends-arrangement
 
 ```{r}
 make_buckets <- function(df) {
