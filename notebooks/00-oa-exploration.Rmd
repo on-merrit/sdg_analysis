@@ -645,10 +645,17 @@ oa_per_country_sampled <- oa_per_affiliation %>%
   
 
 oa_per_country_sampled_local <- sdf_sample(oa_per_country_sampled,
-                                           fraction = .1, replacement = FALSE, 
+                                           fraction = .5, replacement = FALSE, 
                                            seed = 7634876) %>% 
   select(SDG_label, is_oa, country) %>% 
   collect()
+
+oa_per_region_summarised <- oa_per_country_sampled_local %>% 
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
+  group_by(SDG_label, region) %>% 
+  summarise(mean_oa = mean(is_oa)) %>% 
+  drop_na()
+
 ```
 
 
@@ -716,16 +723,24 @@ oa_per_affil_firsts_w_groups %>%
   geom_line()
 ```
 
-```{r}
+```{r, fig.height=7, fig.width=7}
 oa_per_affil_firsts_w_groups %>% 
   filter(!is.na(region)) %>% 
   group_by(region, SDG_label) %>% 
-  ggplot(aes(region, prop_oa, colour = region, group = region, size = n_papers)) +
-  geom_beeswarm() +
+  ggplot(aes(region, prop_oa)) +
+  # geom_point(data = tibble(region = "South Asia", y = .5), 
+  #            aes(x = region, y = y, shape = "black"), show.legend = TRUE,
+  #            shape = 18) +
+  geom_beeswarm(aes(colour = region, group = region, size = n_papers),
+                show.legend = FALSE) +
+  geom_point(data = oa_per_region_summarised, colour = "grey10",
+             aes(y = mean_oa), size = 4,
+             shape = 18, show.legend = FALSE) +
+  scale_size_continuous(trans = "sqrt") +
   scale_y_continuous(labels = scales::percent) +
-  facet_wrap(vars(SDG_label)) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  facet_wrap(vars(SDG_label), nrow = 2) +
+  theme(legend.position = c(.8, .1),
+        axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1)) +
   labs(x = NULL, y = "% of papers which are OA")
 
 ```
