@@ -309,7 +309,7 @@ p1 +
 plotly::ggplotly(p1)
 ```
 
-preservee5981ca8d9a6c330
+preservef897a2cbedb9b277
 
 
 
@@ -586,7 +586,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preserve549436630764b7f8
+preserve43b488b15eeb9586
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
