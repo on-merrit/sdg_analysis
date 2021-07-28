@@ -668,7 +668,12 @@ oa_per_region_summarised %>%
 
 ```{r}
 oa_per_affil_firsts_w_groups <- oa_per_affil_firsts %>% 
-  left_join(proper_countries, by = c("country" = "country_code"))
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
+  filter(!is.na(income_group)) %>% 
+  mutate(income_group = fct_relevel(income_group, "High income", 
+                                    "Upper middle income", 
+                                    "Lower middle income", "Low income"),
+         SDG_label = fct_relevel(SDG_label, "SDG_13", after = 3))
 ```
 
 
@@ -687,10 +692,6 @@ use dbplot variante.
 
 ```{r}
 oa_per_affil_firsts_w_groups %>% 
-  filter(!is.na(income_group)) %>% 
-  mutate(income_group = fct_relevel(income_group, "High income", 
-                                    "Upper middle income", 
-                                    "Lower middle income", "Low income")) %>% 
   ggplot(aes(SDG_label, prop_oa, fill = income_group)) +
   geom_boxplot()
 ```
@@ -718,12 +719,7 @@ oa_per_affil_firsts_w_groups %>%
 
 ```{r, fig.height=7, fig.width=7}
 oa_per_affil_firsts_w_groups %>% 
-  filter(!is.na(region)) %>% 
-  group_by(region, SDG_label) %>% 
   ggplot(aes(region, prop_oa)) +
-  # geom_point(data = tibble(region = "South Asia", y = .5), 
-  #            aes(x = region, y = y, shape = "black"), show.legend = TRUE,
-  #            shape = 18) +
   geom_beeswarm(aes(colour = region, group = region, size = n_papers),
                 show.legend = FALSE, alpha = .6) +
   geom_point(data = oa_per_region_summarised, colour = "grey10",
@@ -731,17 +727,58 @@ oa_per_affil_firsts_w_groups %>%
              shape = 18, show.legend = FALSE) +
   scale_size_continuous(trans = "sqrt") +
   scale_y_continuous(labels = scales::percent) +
-  facet_wrap(vars(SDG_label), nrow = 2) +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3)), nrow = 2) +
   theme_bw() +
   theme(legend.position = c(.8, .1),
         axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1)) +
   labs(x = NULL, y = "% of papers which are OA")
-
 ```
 
 This figure is good to go in terms of setup. Add manual indication of what the diamond
 means with inkscape or similar.
 
+
+Results:
+
+- sub saharan africa higher in SDG 3, but not in others. 
+- Europe highest in SDG 13
+- Asia, middle east and northern africa always lowest
+  - why this divide between sub saharan africa and northern africa & middle east?
+
+
+Now by income group
+
+```{r}
+oa_per_income_summarised <- oa_per_affiliation %>% 
+  filter(author_position == "first_author", year %in% 2015:2018) %>% 
+  left_join(wb_countries_spark, by = c("country" = "Country_Code")) %>% 
+  group_by(SDG_label, Income_Group) %>% 
+  summarise(prop_oa = mean(as.numeric(is_oa))) %>% 
+  collect() %>% 
+  drop_na(Income_Group) %>% 
+  rename(income_group = Income_Group)
+```
+
+```{r, fig.height=7, fig.width=7}
+oa_per_affil_firsts_w_groups %>% 
+  ggplot(aes(income_group, prop_oa)) +
+  geom_beeswarm(aes(colour = income_group, group = income_group,
+                    size = n_papers),
+                show.legend = FALSE, alpha = .6) +
+  geom_point(data = oa_per_income_summarised, colour = "grey10",
+             aes(y = prop_oa), size = 3.5,
+             shape = 18, show.legend = FALSE) +
+  scale_size_continuous(trans = "sqrt") +
+  scale_y_continuous(labels = scales::percent) +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3)), nrow = 2) +
+  theme_bw() +
+  theme(legend.position = c(.8, .1),
+        axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1)) +
+  labs(x = NULL, y = "% of papers which are OA")
+```
+
+- LIC higher, except for SDG 13
+- MIC always lower than rest.
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
