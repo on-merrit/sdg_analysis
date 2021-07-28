@@ -1,7 +1,7 @@
 ---
 title: "OA Overview"
 author: "Thomas Klebel"
-date: "26 July, 2021"
+date: "28 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -309,7 +309,7 @@ p1 +
 plotly::ggplotly(p1)
 ```
 
-preserve700b46e4ca1da8f4
+preservee5981ca8d9a6c330
 
 
 
@@ -586,7 +586,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preserve58cf218da2eb2501
+preserve549436630764b7f8
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -700,26 +700,23 @@ New approach by sampling based on country. Sampling could be avoided, if the
 
 
 ```r
-oa_per_country_sampled <- oa_per_affiliation %>% 
-  filter(author_position == "first_author", year %in% 2015:2018) 
-  
-
-oa_per_country_sampled_local <- sdf_sample(oa_per_country_sampled,
-                                           fraction = .1, replacement = FALSE, 
-                                           seed = 7634876) %>% 
-  select(SDG_label, is_oa, country) %>% 
-  collect()
+oa_per_region_summarised <- oa_per_affiliation %>% 
+  filter(author_position == "first_author", year %in% 2015:2018) %>% 
+  left_join(wb_countries_spark, by = c("country" = "Country_Code")) %>% 
+  group_by(SDG_label, Region) %>% 
+  summarise(prop_oa = mean(as.numeric(is_oa))) %>% 
+  collect() %>% 
+  drop_na(Region) %>% 
+  rename(region = Region)
 ```
 
 
 
 ```r
-oa_per_country_sampled_local %>% 
-  left_join(proper_countries, by = c("country" = "country_code")) %>% 
-  group_by(SDG_label, region) %>% 
-  count(is_oa) %>% 
-  mutate(prop = n / sum(n)) %>% 
-  ggplot(aes(prop, region, fill = is_oa)) +
+oa_per_region_summarised %>% 
+  mutate(prop_non_oa = 1 - prop_oa) %>% 
+  pivot_longer(starts_with("prop")) %>% 
+  ggplot(aes(value, region, fill = name)) +
   geom_col() +
   facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after =  3)),
              nrow = 2) +
@@ -732,7 +729,12 @@ oa_per_country_sampled_local %>%
 
 ```r
 oa_per_affil_firsts_w_groups <- oa_per_affil_firsts %>% 
-  left_join(proper_countries, by = c("country" = "country_code"))
+  left_join(proper_countries, by = c("country" = "country_code")) %>% 
+  filter(!is.na(income_group)) %>% 
+  mutate(income_group = fct_relevel(income_group, "High income", 
+                                    "Upper middle income", 
+                                    "Lower middle income", "Low income"),
+         SDG_label = fct_relevel(SDG_label, "SDG_13", after = 3))
 ```
 
 
@@ -752,10 +754,6 @@ use dbplot variante.
 
 ```r
 oa_per_affil_firsts_w_groups %>% 
-  filter(!is.na(income_group)) %>% 
-  mutate(income_group = fct_relevel(income_group, "High income", 
-                                    "Upper middle income", 
-                                    "Lower middle income", "Low income")) %>% 
   ggplot(aes(SDG_label, prop_oa, fill = income_group)) +
   geom_boxplot()
 ```
@@ -808,25 +806,73 @@ oa_per_affil_firsts_w_groups %>%
 
 ```r
 oa_per_affil_firsts_w_groups %>% 
-  filter(!is.na(region)) %>% 
-  group_by(region, SDG_label) %>% 
-  ggplot(aes(region, prop_oa, colour = region, group = region, size = n_papers)) +
-  geom_beeswarm() +
+  ggplot(aes(region, prop_oa)) +
+  geom_beeswarm(aes(colour = region, group = region, size = n_papers),
+                show.legend = FALSE, alpha = .6) +
+  geom_point(data = oa_per_region_summarised, colour = "grey10",
+             aes(y = prop_oa), size = 3.5,
+             shape = 18, show.legend = FALSE) +
+  scale_size_continuous(trans = "sqrt") +
   scale_y_continuous(labels = scales::percent) +
-  facet_wrap(vars(SDG_label)) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3)), nrow = 2) +
+  theme_bw() +
+  theme(legend.position = c(.8, .1),
+        axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1)) +
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
 ![](00-oa-exploration_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
-to develop further: how to visualise country differences?
-issue: low counts for many countries. maybe filter them out, maybe increase year
-span.
+This figure is good to go in terms of setup. Add manual indication of what the diamond
+means with inkscape or similar.
 
-one reason for low numbers: authorship positions are associated with country ->
-look at this in detail in 04-sdg-with-whom
+
+Results:
+
+- sub saharan africa higher in SDG 3, but not in others. 
+- Europe highest in SDG 13
+- Asia, middle east and northern africa always lowest
+  - why this divide between sub saharan africa and northern africa & middle east?
+
+
+Now by income group
+
+
+```r
+oa_per_income_summarised <- oa_per_affiliation %>% 
+  filter(author_position == "first_author", year %in% 2015:2018) %>% 
+  left_join(wb_countries_spark, by = c("country" = "Country_Code")) %>% 
+  group_by(SDG_label, Income_Group) %>% 
+  summarise(prop_oa = mean(as.numeric(is_oa))) %>% 
+  collect() %>% 
+  drop_na(Income_Group) %>% 
+  rename(income_group = Income_Group)
+```
+
+
+```r
+oa_per_affil_firsts_w_groups %>% 
+  ggplot(aes(income_group, prop_oa)) +
+  geom_beeswarm(aes(colour = income_group, group = income_group,
+                    size = n_papers),
+                show.legend = FALSE, alpha = .6) +
+  geom_point(data = oa_per_income_summarised, colour = "grey10",
+             aes(y = prop_oa), size = 3.5,
+             shape = 18, show.legend = FALSE) +
+  scale_size_continuous(trans = "sqrt") +
+  scale_y_continuous(labels = scales::percent) +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3)), nrow = 2) +
+  theme_bw() +
+  theme(legend.position = c(.8, .1),
+        axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1)) +
+  labs(x = NULL, y = "% of papers which are OA")
+```
+
+![](00-oa-exploration_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+
+- LIC higher, except for SDG 13
+- MIC always lower than rest.
+
 
 
 
