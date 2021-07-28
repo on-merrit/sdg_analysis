@@ -345,3 +345,255 @@ firsts %>%
 
 ![](04-oa_apcs_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
+
+Same as above, but with zero apcs included into the mean
+
+
+```r
+mean_0_apc_per_affiliation_per_sdg <- step1_apc_prices %>% 
+  mutate(APC_in_dollar = case_when(APC == "FALSE" ~ 0,
+                                   TRUE ~ APC_in_dollar)) %>% 
+  group_by(affiliationid, SDG_label, author_position) %>% 
+  summarise(mean_apc = mean(APC_in_dollar),
+            n_papers = n())
+
+mean_0_apc_per_affiliation_per_sdg_local <- mean_0_apc_per_affiliation_per_sdg %>% 
+  filter(n_papers > 20) %>% 
+  collect()
+```
+
+
+
+```r
+apc_val_affiliation_leiden <- mean_0_apc_per_affiliation_per_sdg_local %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local) %>% 
+  # remove those institutions that are not in leiden ranking
+  filter(!is.na(University), Period == "2015–2018")
+```
+
+```
+## Joining, by = "affiliationid"
+```
+
+```
+## Joining, by = c("University", "Country")
+```
+
+```r
+firsts <- apc_val_affiliation_leiden %>% 
+  filter(author_position == "first_author")
+
+lasts <- apc_val_affiliation_leiden %>% 
+  filter(author_position == "last_author")
+```
+
+
+```r
+labels <- lasts %>% 
+  group_by(SDG_label) %>% 
+  summarise(cor = cor(mean_apc, P_top10)) %>% 
+  mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
+
+lasts %>% 
+  ggplot(aes(P_top10, mean_apc)) +
+  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_smooth(show.legend = FALSE, colour = "grey30") +
+  geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
+  facet_wrap(vars(SDG_label), nrow = 1) +
+  scale_x_log10() +
+  scale_colour_viridis_c(trans = "log10") +
+  theme_bw() +
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
+  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
+       colour = "Number of papers per institution",
+       caption = "Full counting; last authors only; including no APC as '0'")
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+
+
+```r
+labels <- firsts %>% 
+  group_by(SDG_label) %>% 
+  summarise(cor = cor(mean_apc, P_top10)) %>% 
+  mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
+
+firsts %>% 
+  ggplot(aes(P_top10, mean_apc)) +
+  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_smooth(show.legend = FALSE, colour = "grey30") +
+  geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
+  facet_wrap(vars(SDG_label), nrow = 1) +
+  scale_x_log10() +
+  scale_colour_viridis_c(trans = "log10") +
+  theme_bw() +
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
+  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
+       colour = "Number of papers per institution",
+       caption = "Full counting; first authors only; including no APC as '0'")
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+
+
+
+
+
+Visualise time component:
+
+- do quantiles over time, with mean of APC per quantile of Ptop10
+
+
+```r
+cut_quantiles <- function(x) {
+    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE), 
+        labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")), 
+        include.lowest = TRUE)
+}
+
+
+cut_quartiles <- function(x) {
+    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .25), na.rm = TRUE), 
+        labels = {1:4*25} %>% map_chr(~paste("p", . - 25, ., sep = "-")), 
+        include.lowest = TRUE)
+}
+```
+
+
+```r
+apc_time <- papers %>% 
+  # we can only look at journals, since doaj only is for journals
+  # also only look at fairly recent papers
+  # also only look at papers which actually are OA
+  filter(!is.na(journalid), is_oa) %>% 
+  left_join(author_paper_affiliations_w_groups) %>% 
+  left_join(affils) %>% 
+  left_join(journals, by = "journalid") %>% 
+  # need to filter out some NAs, since the journal table seems to be older than
+  # the rest of MAG? at least it does not contain some journals for which we
+  # have papers
+  filter(!is.na(APC), provider_cat != "Repository only") %>% 
+  # keep only last and first authors
+  filter(author_position %in% c("last_author", "first_author"))
+```
+
+```
+## Joining, by = "paperid"
+```
+
+```
+## Joining, by = c("citationcount", "affiliationid")
+```
+
+
+
+```r
+apc_time_summarised <- apc_time %>% 
+  mutate(APC_in_dollar = case_when(APC == "FALSE" ~ 0,
+                                   TRUE ~ APC_in_dollar)) %>% 
+  group_by(affiliationid, SDG_label, year, author_position) %>% 
+  summarise(mean_apc = mean(APC_in_dollar),
+            n_papers = n()) %>% 
+  collect()
+```
+
+
+
+```r
+apc_time_leiden <- apc_time_summarised %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local) %>% 
+  # remove those institutions that are not in leiden ranking
+  filter(!is.na(University), year == as.integer(last_year_of_period)) %>% 
+  mutate(P_top10 = cut_quartiles(P_top10)) %>% 
+  filter(!is.na(P_top10))
+```
+
+```
+## Joining, by = "affiliationid"
+```
+
+```
+## Joining, by = c("University", "Country")
+```
+
+```r
+firsts <- apc_time_leiden %>% 
+  filter(author_position == "first_author")
+
+lasts <- apc_time_leiden %>% 
+  filter(author_position == "last_author")
+```
+
+
+
+```r
+plot_over_time <- function(df, indicator, y_var) {
+  df %>% 
+    group_by(SDG_label, year, {{indicator}}) %>% 
+    mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
+    ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
+    geom_line() +
+    facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
+    #scale_y_log10() +
+    guides(colour = guide_legend(reverse = FALSE)) +
+    labs(x = NULL, y = "Median of APCs in quartile") +
+    theme_bw() +
+    theme(legend.position = "top")
+}
+```
+
+
+
+```r
+firsts %>% 
+  plot_over_time(P_top10, mean_apc) +
+  labs(caption = "First authors; full counting")
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+
+
+
+```r
+lasts %>% 
+  plot_over_time(P_top10, mean_apc) +
+  labs(caption = "Last authors; full counting")
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+
+Only SDG 3 really has a clear picture for the lowest percentile.
+
+
+```r
+firsts %>% 
+  filter(SDG_label == "SDG_3") %>% 
+  plot_over_time(P_top10, mean_apc) +
+  labs(caption = "First authors; full counting")
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+
+
+
+```r
+lasts %>% 
+  filter(SDG_label == "SDG_3") %>% 
+  plot_over_time(P_top10, mean_apc) +
+  labs(caption = "Last authors; full counting")
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+
