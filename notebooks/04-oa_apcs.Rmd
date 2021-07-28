@@ -349,3 +349,87 @@ firsts %>%
        colour = "Number of papers per institution",
        caption = "Full counting; first authors only")
 ```
+
+
+Same as above, but with zero apcs included into the mean
+
+```{r, cache=TRUE}
+mean_0_apc_per_affiliation_per_sdg <- step1_apc_prices %>% 
+  mutate(APC_in_dollar = case_when(APC == "FALSE" ~ 0,
+                                   TRUE ~ APC_in_dollar)) %>% 
+  group_by(affiliationid, SDG_label, author_position) %>% 
+  summarise(mean_apc = mean(APC_in_dollar),
+            n_papers = n())
+
+mean_0_apc_per_affiliation_per_sdg_local <- mean_0_apc_per_affiliation_per_sdg %>% 
+  filter(n_papers > 20) %>% 
+  collect()
+```
+
+
+```{r}
+apc_val_affiliation_leiden <- mean_0_apc_per_affiliation_per_sdg_local %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local) %>% 
+  # remove those institutions that are not in leiden ranking
+  filter(!is.na(University), Period == "2015–2018")
+
+firsts <- apc_val_affiliation_leiden %>% 
+  filter(author_position == "first_author")
+
+lasts <- apc_val_affiliation_leiden %>% 
+  filter(author_position == "last_author")
+```
+
+```{r, fig.width=8, fig.height=5}
+labels <- lasts %>% 
+  group_by(SDG_label) %>% 
+  summarise(cor = cor(mean_apc, P_top10)) %>% 
+  mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
+
+lasts %>% 
+  ggplot(aes(P_top10, mean_apc)) +
+  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_smooth(show.legend = FALSE, colour = "grey30") +
+  geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
+  facet_wrap(vars(SDG_label), nrow = 1) +
+  scale_x_log10() +
+  scale_colour_viridis_c(trans = "log10") +
+  theme_bw() +
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
+  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
+       colour = "Number of papers per institution",
+       caption = "Full counting; last authors only; including no APC as '0'")
+```
+
+```{r, fig.width=8, fig.height=5}
+labels <- firsts %>% 
+  group_by(SDG_label) %>% 
+  summarise(cor = cor(mean_apc, P_top10)) %>% 
+  mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
+
+firsts %>% 
+  ggplot(aes(P_top10, mean_apc)) +
+  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_smooth(show.legend = FALSE, colour = "grey30") +
+  geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
+  facet_wrap(vars(SDG_label), nrow = 1) +
+  scale_x_log10() +
+  scale_colour_viridis_c(trans = "log10") +
+  theme_bw() +
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
+  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
+       colour = "Number of papers per institution",
+       caption = "Full counting; first authors only; including no APC as '0'")
+```
+
+
+
+
+
+Visualise time component:
+
+- do correlations over time
+- do quantiles over time
+
