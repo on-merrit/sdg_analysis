@@ -68,6 +68,9 @@ leiden <- spark_read_csv(sc,
                          name = "leiden")
 
 wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
+wb_countries_spark <- spark_read_csv(
+  sc,  "/user/tklebel/sdg/data/world_bank_countries.csv",
+  name = "WBCountries")
 
 message("Successfully read all datasets!")
 ```
@@ -640,32 +643,22 @@ New approach by sampling based on country. Sampling could be avoided, if the
 
 
 ```{r}
-oa_per_country_sampled <- oa_per_affiliation %>% 
-  filter(author_position == "first_author", year %in% 2015:2018) 
-  
-
-oa_per_country_sampled_local <- sdf_sample(oa_per_country_sampled,
-                                           fraction = .5, replacement = FALSE, 
-                                           seed = 7634876) %>% 
-  select(SDG_label, is_oa, country) %>% 
-  collect()
-
-oa_per_region_summarised <- oa_per_country_sampled_local %>% 
-  left_join(proper_countries, by = c("country" = "country_code")) %>% 
-  group_by(SDG_label, region) %>% 
-  summarise(mean_oa = mean(is_oa)) %>% 
-  drop_na()
-
+oa_per_region_summarised <- oa_per_affiliation %>% 
+  filter(author_position == "first_author", year %in% 2015:2018) %>% 
+  left_join(wb_countries_spark, by = c("country" = "Country_Code")) %>% 
+  group_by(SDG_label, Region) %>% 
+  summarise(prop_oa = mean(as.numeric(is_oa))) %>% 
+  collect() %>% 
+  drop_na(Region) %>% 
+  rename(region = Region)
 ```
 
 
 ```{r}
-oa_per_country_sampled_local %>% 
-  left_join(proper_countries, by = c("country" = "country_code")) %>% 
-  group_by(SDG_label, region) %>% 
-  count(is_oa) %>% 
-  mutate(prop = n / sum(n)) %>% 
-  ggplot(aes(prop, region, fill = is_oa)) +
+oa_per_region_summarised %>% 
+  mutate(prop_non_oa = 1 - prop_oa) %>% 
+  pivot_longer(starts_with("prop")) %>% 
+  ggplot(aes(value, region, fill = name)) +
   geom_col() +
   facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after =  3)),
              nrow = 2) +
@@ -732,25 +725,24 @@ oa_per_affil_firsts_w_groups %>%
   #            aes(x = region, y = y, shape = "black"), show.legend = TRUE,
   #            shape = 18) +
   geom_beeswarm(aes(colour = region, group = region, size = n_papers),
-                show.legend = FALSE) +
+                show.legend = FALSE, alpha = .6) +
   geom_point(data = oa_per_region_summarised, colour = "grey10",
-             aes(y = mean_oa), size = 4,
+             aes(y = prop_oa), size = 3.5,
              shape = 18, show.legend = FALSE) +
   scale_size_continuous(trans = "sqrt") +
   scale_y_continuous(labels = scales::percent) +
   facet_wrap(vars(SDG_label), nrow = 2) +
+  theme_bw() +
   theme(legend.position = c(.8, .1),
         axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1)) +
   labs(x = NULL, y = "% of papers which are OA")
 
 ```
 
-to develop further: how to visualise country differences?
-issue: low counts for many countries. maybe filter them out, maybe increase year
-span.
+This figure is good to go in terms of setup. Add manual indication of what the diamond
+means with inkscape or similar.
 
-one reason for low numbers: authorship positions are associated with country ->
-look at this in detail in 04-sdg-with-whom
+
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
