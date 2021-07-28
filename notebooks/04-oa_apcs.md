@@ -1,7 +1,7 @@
 ---
 title: "Relationship between OA publishing, APCs and IF"
 author: "Thomas Klebel"
-date: "23 July, 2021"
+date: "28 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -24,7 +24,7 @@ step1 <- papers %>%
   # need to filter out some NAs, since the journal table seems to be older than
   # the rest of MAG? at least it does not contain some journals for which we
   # have papers
-  filter(!is.na(APC)) %>% 
+  filter(!is.na(APC), provider_cat != "Repository only") %>% 
   group_by(authorid, paperid) %>% 
   mutate(frac_value = 1/n()) 
 ```
@@ -188,7 +188,7 @@ p2 <- apc_affiliation_leiden %>%
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between institutional prestige (2015-2018) and\nwhether APCs are ionvolved or not",
+       title = "Association between institutional prestige (2015-2018) and\nwhether APCs are involved or not",
        caption = "Fractional counting")
 p2
 ```
@@ -232,7 +232,7 @@ step1_apc_prices <- papers %>%
   # need to filter out some NAs, since the journal table seems to be older than
   # the rest of MAG? at least it does not contain some journals for which we
   # have papers
-  filter(!is.na(APC)) %>% 
+  filter(!is.na(APC), provider_cat != "Repository only") %>% 
   # keep only last and first authors
   filter(author_position %in% c("last_author", "first_author"))
 ```
@@ -344,3 +344,4 @@ firsts %>%
 ```
 
 ![](04-oa_apcs_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+
