@@ -101,12 +101,11 @@ collaboration_by_country <- collaborative_papers_filtered %>%
 collaborative_countries <- collaboration_by_country %>% 
   left_join(wb_countries_selected, by = c("country" = "Country Code"))
 
-# # why did we do this, if we are anyways aggregating?
-# # only keep countries where each position has at least 5 papers
-# collaborative_countries <- collaborative_countries %>% 
-#   group_by(country) %>% 
-#   mutate(include = all(n >= 5)) %>% 
-#   ungroup()
+# create flag for only keeping countries where each position has at least 5 papers
+collaborative_countries <- collaborative_countries %>%
+  group_by(country) %>%
+  mutate(include = all(n >= 5)) %>%
+  ungroup()
 ```
 
 ```{r}
