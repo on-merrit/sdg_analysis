@@ -1,7 +1,7 @@
 ---
 title: "SDG OA author characteristics"
 author: "Thomas Klebel"
-date: "13 July, 2021"
+date: "29 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -292,7 +292,7 @@ affil_leiden_key <- read_csv2(
 ```
 
 ```
-## ℹ Using '\',\'' as decimal and '\'.\'' as grouping mark. Use `read_delim()` for more control.
+## ℹ Using "','" as decimal and "'.'" as grouping mark. Use `read_delim()` for more control.
 ```
 
 ```
@@ -696,7 +696,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserve03c555317fc9caec
+preserveea0b559f251fbd77
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -887,8 +887,8 @@ papers_p_author %>%
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
 ## 1 female    0.484        3.40
-## 2 unknown   0.449        2.53
-## 3 male      0.472        4.75
+## 2 male      0.472        4.75
+## 3 unknown   0.449        2.53
 ## 4 <NA>     NA          199
 ```
 
@@ -915,9 +915,9 @@ papers_p_author %>%
 ## # Source: spark<?> [?? x 3]
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
-## 1 unknown   0.419        6.40
+## 1 female    0.462        6.82
 ## 2 male      0.439        9.65
-## 3 female    0.462        6.82
+## 3 unknown   0.419        6.40
 ## 4 <NA>     NA          199
 ```
 
@@ -1098,9 +1098,9 @@ pdata %>%
 ## # A tibble: 3 x 2
 ##   gender      n
 ##   <chr>   <int>
-## 1 female     46
-## 2 male      185
-## 3 unknown    84
+## 1 female     54
+## 2 male      175
+## 3 unknown    77
 ```
 
 
@@ -1181,7 +1181,7 @@ plotly::ggplotly(p)
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-preservebcfd4e228e4fe15f
+preservec38a387b6f9835f2
 
 
 
