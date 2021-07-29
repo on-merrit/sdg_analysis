@@ -3,7 +3,7 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "12 July, 2021"
+date: "29 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -65,7 +65,7 @@ p <- fos_counts %>%
 plotly::ggplotly(p)
 ```
 
-preserveb92394b97d291776
+preserve9081c1b5a495db5c
 
 We can observe a slight upward trend, that could be attributable to the overall
 growth of research.
@@ -377,7 +377,7 @@ affil_leiden_key <- read_csv2(
 ```
 
 ```
-## ℹ Using '\',\'' as decimal and '\'.\'' as grouping mark. Use `read_delim()` for more control.
+## ℹ Using "','" as decimal and "'.'" as grouping mark. Use `read_delim()` for more control.
 ```
 
 ```
