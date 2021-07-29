@@ -66,3 +66,5 @@ cut_quantiles <- function(x) {
       labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")),
       include.lowest = TRUE)
 }
+
+fix_sdg <- function(x) fct_relevel(x, "SDG_13", after = 3)
