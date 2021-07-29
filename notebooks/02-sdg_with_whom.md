@@ -22,14 +22,14 @@ Are we dealing in any way with authors having multiple affiliations?
 author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
 
 collaborative_papers <- papers %>% 
-  select(paperid, year) %>% 
+  select(paperid, year, SDG_label) %>% 
   left_join(author_paper_affiliations_w_groups) %>% 
   left_join(affils) %>% 
   group_by(paperid) %>% 
   # check if we have country for all authors
   mutate(country_available = sum(as.numeric(is.na(country))) == 0) %>% 
   filter(country_available, paper_author_cat == "multi") %>% 
-  select(paperid, year, country, paper_author_cat, author_position)
+  select(paperid, year, country, paper_author_cat, author_position, SDG_label)
 ```
 
 ```
@@ -60,7 +60,7 @@ collaborative_papers_filtered <- collaborative_papers %>%
 
 ```r
 collaboration_by_country <- collaborative_papers_filtered %>% 
-  group_by(country) %>% 
+  group_by(country, SDG_label) %>% 
   count(author_position) %>% 
   collect()
 
@@ -68,10 +68,10 @@ collaboration_by_country <- collaborative_papers_filtered %>%
 collaborative_countries <- collaboration_by_country %>% 
   left_join(wb_countries_selected, by = c("country" = "Country Code"))
 
-# only keep countries where each position has at least 5 papers
-collaborative_countries <- collaborative_countries %>% 
-  group_by(country) %>% 
-  mutate(include = all(n >= 5)) %>% 
+# create flag for only keeping countries where each position has at least 5 papers
+collaborative_countries <- collaborative_countries %>%
+  group_by(country) %>%
+  mutate(include = all(n >= 5)) %>%
   ungroup()
 ```
 
@@ -80,7 +80,7 @@ collaborative_countries <- collaborative_countries %>%
 # then plot by income region and geographical region
 plot_countries <- function(df, facet) {
   pdata <- df %>% 
-    group_by({{facet}}) %>% 
+    group_by(SDG_label, {{facet}}) %>% 
     add_proportion(n, order_var = author_position,
                    order_string = "first") %>% 
     drop_na() %>% 
@@ -91,20 +91,24 @@ plot_countries <- function(df, facet) {
     ggplot(aes(fct_reorder({{facet}}, order), prop)) +
     geom_col(width = .7) +
     scale_y_continuous(labels = scales::percent) +
-    facet_wrap(vars(fct_rev(author_position)), nrow = 2, scales = "free_x") +
+    facet_grid(rows = vars(fct_rev(author_position)),
+               cols = vars(fix_sdg(SDG_label))) +
+    # facet_wrap(vars(fct_rev(author_position)), nrow = 2, scales = "free_x") +
     coord_flip() +
     labs(x = NULL, y = "% of authorship positions", fill = NULL,
          caption = "Only considering papers with at least three authors\nand with affiliations from at least two distinct countries.") +
     theme(legend.position = "top") +
     guides(fill = guide_legend(reverse = TRUE))
 }
+```
 
 
+```r
 plot_countries(collaborative_countries, Region) +
   labs(title = "Authorship positions by geographic region")
 ```
 
-![](02-sdg_with_whom_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+![](02-sdg_with_whom_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 
 ```r
@@ -112,7 +116,7 @@ plot_countries(collaborative_countries, `Income Group`) +
   labs(title = "Authorship positions by country income")
 ```
 
-![](02-sdg_with_whom_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](02-sdg_with_whom_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
 Overall, there are no big differences. The hypothesis that LIC are driven 
 towards certain positions is not clearly observable from this view. This might be
@@ -134,7 +138,7 @@ p <- collaborative_countries %>%
 plotly::ggplotly(p)
 ```
 
-preserve45acdf2c7238df36
+preserve2b6d2268ca602691
 This again is only considering papers with at least three authors and countries
 with at least 5 papers per position.
 
@@ -147,7 +151,7 @@ collaborative_countries %>%
   facet_wrap(vars(Region), scales = "free_y", ncol = 2)
 ```
 
-![](02-sdg_with_whom_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](02-sdg_with_whom_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 
 # Remaining questions to cover
