@@ -1,7 +1,7 @@
 ---
 title: "Who collaborates with whom?"
 author: "Thomas Klebel"
-date: "12 July, 2021"
+date: "29 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -13,6 +13,8 @@ output:
 Q: How are authorship roles distributed with international collaborations?
 
 Only take into account papers with more than one country on it.
+
+Are we dealing in any way with authors having multiple affiliations?
 
 
 
@@ -38,9 +40,26 @@ collaborative_papers <- papers %>%
 ## Joining, by = "affiliationid"
 ```
 
+```r
+collaborative_n <- collaborative_papers %>% 
+  distinct(paperid, country) %>% 
+  group_by(paperid) %>% 
+  count() %>% 
+  mutate(cross_country = n > 1)
+
+collaborative_papers_filtered <- collaborative_papers %>% 
+  left_join(collaborative_n) %>% 
+  filter(cross_country) %>% 
+  select(-n, -cross_country)
+```
+
+```
+## Joining, by = "paperid"
+```
+
 
 ```r
-collaboration_by_country <- collaborative_papers %>% 
+collaboration_by_country <- collaborative_papers_filtered %>% 
   group_by(country) %>% 
   count(author_position) %>% 
   collect()
@@ -69,12 +88,13 @@ plot_countries <- function(df, facet) {
                                          after = 2))
   
   pdata %>% 
-    ggplot(aes(fct_reorder({{facet}}, order), prop, fill = author_position)) +
+    ggplot(aes(fct_reorder({{facet}}, order), prop)) +
     geom_col(width = .7) +
     scale_y_continuous(labels = scales::percent) +
+    facet_wrap(vars(fct_rev(author_position)), nrow = 2, scales = "free_x") +
     coord_flip() +
     labs(x = NULL, y = "% of authorship positions", fill = NULL,
-         caption = "Only considering papers with at least three authors.") +
+         caption = "Only considering papers with at least three authors\nand with affiliations from at least two distinct countries.") +
     theme(legend.position = "top") +
     guides(fill = guide_legend(reverse = TRUE))
 }
@@ -95,13 +115,13 @@ plot_countries(collaborative_countries, `Income Group`) +
 ![](02-sdg_with_whom_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 Overall, there are no big differences. The hypothesis that LIC are driven 
-towards certain positions is not observable from this view. Maybe this is true
-if we look at papers which have been published in certain journals, i.e. in 
-higher prestige journals. Because the underlying hypothesis would have been:
-authorship positions from LIC for papers led by WEIRD researchers.
+towards certain positions is not clearly observable from this view. This might be
+partly true for last author positions, where high income countries are more prevalent.
+But there is likely two effects going on: collaborations between affiliations from
+countries within a given bracket, and collaboration between brackets.
+Maybe this could be the focus: how are authorship positions distributed
+for collaborations between high income and all other countries?
 
-But maybe this underlying hypothesis is very biased and dismissive of researchers
-from other continents?
 
 
 
@@ -114,7 +134,7 @@ p <- collaborative_countries %>%
 plotly::ggplotly(p)
 ```
 
-preservebb33550992bac420
+preserve45acdf2c7238df36
 This again is only considering papers with at least three authors and countries
 with at least 5 papers per position.
 
