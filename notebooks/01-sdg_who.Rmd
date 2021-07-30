@@ -123,8 +123,13 @@ p <- fos_counts %>%
                 breaks = c(10e+3, 30e+3, 1e+5, 1e+6)) +
   labs(x = NULL, y = "# of papers", colour = NULL,
        title = "Development of SDG areas over time") 
+p
+```
+
+```{r, dpi=120}
 plotly::ggplotly(p)
 ```
+
 
 We can observe a slight upward trend, that could be attributable to the overall
 growth of research.
