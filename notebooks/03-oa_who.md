@@ -696,7 +696,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserveef6f50b8f384ebd3
+preserve3d869f5828efafdf
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -963,5 +963,8 @@ I also checked the above approach (with small differences) for middle authors,
 but there was not difference there. So where does this gap come from? Why do 
 OA papers have lower rates of females as authors, although rates of females for
 first and last positions have little effect?
+
+For the gender rate per paper, we only include papers for which we have gender
+for all authors. Maybe this distorts, i.e. reduces the set considerably?
 
 
