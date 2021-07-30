@@ -1,7 +1,7 @@
 ---
 title: "Relationship between OA publishing, APCs and IF"
 author: "Thomas Klebel"
-date: "28 July, 2021"
+date: "30 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -454,21 +454,6 @@ Visualise time component:
 - do quantiles over time, with mean of APC per quantile of Ptop10
 
 
-```r
-cut_quantiles <- function(x) {
-    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE), 
-        labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")), 
-        include.lowest = TRUE)
-}
-
-
-cut_quartiles <- function(x) {
-    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .25), na.rm = TRUE), 
-        labels = {1:4*25} %>% map_chr(~paste("p", . - 25, ., sep = "-")), 
-        include.lowest = TRUE)
-}
-```
-
 
 ```r
 apc_time <- papers %>% 
@@ -562,7 +547,7 @@ firsts %>%
   labs(caption = "First authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 
 
@@ -572,7 +557,7 @@ lasts %>%
   labs(caption = "Last authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 Only SDG 3 really has a clear picture for the lowest percentile.
 
@@ -584,7 +569,7 @@ firsts %>%
   labs(caption = "First authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 
 
@@ -595,5 +580,5 @@ lasts %>%
   labs(caption = "Last authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
