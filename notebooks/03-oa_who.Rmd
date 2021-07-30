@@ -592,12 +592,12 @@ gender_base <- papers %>%
   left_join(author_paper_affiliations_w_groups) %>% 
   left_join(author_metadata) %>% 
   select(paperid, SDG_label, year, author_position, authorid, 
-         is_oa, paper_author_cat, gender)
+         is_oa, paper_author_cat, gender) %>% 
+  filter(!is.na(is_oa)) # restrict to unpaywall set only
 ```
 
 ```{r}
 gender_rate <- gender_base %>% 
-  filter(!is.na(is_oa)) %>% # restrict to unpaywall set only
   group_by(SDG_label, year, gender) %>% 
   count(is_oa) %>% 
   mutate(prop = n/sum(n)) %>% 
@@ -699,6 +699,52 @@ The reasons for this are probably related with general factors of OA
 publishing, in complex patterns (institutional prestige, funding, academic age,
 country differences, etc.). This is why it would be good to do a full model.
 
+
+
+What to look at now: author position, i.e. whether authors with female first 
+authors have more OA, or with male last authors, etc.
+
+```{r}
+gender_oa_position <- gender_base %>% 
+  filter(paper_author_cat != "single", author_position != "middle_author",
+         gender != "unknown") %>% 
+  select(paperid, SDG_label, year, author_position, is_oa, gender) %>% 
+  group_by(year, SDG_label, author_position, gender) %>% 
+  count(is_oa) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  filter(is_oa) %>% 
+  rename(prop_oa = prop) %>% 
+  collect()
+```
+
+```{r}
+pdata <- gender_oa_position %>% 
+  select(-n) %>% 
+  pivot_wider(names_from = gender, values_from = prop_oa) %>% 
+  mutate(diff_from_male = female - male)
+```
+
+
+```{r}
+pdata %>% 
+  # filter(author_position == "first_author") %>% 
+  ggplot(aes(as_year(year), diff_from_male, colour = fix_sdg(SDG_label))) +
+  geom_line() +
+  geom_point() + 
+  facet_wrap(vars(author_position)) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
+  theme(legend.position = "top") +
+  labs(title = "Difference in OA publishing between genders")
+```
+
+A value of x% means that in that year, the share of papers with women as 
+first/last authors which were published OA is X percentage points higher, e.g.
+male first authors published 50% of their papers OA, females 52% for X = 2.
+
+Why is the difference to the above plot so big? 
+Differences in single authors? This view here only includes papers with at least
+two authors, the above includes all.
 
 
 ```{r shut-down, echo=FALSE, message=FALSE}
