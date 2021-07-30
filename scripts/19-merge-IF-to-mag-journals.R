@@ -159,7 +159,7 @@ all_journals_joined %>%
 #> # A tibble: 4 x 3
 #> name           value   prop
 #> <chr>          <int>  <dbl>
-#> 1 mag_doaj_sjr  3383 0.0690
-#> 2 mag_doaj      6192 0.126
+#> 1 mag_doaj_sjr  3570 0.0728
+#> 2 mag_doaj      6980 0.142
 #> 3 mag_sjr      22220 0.453
 #> 4 mag          49010 1
