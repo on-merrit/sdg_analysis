@@ -661,26 +661,45 @@ gender_ratio_p_paper <- gender_base %>%
   filter(all_genderized) %>% 
   count(gender) %>% 
   mutate(prop = n/sum(n)) %>% 
-  ungroup()
+  ungroup() %>% 
+  filter(gender == "female") %>% 
+  rename(prop_female = prop)
 
-n_rows <- gender_ratio_p_paper %>% count() %>% collect() %>% pull(n)
 
-gender_sample <- gender_ratio_p_paper %>% 
-  sdf_sample(fraction = 1e+6/n_rows, replacement = FALSE, seed = 786243876) %>% 
+gender_oa_papers <- gender_ratio_p_paper %>% 
   left_join(papers) %>% 
   # it could be interesting though to look at this via regression -> then keep
   # more variables
-  select(paperid:prop, year, is_oa, SDG_label) %>% 
-  filter(!is.na(is_oa)) %>% 
-  collect()
-
-
-pdata <- gender_sample %>% 
-  distinct() %>% 
-  pivot_wider(names_from = "gender", values_from = "prop") %>% 
-  mutate(female = case_when(is.na(female) ~ 1 - male,
-                            TRUE ~ female))
+  select(paperid, prop_female, year, is_oa, SDG_label) %>% 
+  filter(!is.na(is_oa))
 ```
+
+```{r}
+gender_by_sdg <- gender_oa_papers %>% 
+  group_by(year, is_oa, SDG_label) %>% 
+  summarise(mean_prop_female = mean(prop_female)) %>% 
+  collect()
+```
+
+```{r}
+gender_by_sdg %>% 
+  ggplot(aes(as_year(year), mean_prop_female, colour = is_oa)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 2) +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1),
+                     limits = c(.45, .60)) +
+  labs(x = NULL, y = "Mean share of female authors on papers") +
+  theme_bw() +
+  theme(legend.position = c(.8, .2))
+```
+
+Very interesting: OA papers generally have a lower share of female authors.
+The reasons for this are probably related with general factors of OA
+publishing, in complex patterns (institutional prestige, funding, academic age,
+country differences, etc.). This is why it would be good to do a full model.
+
+
 
 ```{r}
 pdata %>% 
