@@ -801,6 +801,9 @@ but there was not difference there. So where does this gap come from? Why do
 OA papers have lower rates of females as authors, although rates of females for
 first and last positions have little effect?
 
+For the gender rate per paper, we only include papers for which we have gender
+for all authors. Maybe this distorts, i.e. reduces the set considerably?
+
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
 spark_disconnect(sc)
