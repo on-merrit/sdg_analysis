@@ -72,7 +72,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve44acc8679afc9a50
+preserve9c59c609a39e29c3
 
 
 We can observe a slight upward trend, that could be attributable to the overall
@@ -920,6 +920,81 @@ funder_overview %>%
 
 ![](01-sdg_who_files/figure-html/sdg_by_funding_status-1.png)<!-- -->
 
+# SDG by gender
+
+
+```r
+gender_base <- papers %>% 
+  select(paperid, SDG_label, year, is_oa) %>% 
+  left_join(author_paper_affiliations_w_groups) %>% 
+  left_join(author_metadata) %>% 
+  select(paperid, SDG_label, year, author_position, authorid, 
+         paper_author_cat, gender)
+```
+
+```
+## Joining, by = "paperid"
+```
+
+```
+## Joining, by = "authorid"
+```
+
+
+
+```r
+# only do this for papers where we have gender for all authors
+gender_ratio_p_paper <- gender_base %>% 
+  select(paperid, gender) %>% 
+  group_by(paperid) %>% 
+  mutate(all_genderized = sum(as.numeric(gender == "unknown")) == 0) %>% 
+  filter(all_genderized) %>% 
+  count(gender) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ungroup() %>% 
+  filter(gender == "female") %>% 
+  rename(prop_female = prop)
+
+
+gender_oa_papers <- gender_ratio_p_paper %>% 
+  left_join(papers) %>% 
+  # it could be interesting though to look at this via regression -> then keep
+  # more variables
+  select(paperid, prop_female, year, SDG_label) 
+```
+
+```
+## Joining, by = "paperid"
+```
+
+
+```r
+gender_by_sdg <- gender_oa_papers %>% 
+  group_by(year, SDG_label) %>% 
+  summarise(mean_prop_female = mean(prop_female)) %>% 
+  collect()
+```
+
+
+```r
+gender_by_sdg %>% 
+  ggplot(aes(as_year(year), mean_prop_female, colour = fix_sdg(SDG_label))) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  labs(x = NULL, y = "Mean share of female authors on publications",
+       caption = "Including publications where all genders are known.",
+       colour = NULL) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+![](01-sdg_who_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
+
+Is this credible? Higher share of females overall? Computations correct? Bias in
+genderizing? 
+
+From general trends on gender I would expect a lower female participation.
 
 
 
