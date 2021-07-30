@@ -432,20 +432,6 @@ Visualise time component:
 
 - do quantiles over time, with mean of APC per quantile of Ptop10
 
-```{r}
-cut_quantiles <- function(x) {
-    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE), 
-        labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")), 
-        include.lowest = TRUE)
-}
-
-
-cut_quartiles <- function(x) {
-    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .25), na.rm = TRUE), 
-        labels = {1:4*25} %>% map_chr(~paste("p", . - 25, ., sep = "-")), 
-        include.lowest = TRUE)
-}
-```
 
 ```{r}
 apc_time <- papers %>% 

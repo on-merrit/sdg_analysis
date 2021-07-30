@@ -67,4 +67,10 @@ cut_quantiles <- function(x) {
       include.lowest = TRUE)
 }
 
+cut_quartiles <- function(x) {
+  cut(x, breaks = quantile(x, probs = seq(0, 1, by = .25), na.rm = TRUE),
+      labels = {1:4*25} %>% map_chr(~paste("p", . - 25, ., sep = "-")),
+      include.lowest = TRUE)
+}
+
 fix_sdg <- function(x) fct_relevel(x, "SDG_13", after = 3)
