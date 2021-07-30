@@ -50,6 +50,15 @@ affils <- spark_read_csv(sc,
 author_metadata <- spark_read_csv(sc,
                                   "/user/tklebel/sdg/data/sdg_author_data.csv",
                                   name = "author_metadata")
+# join genders with author data
+genders <- spark_read_csv(sc,
+                          "/user/tklebel/sdg/data/merged_genderized_names.csv",
+                          name = "genders") %>% 
+  select(-first_name)
+
+author_metadata <- author_metadata %>% 
+  left_join(genders, by = "authorid")
+
 author_paper_affiliations <- spark_read_csv(
   sc,
   "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
