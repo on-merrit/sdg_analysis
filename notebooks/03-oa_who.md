@@ -172,7 +172,7 @@ age_oa_cohort %>%
 ```r
 age_oa_positions <- age_cohorts %>% 
   # only consider multi author papers
-  filter(paper_author_cat == "multi") %>% 
+  filter(paper_author_cat == "multi", age_cohort != "1960-1969") %>% 
   group_by(year, age_cohort, SDG_label, author_position) %>%
   summarise(oa_share = mean(as.numeric(is_oa)),
             n = n()) %>%
@@ -186,10 +186,10 @@ age_oa_positions %>%
   ggplot(aes(as_year(year), oa_share, colour = age_cohort)) +
   geom_point() +
   geom_line() +
-  facet_grid(rows = vars(SDG_label), cols = vars(author_position)) +
+  facet_grid(rows = vars(fix_sdg(SDG_label)), cols = vars(author_position)) +
   scale_y_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
   theme_bw() +
-  theme(legend.position = c(.9, .1)) +
+  theme(legend.position = c(.9385, .083)) +
   labs(x = NULL, y = "OA share", title = "OA share over time", colour = NULL,
        caption = "Only considering multi author papers. Dropping 2020 because of low cell counts")
 ```
@@ -696,7 +696,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserve270feb4ab3f7fc74
+preserve832ca3dcf4fda6e5
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -886,10 +886,10 @@ papers_p_author %>%
 ## # Source: spark<?> [?? x 3]
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
-## 1 unknown   0.449        2.53
-## 2 male      0.472        4.75
+## 1 female    0.484        3.40
+## 2 unknown   0.449        2.53
 ## 3 <NA>     NA          199   
-## 4 female    0.484        3.40
+## 4 male      0.472        4.75
 ```
 
 Also from this perspective, there is not much difference, at least with 
@@ -915,9 +915,9 @@ papers_p_author %>%
 ## # Source: spark<?> [?? x 3]
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
-## 1 female    0.462        6.82
+## 1 unknown   0.419        6.40
 ## 2 male      0.439        9.65
-## 3 unknown   0.419        6.40
+## 3 female    0.462        6.82
 ## 4 <NA>     NA          199
 ```
 
@@ -1181,7 +1181,7 @@ plotly::ggplotly(p)
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-preserve75242d32da5f8371
+preserve25f12c5082d397a5
 
 
 
