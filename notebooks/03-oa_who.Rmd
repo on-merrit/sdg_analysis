@@ -689,7 +689,8 @@ gender_by_sdg %>%
   facet_wrap(vars(fix_sdg(SDG_label)), nrow = 2) +
   scale_y_continuous(labels = function(x) scales::percent(x, 1),
                      limits = c(.45, .60)) +
-  labs(x = NULL, y = "Mean share of female authors on papers") +
+  labs(x = NULL, y = "Mean share of female authors on publications",
+       caption = "Including publications with at least two authors") +
   theme_bw() +
   theme(legend.position = c(.8, .2))
 ```
@@ -746,6 +747,59 @@ Why is the difference to the above plot so big?
 Differences in single authors? This view here only includes papers with at least
 two authors, the above includes all.
 
+To do: the above (first one) but only with papers which are not single author
+papers
+
+```{r}
+# only do this for papers where we have gender for all authors
+gender_ratio_p_paper_no_single <- gender_base %>% 
+  filter(paper_author_cat != "single") %>% 
+  select(paperid, gender) %>% 
+  group_by(paperid) %>% 
+  mutate(all_genderized = sum(as.numeric(gender == "unknown")) == 0) %>% 
+  filter(all_genderized) %>% 
+  count(gender) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ungroup() %>% 
+  filter(gender == "female") %>% 
+  rename(prop_female = prop)
+
+
+gender_oa_papers_no_single <- gender_ratio_p_paper_no_single %>% 
+  left_join(papers) %>% 
+  # it could be interesting though to look at this via regression -> then keep
+  # more variables
+  select(paperid, prop_female, year, is_oa, SDG_label) %>% 
+  filter(!is.na(is_oa))
+```
+
+```{r}
+gender_by_sdg_no_single <- gender_oa_papers_no_single %>% 
+  group_by(year, is_oa, SDG_label) %>% 
+  summarise(mean_prop_female = mean(prop_female)) %>% 
+  collect()
+```
+
+```{r}
+gender_by_sdg_no_single %>% 
+  ggplot(aes(as_year(year), mean_prop_female, colour = is_oa)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 2) +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  labs(x = NULL, y = "Mean share of female authors on publications",
+       caption = "Including publications with at least two authors") +
+  theme_bw() +
+  theme(legend.position = c(.8, .2))
+```
+
+The effect is already smaller than above, but still there. So single author
+papers are not the only source of confounding here.
+
+I also checked the above approach (with small differences) for middle authors,
+but there was not difference there. So where does this gap come from? Why do 
+OA papers have lower rates of females as authors, although rates of females for
+first and last positions have little effect?
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
