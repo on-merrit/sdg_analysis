@@ -1,7 +1,7 @@
 ---
 title: "SDG OA author characteristics"
 author: "Thomas Klebel"
-date: "29 July, 2021"
+date: "30 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -496,7 +496,7 @@ Look at this in terms of types of OA, and with percentiles of the leiden ranks.
 pdata <- affil_oa %>% 
   filter(!is.na(P_top10), n_frac_papers > 50) %>% 
   group_by(Period) %>% 
-  mutate(across(c(P_top10, PP_top10, P_OA, PP_OA, impact_P), cut_quantiles)) 
+  mutate(across(c(P_top10, PP_top10, P_OA, PP_OA, impact_P), cut_quartiles)) 
 ```
 
 
@@ -696,7 +696,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserveea0b559f251fbd77
+preserve270feb4ab3f7fc74
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -886,10 +886,10 @@ papers_p_author %>%
 ## # Source: spark<?> [?? x 3]
 ##   gender  mean_oa mean_papers
 ##   <chr>     <dbl>       <dbl>
-## 1 female    0.484        3.40
+## 1 unknown   0.449        2.53
 ## 2 male      0.472        4.75
-## 3 unknown   0.449        2.53
-## 4 <NA>     NA          199
+## 3 <NA>     NA          199   
+## 4 female    0.484        3.40
 ```
 
 Also from this perspective, there is not much difference, at least with 
@@ -1181,7 +1181,7 @@ plotly::ggplotly(p)
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-preservec38a387b6f9835f2
+preserve75242d32da5f8371
 
 
 

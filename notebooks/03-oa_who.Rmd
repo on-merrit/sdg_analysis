@@ -432,7 +432,7 @@ Look at this in terms of types of OA, and with percentiles of the leiden ranks.
 pdata <- affil_oa %>% 
   filter(!is.na(P_top10), n_frac_papers > 50) %>% 
   group_by(Period) %>% 
-  mutate(across(c(P_top10, PP_top10, P_OA, PP_OA, impact_P), cut_quantiles)) 
+  mutate(across(c(P_top10, PP_top10, P_OA, PP_OA, impact_P), cut_quartiles)) 
 ```
 
 ```{r}
