@@ -62,10 +62,18 @@ p <- fos_counts %>%
                 breaks = c(10e+3, 30e+3, 1e+5, 1e+6)) +
   labs(x = NULL, y = "# of papers", colour = NULL,
        title = "Development of SDG areas over time") 
+p
+```
+
+![](01-sdg_who_files/figure-html/sdg_who_by_sdg_count-1.png)<!-- -->
+
+
+```r
 plotly::ggplotly(p)
 ```
 
-preservedbb45352f1376a85
+preserve4098315951d7e7b7
+
 
 We can observe a slight upward trend, that could be attributable to the overall
 growth of research.
@@ -190,7 +198,7 @@ sdg_age %>%
   labs(y = "# of papers", x = NULL, colour = NULL)
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 This is not very meaningful.
 
@@ -431,7 +439,7 @@ papers_per_affiliation_per_w_leiden %>%
   theme(legend.position = "top")
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 
 
@@ -797,7 +805,7 @@ papers_per_country_fos_author_pos_country %>%
   scale_y_log10() 
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 
 
@@ -857,7 +865,7 @@ papers_per_country_fos_author_pos_country %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 
 ```r
