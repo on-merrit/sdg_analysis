@@ -207,7 +207,7 @@ age_oa_cohort %>%
 ```{r}
 age_oa_positions <- age_cohorts %>% 
   # only consider multi author papers
-  filter(paper_author_cat == "multi") %>% 
+  filter(paper_author_cat == "multi", age_cohort != "1960-1969") %>% 
   group_by(year, age_cohort, SDG_label, author_position) %>%
   summarise(oa_share = mean(as.numeric(is_oa)),
             n = n()) %>%
@@ -220,7 +220,7 @@ age_oa_positions %>%
   ggplot(aes(as_year(year), oa_share, colour = age_cohort)) +
   geom_point() +
   geom_line() +
-  facet_grid(rows = vars(SDG_label), cols = vars(author_position)) +
+  facet_grid(rows = vars(fix_sdg(SDG_label)), cols = vars(author_position)) +
   scale_y_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
   theme_bw() +
   theme(legend.position = c(.9, .1)) +
