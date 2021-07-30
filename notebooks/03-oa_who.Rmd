@@ -223,7 +223,7 @@ age_oa_positions %>%
   facet_grid(rows = vars(fix_sdg(SDG_label)), cols = vars(author_position)) +
   scale_y_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
   theme_bw() +
-  theme(legend.position = c(.9, .1)) +
+  theme(legend.position = c(.9385, .083)) +
   labs(x = NULL, y = "OA share", title = "OA share over time", colour = NULL,
        caption = "Only considering multi author papers. Dropping 2020 because of low cell counts")
 ```
