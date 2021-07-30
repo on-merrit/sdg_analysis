@@ -3,7 +3,7 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "29 July, 2021"
+date: "30 July, 2021"
 output: 
   html_document:
     keep_md: true
@@ -65,7 +65,7 @@ p <- fos_counts %>%
 plotly::ggplotly(p)
 ```
 
-preserve9081c1b5a495db5c
+preservedbb45352f1376a85
 
 We can observe a slight upward trend, that could be attributable to the overall
 growth of research.
@@ -881,6 +881,36 @@ papers_per_country_fos_author_pos_country %>%
 
 ![](01-sdg_who_files/figure-html/sdg_who_mncs_by_country-1.png)<!-- -->
 
+# SDG by funding
+To which extent is research in these areas being funded?
+
+
+```r
+funder_overview <- papers %>% 
+  filter(!is.na(is_funded)) %>% 
+  group_by(is_funded, year, SDG_label) %>% 
+  count() %>% 
+  collect()
+```
+
+
+```r
+funder_overview %>% 
+  group_by(year, SDG_label) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  filter(is_funded) %>% 
+  ggplot(aes(as_year(year), prop, colour = fix_sdg(SDG_label))) +
+  geom_line() +
+  geom_point() +
+  # facet_wrap(vars(fix_sdg(SDG_label))) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL, y = "% of publications which are funded", 
+       title = "SDG by funding status",
+       colour = NULL) +
+  theme(legend.position = "top")
+```
+
+![](01-sdg_who_files/figure-html/sdg_by_funding_status-1.png)<!-- -->
 
 
 
