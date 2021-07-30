@@ -65,6 +65,7 @@ joined2 %>%
 joined_by_issn <- joined %>%
   filter(!is.na(APC)) %>%
   bind_rows(joined2) %>%
+  filter(!is.na(APC)) %>%
   select(-eissn)
 
 joined_by_issn %>%
@@ -81,14 +82,7 @@ all_journals_midstep <- journals %>%
 unjoined_doaj <- all_journals_midstep %>%
   select(journal_title) %>%
   drop_na() %>%
-  anti_join(doaj_for_matching, .) %>%
-  mutate(normalizedname = journal_title %>%
-           str_to_lower() %>%
-           # replace non word chars
-           str_replace_all("[^\\w&\\s]", " ") %>%
-           # replace doble or multiple spaces with single ones
-           str_replace_all("\\s{2,}", " ")
-  )
+  anti_join(doaj_for_matching, .)
 
 
 all_journals_midstep %>%
@@ -100,55 +94,44 @@ still_unjoined <- all_journals_midstep %>%
   select(-c(journal_title:APC_in_dollar))
 
 name_joined <- still_unjoined %>%
-  left_join(unjoined_doaj)
+  left_join(unjoined_doaj, by = c("displayname" = "journal_title"))
 
 # joining and inspecting one journal that is duplicated
+join_complete <- joined_by_issn %>%
+  bind_rows(name_joined)
+
+dupes <- join_complete %>%
+  count(journalid, sort = TRUE) %>%
+  filter(n > 1) %>%
+  left_join(join_complete)
+# are any of the dupes in the issn set?
+
 joined_by_issn %>%
-  bind_rows(name_joined) %>%
-  distinct() %>%
-  filter(journalid == "21998430") %>%
-  View()
-# it seems that we should not normalize names and then match, since there might
-# be duplicates from this
+  select(journalid) %>%
+  inner_join(dupes) %>%
+  nrow()
+# nope, none of them are in the issn set
 
+# we simply delete the DOAJ information for these duplicates, since we cannot be
+# sure what is going on here
 
-
-name_joined_simple <- still_unjoined %>%
-  left_join(select(unjoined_doaj, -normalizedname),
-            by = c("displayname" = "journal_title"))
-
-name_joined_simple %>%
-  summarise(n_joined = sum(!is.na(APC)))
-
-name_joined %>%
-  summarise(n_joined = sum(!is.na(APC)))
-# only a small fraction that is not joined when using direct names -> this will
-# be superior
-
-final_joined <- joined_by_issn %>%
-  bind_rows(name_joined_simple) %>%
+dupes_fixed <- dupes %>%
+  select(journalid:createddate) %>%
   distinct()
-nrow(final_joined)
-# nope it is not (This is more rows than originally)
 
-final_joined %>%
-  count(journalid, sort = TRUE)
+mag_doaj_final <- join_complete %>%
+  anti_join(dupes) %>%
+  bind_rows(dupes_fixed)
 
-final_joined %>%
-  filter(journalid == "108845946") %>% View()
-
-# name joining just does not work
-
-mag_doaj_final <- all_journals_midstep
-
-mag_doaj_final
 
 # notes on why matched number from DOAJ might be low:
 # - issues with eissn vs print issn - inconsistent use (but tried to mitigate)
-# MAG just does not have quite a few journals which are in DOAJ, e.g. Materials
-# Letters: X. MAG has Materials Letters, which is the paywall version, but the
-# OA subjournal it does not have as a recognized entity (it does have it by name,
-# but then again, name matching does not work easily)
+# - Mirror journals:  e.g. Materials Letters: X. MAG has Materials Letters,
+#   which is the paywall version, but the
+#   OA subjournal it does not have as a recognized entity (it does have it by
+#   name, but then again, name matching does not work easily)
+# - DOAJ journals tend to be young (inclusion into DAOJ might be important for
+#   them), but MAG often does not have younger entities.
 
 write_csv(mag_doaj_final, "data/processed/mag_journals_w_doaj.csv")
 
