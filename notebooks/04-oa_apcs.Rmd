@@ -120,6 +120,17 @@ p
 plotly::ggplotly(p)
 ```
 
+```{r}
+oa_status_within_non_doaj <- step1 %>% 
+  filter(APC == "NA") %>% 
+  count(oa_status)
+  mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
+  group_by(SDG_label, year) %>% 
+  count(APC) %>% 
+  collect()
+```
+
+
 
 ```{r, fig.width=8, fig.height=3}
 p <- apc_per_sdg %>% 
@@ -164,12 +175,44 @@ hybrid/bronze?
 
 Yes it is, see below!
 
-```{r, fig.width=8, fig.height=3}
+```{r}
 oa_colours <- step1 %>% 
   group_by(SDG_label, year) %>% 
   count(oa_status) %>% 
   collect()
+```
 
+
+```{r, fig.height=3, fig.width=7}
+oa_colour_scheme <- c(bronze = "#cd7f32", hybrid = "#ffa500", 
+                                gold = "#ffe135", green = "#4CAF50")
+
+
+p <- oa_colours %>% 
+  filter(year %in% 2015:2018) %>%
+  group_by(SDG_label, oa_status) %>% 
+  summarise(n = sum(n)) %>% 
+  mutate(prop = n / sum(n),
+         oa_status = factor(oa_status, levels = c("gold", "green", "hybrid",
+                                                  "bronze"))) %>% 
+  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = oa_status)) +
+  geom_col(width = .7) +
+  scale_x_continuous(labels = scales::percent) +
+  scale_fill_manual(values = oa_colour_scheme) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = NULL,
+       caption = "2015-2018") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(reverse = TRUE))
+p
+```
+
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
+
+```{r, fig.width=8, fig.height=3}
 p <- oa_colours %>% 
   drop_na() %>% 
   group_by(year, SDG_label) %>% 
@@ -179,8 +222,7 @@ p <- oa_colours %>%
   geom_point() +
   facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
-  scale_color_manual(values = c(bronze = "#cd7f32", hybrid = "#ffa500", 
-                                gold = "#ffe135", green = "#4CAF50")) +
+  scale_color_manual(values = oa_colour_scheme) +
   theme_bw() +
   labs(x = NULL, y = NULL)
 p
@@ -399,51 +441,6 @@ p
 ```{r, dpi=100}
 plotly::ggplotly(p)
 ```
-
-
-
-```{r}
-plot_over_time <- function(df, indicator, y_var) {
-  df %>% 
-    group_by(SDG_label, year, {{indicator}}) %>% 
-    mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
-    ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
-    geom_line() +
-    facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
-    #scale_y_log10() +
-    guides(colour = guide_legend(reverse = FALSE)) +
-    labs(x = NULL, y = "Median of APCs in quartile") +
-    theme_bw() +
-    theme(legend.position = "top")
-}
-```
-
-
-```{r}
-firsts %>% 
-  plot_over_time(P_top10, mean_apc) +
-  labs(caption = "First authors; full counting")
-```
-
-
-
-```{r}
-p <- apc_affiliation_leiden %>% 
-  group_by(SDG_label, affiliationid) %>% 
-  mutate(apc_share = n/sum(n)) %>% 
-  ggplot(aes(P_top10, apc_share, colour = APC)) +
-  geom_point(size = .7, alpha = .4) +
-  scale_x_log10() +
-  geom_smooth() +
-  facet_wrap(vars(SDG_label)) +
-  scale_y_continuous(labels = scales::percent) +
-  theme(legend.position = "top") +
-  labs(y = "Share of papers in category", colour = NULL,
-       title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not",
-       caption = "Fractional counting")
-p
-```
-
 
 
 # APC prices
