@@ -174,6 +174,10 @@ oa_colours <- step1 %>%
 
 
 ```{r, fig.width=8, fig.height=3}
+oa_colour_scheme <- c(bronze = "#cd7f32", hybrid = "#ffa500", 
+                                gold = "#ffe135", green = "#4CAF50")
+
+
 p <- oa_colours %>% 
   drop_na() %>% 
   group_by(year, SDG_label) %>% 
@@ -212,8 +216,7 @@ p <- not_in_doaj %>%
   geom_point() +
   facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
-  scale_color_manual(values = c(bronze = "#cd7f32", hybrid = "#ffa500", 
-                                gold = "#ffe135", green = "#4CAF50")) +
+  scale_color_manual(values = oa_colour_scheme) +
   theme_bw() +
   labs(x = NULL, y = NULL)
 p
@@ -225,9 +228,6 @@ plotly::ggplotly(p)
 
 
 ```{r, fig.height=3, fig.width=7}
-oa_colour_scheme <- c(bronze = "#cd7f32", hybrid = "#ffa500", 
-                                gold = "#ffe135", green = "#4CAF50")
-
 
 p <- not_in_doaj %>% 
   filter(year %in% 2015:2018) %>%
