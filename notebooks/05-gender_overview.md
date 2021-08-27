@@ -1,7 +1,7 @@
 ---
 title: "05-gender-overview"
 author: "Thomas Klebel"
-date: "13 July, 2021"
+date: "25 August, 2021"
 output: 
   html_document:
     keep_md: true
@@ -149,14 +149,14 @@ Let's see now how this translates if we start setting thresholds.
 eval_res <- joined_genders %>% 
   filter(!is.na(gender)) %>% 
   mutate(c1_p7 = probability >= .7,
-         c1_p8 = probability >= .8,
+         c1_p85 = probability >= .85,
          c1_p9 = probability >= .9,
          c3_p7 = count >= 3 & c1_p7,
          c3_p75 = count >= 3 & probability >= .75,
-         c3_p8 = count >= 3 & c1_p8,
+         c3_p85 = count >= 3 & c1_p85,
          c3_p9 = count >= 3 & c1_p9,
          c5_p7 = count >= 5 & c1_p7,
-         c5_p8 = count >= 5 & c1_p8,
+         c5_p85 = count >= 5 & c1_p85,
          c5_p9 = count >= 5 & c1_p9) %>% 
   mutate(across(matches("^c\\d"), as.numeric)) %>% 
   summarise(n = n(),
@@ -176,14 +176,14 @@ eval_res %>%
 ##           n name     value  prop
 ##       <int> <chr>    <dbl> <dbl>
 ##  1 11059364 c1_p7  9827345 0.889
-##  2 11059364 c1_p8  9117562 0.824
+##  2 11059364 c1_p85 8777640 0.794
 ##  3 11059364 c1_p9  8342958 0.754
 ##  4 11059364 c3_p7  9539831 0.863
 ##  5 11059364 c3_p75 9223300 0.834
-##  6 11059364 c3_p8  8830048 0.798
+##  6 11059364 c3_p85 8490126 0.768
 ##  7 11059364 c3_p9  8055444 0.728
 ##  8 11059364 c5_p7  9391004 0.849
-##  9 11059364 c5_p8  8708995 0.787
+##  9 11059364 c5_p85 8369073 0.757
 ## 10 11059364 c5_p9  7934391 0.717
 ```
 
@@ -206,10 +206,10 @@ looking into the split in terms of gender prediction between countries/regions.
 
 From the above table, let us take the following numbers:
 
-- counts = 3
-- probability = .75
+- counts = 5
+- probability = .85
 
-This leads to gender assigned for about 66% of all authors.
+This leads to gender assigned for about ??% of all authors.
 
 
 Maybe we also didn't use the API to its full potential. What we could do:
@@ -241,9 +241,9 @@ author_metadata %>%
 |gender  |       n|      prop|
 |:-------|-------:|---------:|
 |unknown | 5630112| 0.4021686|
+|female  | 3505606| 0.2504114|
 |NA      |     199| 0.0000142|
 |male    | 4863467| 0.3474058|
-|female  | 3505606| 0.2504114|
 
 
 

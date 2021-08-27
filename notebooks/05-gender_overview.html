@@ -165,7 +165,7 @@ pre code {
 
 <h1 class="title toc-ignore">05-gender-overview</h1>
 <h4 class="author">Thomas Klebel</h4>
-<h4 class="date">13 July, 2021</h4>
+<h4 class="date">25 August, 2021</h4>
 
 </div>
 
@@ -375,14 +375,14 @@ genderize_overview &lt;- joined_genders %&gt;%
 <pre class="r"><code>eval_res &lt;- joined_genders %&gt;% 
   filter(!is.na(gender)) %&gt;% 
   mutate(c1_p7 = probability &gt;= .7,
-         c1_p8 = probability &gt;= .8,
+         c1_p85 = probability &gt;= .85,
          c1_p9 = probability &gt;= .9,
          c3_p7 = count &gt;= 3 &amp; c1_p7,
          c3_p75 = count &gt;= 3 &amp; probability &gt;= .75,
-         c3_p8 = count &gt;= 3 &amp; c1_p8,
+         c3_p85 = count &gt;= 3 &amp; c1_p85,
          c3_p9 = count &gt;= 3 &amp; c1_p9,
          c5_p7 = count &gt;= 5 &amp; c1_p7,
-         c5_p8 = count &gt;= 5 &amp; c1_p8,
+         c5_p85 = count &gt;= 5 &amp; c1_p85,
          c5_p9 = count &gt;= 5 &amp; c1_p9) %&gt;% 
   mutate(across(matches(&quot;^c\\d&quot;), as.numeric)) %&gt;% 
   summarise(n = n(),
@@ -395,14 +395,14 @@ genderize_overview &lt;- joined_genders %&gt;%
 ##           n name     value  prop
 ##       &lt;int&gt; &lt;chr&gt;    &lt;dbl&gt; &lt;dbl&gt;
 ##  1 11059364 c1_p7  9827345 0.889
-##  2 11059364 c1_p8  9117562 0.824
+##  2 11059364 c1_p85 8777640 0.794
 ##  3 11059364 c1_p9  8342958 0.754
 ##  4 11059364 c3_p7  9539831 0.863
 ##  5 11059364 c3_p75 9223300 0.834
-##  6 11059364 c3_p8  8830048 0.798
+##  6 11059364 c3_p85 8490126 0.768
 ##  7 11059364 c3_p9  8055444 0.728
 ##  8 11059364 c5_p7  9391004 0.849
-##  9 11059364 c5_p8  8708995 0.787
+##  9 11059364 c5_p85 8369073 0.757
 ## 10 11059364 c5_p9  7934391 0.717</code></pre>
 <p>Looking at some of the papers we collected, we would potentially end up with a low number of authors that have been assigned a gender (lit seems to be at 80-90%). Since we only got a reply from the API on about 80% of the authors, if we multiply this with say 85% or 80% we end up at 64-68% of all authors having an assigned gender.</p>
 <p>Potential explanations:</p>
@@ -413,10 +413,10 @@ genderize_overview &lt;- joined_genders %&gt;%
 <p>We should therefore (for the paper at least) include a sensitivity analysis, looking into the split in terms of gender prediction between countries/regions.</p>
 <p>From the above table, let us take the following numbers:</p>
 <ul>
-<li>counts = 3</li>
-<li>probability = .75</li>
+<li>counts = 5</li>
+<li>probability = .85</li>
 </ul>
-<p>This leads to gender assigned for about 66% of all authors.</p>
+<p>This leads to gender assigned for about ??% of all authors.</p>
 <p>Maybe we also didn't use the API to its full potential. What we could do: run the full names through findGivenNames (to avoid the issue of choosing the wrong part of the name), then genderize the strings. We could also include county information. However, this might bump our usage right up to 10mio requests (we have 14mio authors, which will likely be at or above 10mio unique combinations of full names with countries).</p>
 </div>
 <div id="final-properties" class="section level1">
@@ -444,19 +444,19 @@ genderize_overview &lt;- joined_genders %&gt;%
 <td align="right">0.4021686</td>
 </tr>
 <tr class="even">
+<td align="left">female</td>
+<td align="right">3505606</td>
+<td align="right">0.2504114</td>
+</tr>
+<tr class="odd">
 <td align="left">NA</td>
 <td align="right">199</td>
 <td align="right">0.0000142</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">male</td>
 <td align="right">4863467</td>
 <td align="right">0.3474058</td>
-</tr>
-<tr class="even">
-<td align="left">female</td>
-<td align="right">3505606</td>
-<td align="right">0.2504114</td>
 </tr>
 </tbody>
 </table>
