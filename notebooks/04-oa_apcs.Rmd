@@ -339,6 +339,113 @@ Maybe correspondence analysis to relate these? IF in quartiles from SJR
 What do we learn? 
 
 
+
+## collapsing hybrid, bronze + DOAJ APC
+```{r, cache=TRUE}
+apc_per_affiliation_per_sdg <- step1 %>% 
+  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+                         TRUE ~ APC)) %>%  
+  group_by(affiliationid, SDG_label, year) %>% 
+  count(APC, wt = frac_value)
+
+# apc_per_affiliation_per_sdg %>% ungroup() %>% count(APC)
+
+totals <- step1 %>% 
+  group_by(affiliationid, SDG_label, year) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE))
+
+apc_per_affiliation_per_sdg <- apc_per_affiliation_per_sdg %>% 
+  left_join(totals)
+
+apc_per_affiliation_per_sdg_local <- apc_per_affiliation_per_sdg %>% 
+  # filter(n_frac_papers > 50) %>% 
+  collect()
+```
+
+
+
+
+
+
+```{r}
+apc_value_affiliation_leiden <- apc_per_affiliation_per_sdg_local %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local) %>% 
+  # remove those institutions that are not in leiden ranking
+  filter(!is.na(University), year == as.integer(last_year_of_period)) %>% 
+  mutate(P_top10 = cut_quartiles(P_top10)) %>% 
+  filter(!is.na(P_top10))
+```
+
+```{r, fig.width=8, fig.height=4}
+p <- apc_value_affiliation_leiden %>% 
+  mutate(prop_apc = n / n_frac_papers) %>% 
+  filter(APC == "TRUE") %>% 
+  group_by(SDG_label, year, P_top10) %>% 
+  mutate(y_median = weighted.mean(prop_apc, n_frac_papers, na.rm = TRUE)) %>% 
+  ggplot(aes(as_year(year), y_median, colour = P_top10)) +
+  geom_line() +
+  # geom_point() +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
+  scale_y_continuous(labels = scales::percent) +
+  guides(colour = guide_legend(reverse = FALSE)) +
+  labs(x = NULL, y = "% of publications per quartile\nwhich involved an APC") +
+  theme_bw() +
+  theme(legend.position = "top")
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
+
+
+
+```{r}
+plot_over_time <- function(df, indicator, y_var) {
+  df %>% 
+    group_by(SDG_label, year, {{indicator}}) %>% 
+    mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
+    ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
+    geom_line() +
+    facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
+    #scale_y_log10() +
+    guides(colour = guide_legend(reverse = FALSE)) +
+    labs(x = NULL, y = "Median of APCs in quartile") +
+    theme_bw() +
+    theme(legend.position = "top")
+}
+```
+
+
+```{r}
+firsts %>% 
+  plot_over_time(P_top10, mean_apc) +
+  labs(caption = "First authors; full counting")
+```
+
+
+
+```{r}
+p <- apc_affiliation_leiden %>% 
+  group_by(SDG_label, affiliationid) %>% 
+  mutate(apc_share = n/sum(n)) %>% 
+  ggplot(aes(P_top10, apc_share, colour = APC)) +
+  geom_point(size = .7, alpha = .4) +
+  scale_x_log10() +
+  geom_smooth() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "top") +
+  labs(y = "Share of papers in category", colour = NULL,
+       title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not",
+       caption = "Fractional counting")
+p
+```
+
+
+
 # APC prices
 The figures below use full counting, but for first and last authors separately.
 ```{r, cache=TRUE}
