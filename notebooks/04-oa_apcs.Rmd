@@ -39,39 +39,14 @@ papers <- papers %>%
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
                          name = "affils")
-# author_metadata <- spark_read_csv(sc,
-#                                   "/user/tklebel/sdg/data/sdg_author_data.csv",
-#                                   name = "author_metadata")
-# # join genders with author data
-# genders <- spark_read_csv(sc,
-#                           "/user/tklebel/sdg/data/merged_genderized_names.csv",
-#                           name = "genders") %>% 
-#   select(-first_name)
-# 
-# author_metadata <- author_metadata %>% 
-#   left_join(genders, by = "authorid")
-
-
 
 author_paper_affiliations <- spark_read_csv(
   sc,
   "/user/tklebel/sdg/data/sdg_author_paper_affil.csv",
   name = "author_paper_affiliations"
 )
+
 author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
-
-
-# funded_projects <- spark_read_csv(
-#   sc,
-#   "/user/tklebel/sdg/data/openaire_funders_injoin_w_sdg.csv",
-#   name = "funded_projects"
-# )
-# wb_indicators <- spark_read_csv(
-#   sc,
-#   "/user/tklebel/sdg/data/world_bank_indicators.csv",
-#   name = "wb_indicators")
-# 
-# wb_countries <- read_csv(here::here("data/external/WDICountry.csv"))
 
 leiden <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/leiden_ranking.csv",
@@ -80,7 +55,6 @@ leiden <- spark_read_csv(sc,
 journals <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/mag_journals_w_doaj_w_sjr.csv",
                          name = "journals")
-
 
 leiden_small_local <- leiden %>%
   filter(Field == "All sciences", Frac_counting == 1) %>%
