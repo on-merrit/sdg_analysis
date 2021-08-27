@@ -120,16 +120,6 @@ p
 plotly::ggplotly(p)
 ```
 
-```{r}
-oa_status_within_non_doaj <- step1 %>% 
-  filter(APC == "NA") %>% 
-  count(oa_status)
-  mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
-  group_by(SDG_label, year) %>% 
-  count(APC) %>% 
-  collect()
-```
-
 
 
 ```{r, fig.width=8, fig.height=3}
