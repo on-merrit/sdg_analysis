@@ -78,7 +78,7 @@ step1 <- papers %>%
   # we can only look at journals, since doaj only is for journals
   # also only look at fairly recent papers
   # also only look at papers which actually are OA
-  filter(!is.na(journalid), year %in% 2015:2018, is_oa) %>% 
+  filter(!is.na(journalid), is_oa, year < 2020) %>% 
   left_join(author_paper_affiliations) %>% 
   left_join(affils) %>% 
   left_join(journals, by = "journalid") %>% 
@@ -91,15 +91,17 @@ step1 <- papers %>%
 
 apc_per_sdg <- step1 %>% 
   mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
-  group_by(SDG_label) %>% 
+  group_by(SDG_label, year) %>% 
   count(APC) %>% 
   collect()
 ```
 
 
-```{r}
-apc_per_sdg %>% 
-  group_by(SDG_label) %>% 
+```{r, fig.height=3, fig.width=7}
+p <- apc_per_sdg %>% 
+  filter(year %in% 2015:2018) %>%
+  group_by(SDG_label, APC) %>% 
+  summarise(n = sum(n)) %>% 
   mutate(prop = n / sum(n)) %>% 
   mutate(APC = factor(APC, levels = c("Not in DOAJ", "FALSE", "TRUE"),
                       labels = c("Not in DOAJ", "No", "Yes"))) %>%
@@ -111,6 +113,111 @@ apc_per_sdg %>%
        caption = "2015-2018") +
   theme(legend.position = "top") +
   guides(fill = guide_legend(reverse = TRUE))
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
+
+
+```{r, fig.width=8, fig.height=3}
+p <- apc_per_sdg %>% 
+  filter(year < 2020) %>% 
+  group_by(year, SDG_label) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ggplot(aes(as_year(year), prop, colour = APC)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
+  labs(x = NULL, y = NULL)
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
+
+```{r, fig.width=8, fig.height=3}
+p <- apc_per_sdg %>% 
+  filter(APC != "Not in DOAJ") %>% 
+  group_by(year, SDG_label) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ggplot(aes(as_year(year), prop, colour = APC)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
+  labs(x = NULL, y = NULL)
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
+
+is this decline in non DOAJ based on the rise of Gold OA and the decline of 
+hybrid/bronze?
+
+Yes it is, see below!
+
+```{r, fig.width=8, fig.height=3}
+oa_colours <- step1 %>% 
+  group_by(SDG_label, year) %>% 
+  count(oa_status) %>% 
+  collect()
+
+p <- oa_colours %>% 
+  drop_na() %>% 
+  group_by(year, SDG_label) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ggplot(aes(as_year(year), prop, colour = oa_status)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(values = c(bronze = "#cd7f32", hybrid = "#ffa500", 
+                                gold = "#ffe135", green = "#4CAF50")) +
+  theme_bw() +
+  labs(x = NULL, y = NULL)
+p
+```
+
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
+
+what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
+
+```{r, fig.width=8, fig.height=3}
+not_in_doaj <- step1 %>% 
+  # only keep those that are not in DAOJ
+  filter(APC == "NA") %>% 
+  group_by(SDG_label, year) %>% 
+  count(oa_status) %>% 
+  collect()
+
+p <- not_in_doaj %>% 
+  group_by(year, SDG_label) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ggplot(aes(as_year(year), prop, colour = oa_status)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(values = c(bronze = "#cd7f32", hybrid = "#ffa500", 
+                                gold = "#ffe135", green = "#4CAF50")) +
+  theme_bw() +
+  labs(x = NULL, y = NULL)
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
 ```
 
 ```{r}
