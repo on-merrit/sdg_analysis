@@ -173,35 +173,6 @@ oa_colours <- step1 %>%
 ```
 
 
-```{r, fig.height=3, fig.width=7}
-oa_colour_scheme <- c(bronze = "#cd7f32", hybrid = "#ffa500", 
-                                gold = "#ffe135", green = "#4CAF50")
-
-
-p <- oa_colours %>% 
-  filter(year %in% 2015:2018) %>%
-  group_by(SDG_label, oa_status) %>% 
-  summarise(n = sum(n)) %>% 
-  mutate(prop = n / sum(n),
-         oa_status = factor(oa_status, levels = c("gold", "green", "hybrid",
-                                                  "bronze"))) %>% 
-  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = oa_status)) +
-  geom_col(width = .7) +
-  scale_x_continuous(labels = scales::percent) +
-  scale_fill_manual(values = oa_colour_scheme) +
-  theme_bw() +
-  labs(x = NULL, y = NULL, fill = NULL,
-       caption = "2015-2018") +
-  theme(legend.position = "top") +
-  guides(fill = guide_legend(reverse = TRUE))
-p
-```
-
-
-```{r, dpi=100}
-plotly::ggplotly(p)
-```
-
 ```{r, fig.width=8, fig.height=3}
 p <- oa_colours %>% 
   drop_na() %>% 
@@ -252,6 +223,35 @@ p
 plotly::ggplotly(p)
 ```
 
+
+```{r, fig.height=3, fig.width=7}
+oa_colour_scheme <- c(bronze = "#cd7f32", hybrid = "#ffa500", 
+                                gold = "#ffe135", green = "#4CAF50")
+
+
+p <- not_in_doaj %>% 
+  filter(year %in% 2015:2018) %>%
+  group_by(SDG_label, oa_status) %>% 
+  summarise(n = sum(n)) %>% 
+  mutate(prop = n / sum(n),
+         oa_status = factor(oa_status, levels = c("gold", "green", "hybrid",
+                                                  "bronze"))) %>% 
+  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = oa_status)) +
+  geom_col(width = .7) +
+  scale_x_continuous(labels = scales::percent) +
+  scale_fill_manual(values = oa_colour_scheme) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = NULL,
+       caption = "2015-2018") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(reverse = TRUE))
+p
+```
+
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
 
 
 
