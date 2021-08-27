@@ -80,7 +80,8 @@ p
 plotly::ggplotly(p)
 ```
 
-preservea8a719a8e8a3f28d
+preserve659a3358d2843c42
+
 
 
 
@@ -106,7 +107,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveabd1aaf4e36091a7
+preserve4ddf456676fa7418
 
 
 ```r
@@ -131,7 +132,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservef74d5925f6a3111b
+preserve3613bc96491596b0
 
 is this decline in non DOAJ based on the rise of Gold OA and the decline of 
 hybrid/bronze?
@@ -144,7 +145,53 @@ oa_colours <- step1 %>%
   group_by(SDG_label, year) %>% 
   count(oa_status) %>% 
   collect()
+```
 
+
+
+```r
+oa_colour_scheme <- c(bronze = "#cd7f32", hybrid = "#ffa500", 
+                                gold = "#ffe135", green = "#4CAF50")
+
+
+p <- oa_colours %>% 
+  filter(year %in% 2015:2018) %>%
+  group_by(SDG_label, oa_status) %>% 
+  summarise(n = sum(n)) %>% 
+  mutate(prop = n / sum(n),
+         oa_status = factor(oa_status, levels = c("gold", "green", "hybrid",
+                                                  "bronze"))) %>% 
+  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = oa_status)) +
+  geom_col(width = .7) +
+  scale_x_continuous(labels = scales::percent) +
+  scale_fill_manual(values = oa_colour_scheme) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = NULL,
+       caption = "2015-2018") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+
+```
+## `summarise()` has grouped output by 'SDG_label'. You can override using the `.groups` argument.
+```
+
+```r
+p
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve30b68f2ef473c07b
+
+
+```r
 p <- oa_colours %>% 
   drop_na() %>% 
   group_by(year, SDG_label) %>% 
@@ -154,14 +201,13 @@ p <- oa_colours %>%
   geom_point() +
   facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
-  scale_color_manual(values = c(bronze = "#cd7f32", hybrid = "#ffa500", 
-                                gold = "#ffe135", green = "#4CAF50")) +
+  scale_color_manual(values = oa_colour_scheme) +
   theme_bw() +
   labs(x = NULL, y = NULL)
 p
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
 
 
@@ -169,7 +215,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveba3fd16437a28e63
+preserveaf043aaf1a29c541
 
 what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
 
@@ -197,34 +243,17 @@ p <- not_in_doaj %>%
 p
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preserve77242c4064514108
+preservef064fc96874d9801
 
 
-```r
-apc_per_sdg %>% 
-  filter(APC != "Not in DOAJ") %>% 
-  group_by(SDG_label) %>% 
-  mutate(prop = n / sum(n)) %>% 
-  mutate(APC = factor(APC, levels = c("FALSE", "TRUE"),
-                      labels = c("No", "Yes"))) %>%
-  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = APC)) +
-  geom_col(width = .7) +
-  scale_x_continuous(labels = scales::percent) +
-  theme_bw() +
-  labs(x = NULL, y = NULL, fill = "Publishing involved an APC",
-       caption = "2015-2018") +
-  theme(legend.position = "top")  +
-  guides(fill = guide_legend(reverse = TRUE))
-```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 Are researchers from lower ranking universities publishing with higher or 
 lower APCs? In journals with higher or lower IF?
@@ -237,8 +266,9 @@ this time with APC yes, no, and IF mean.
 
 ```r
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = if_else(APC == "NA", "Not in DOAJ", APC)) %>% 
-  group_by(affiliationid, SDG_label) %>% 
+  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+                         TRUE ~ APC)) %>%  
+  group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
 
 # apc_per_affiliation_per_sdg %>% ungroup() %>% count(APC)
@@ -289,7 +319,11 @@ The figure below uses fractional counting.
 
 ```r
 p <- apc_affiliation_leiden %>% 
-  group_by(SDG_label, affiliationid) %>% 
+  filter(year %in% 2015:2018) %>%
+  group_by(SDG_label, P_top10, APC) %>% 
+  summarise(n = sum(n)) %>%
+  # remove those journals for which we really do not have APC information
+  filter(APC != "NA") %>% 
   mutate(apc_share = n/sum(n)) %>% 
   ggplot(aes(P_top10, apc_share, colour = APC)) +
   geom_point(size = .7, alpha = .4) +
@@ -301,6 +335,13 @@ p <- apc_affiliation_leiden %>%
   labs(y = "Share of papers in category", colour = NULL,
        title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not",
        caption = "Fractional counting")
+```
+
+```
+## `summarise()` has grouped output by 'SDG_label', 'P_top10'. You can override using the `.groups` argument.
+```
+
+```r
 p
 ```
 
@@ -308,7 +349,7 @@ p
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
 
 Very interesting: really high universities publish less in DAOJ journals. Why is
 that? which types of journals are these? This is especially true in medicine.
@@ -338,7 +379,7 @@ p2
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 We can conclude:
 
@@ -357,6 +398,89 @@ Maybe correspondence analysis to relate these? IF in quartiles from SJR
 
 What do we learn? 
 
+
+
+## collapsing hybrid, bronze + DOAJ APC
+
+```r
+apc_per_affiliation_per_sdg <- step1 %>% 
+  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+                         TRUE ~ APC)) %>%  
+  group_by(affiliationid, SDG_label, year) %>% 
+  count(APC, wt = frac_value)
+
+# apc_per_affiliation_per_sdg %>% ungroup() %>% count(APC)
+
+totals <- step1 %>% 
+  group_by(affiliationid, SDG_label, year) %>% 
+  summarise(n_frac_papers = sum(frac_value, na.rm = TRUE))
+
+apc_per_affiliation_per_sdg <- apc_per_affiliation_per_sdg %>% 
+  left_join(totals)
+```
+
+```
+## Joining, by = c("affiliationid", "SDG_label", "year")
+```
+
+```r
+apc_per_affiliation_per_sdg_local <- apc_per_affiliation_per_sdg %>% 
+  # filter(n_frac_papers > 50) %>% 
+  collect()
+```
+
+
+
+
+
+
+
+```r
+apc_value_affiliation_leiden <- apc_per_affiliation_per_sdg_local %>%
+  mutate(affiliationid = as.numeric(affiliationid)) %>% # needed for merging
+  left_join(affil_leiden_key) %>%
+  left_join(leiden_small_local) %>% 
+  # remove those institutions that are not in leiden ranking
+  filter(!is.na(University), year == as.integer(last_year_of_period)) %>% 
+  mutate(P_top10 = cut_quartiles(P_top10)) %>% 
+  filter(!is.na(P_top10))
+```
+
+```
+## Joining, by = "affiliationid"
+```
+
+```
+## Joining, by = c("University", "Country")
+```
+
+
+```r
+p <- apc_value_affiliation_leiden %>% 
+  mutate(prop_apc = n / n_frac_papers) %>% 
+  filter(APC == "TRUE") %>% 
+  group_by(SDG_label, year, P_top10) %>% 
+  mutate(y_median = weighted.mean(prop_apc, n_frac_papers, na.rm = TRUE)) %>% 
+  ggplot(aes(as_year(year), y_median, colour = P_top10)) +
+  geom_line() +
+  # geom_point() +
+  facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
+  scale_y_continuous(labels = scales::percent) +
+  guides(colour = guide_legend(reverse = FALSE)) +
+  labs(x = NULL, y = "% of publications per quartile\nwhich involved an APC") +
+  theme_bw() +
+  theme(legend.position = "top")
+p
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserveea6b840f969143a3
 
 # APC prices
 The figures below use full counting, but for first and last authors separately.
@@ -449,7 +573,7 @@ lasts %>%
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 Inclusion criterion was for an institution to have at least 20 papers per last
 author. in SDG 13 the lower ranked institutions do not have that.
@@ -484,7 +608,7 @@ firsts %>%
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 
 Same as above, but with zero apcs included into the mean
@@ -556,7 +680,7 @@ lasts %>%
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 
 ```r
@@ -584,7 +708,7 @@ firsts %>%
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
 
 
@@ -688,7 +812,7 @@ firsts %>%
   labs(caption = "First authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
 
 
 
@@ -698,7 +822,7 @@ lasts %>%
   labs(caption = "Last authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
 
 Only SDG 3 really has a clear picture for the lowest percentile.
 
@@ -710,7 +834,7 @@ firsts %>%
   labs(caption = "First authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
 
 
 
@@ -721,5 +845,5 @@ lasts %>%
   labs(caption = "Last authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
 
