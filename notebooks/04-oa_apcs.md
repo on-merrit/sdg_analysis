@@ -80,7 +80,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve659a3358d2843c42
+preservefc1f4ff6bf813db6
 
 
 
@@ -107,7 +107,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve4ddf456676fa7418
+preserve5815678687d3239b
 
 
 ```r
@@ -132,7 +132,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve3613bc96491596b0
+preservedf1fed1c77bf0b3d
 
 is this decline in non DOAJ based on the rise of Gold OA and the decline of 
 hybrid/bronze?
@@ -155,6 +155,68 @@ oa_colour_scheme <- c(bronze = "#cd7f32", hybrid = "#ffa500",
 
 
 p <- oa_colours %>% 
+  drop_na() %>% 
+  group_by(year, SDG_label) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ggplot(aes(as_year(year), prop, colour = oa_status)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(values = oa_colour_scheme) +
+  theme_bw() +
+  labs(x = NULL, y = NULL)
+p
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preservec3f76c193100973e
+
+what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
+
+
+```r
+not_in_doaj <- step1 %>% 
+  # only keep those that are not in DAOJ
+  filter(APC == "NA") %>% 
+  group_by(SDG_label, year) %>% 
+  count(oa_status) %>% 
+  collect()
+
+p <- not_in_doaj %>% 
+  group_by(year, SDG_label) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ggplot(aes(as_year(year), prop, colour = oa_status)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(values = oa_colour_scheme) +
+  theme_bw() +
+  labs(x = NULL, y = NULL)
+p
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserveebc13d282f6a8eb0
+
+
+
+```r
+p <- not_in_doaj %>% 
   filter(year %in% 2015:2018) %>%
   group_by(SDG_label, oa_status) %>% 
   summarise(n = sum(n)) %>% 
@@ -180,78 +242,15 @@ p <- oa_colours %>%
 p
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
-
-
-
-```r
-plotly::ggplotly(p)
-```
-
-preserve30b68f2ef473c07b
-
-
-```r
-p <- oa_colours %>% 
-  drop_na() %>% 
-  group_by(year, SDG_label) %>% 
-  mutate(prop = n/sum(n)) %>% 
-  ggplot(aes(as_year(year), prop, colour = oa_status)) +
-  geom_line() +
-  geom_point() +
-  facet_wrap(vars(SDG_label)) +
-  scale_y_continuous(labels = scales::percent) +
-  scale_color_manual(values = oa_colour_scheme) +
-  theme_bw() +
-  labs(x = NULL, y = NULL)
-p
-```
-
-![](04-oa_apcs_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
-
-
-
-```r
-plotly::ggplotly(p)
-```
-
-preserveaf043aaf1a29c541
-
-what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
-
-
-```r
-not_in_doaj <- step1 %>% 
-  # only keep those that are not in DAOJ
-  filter(APC == "NA") %>% 
-  group_by(SDG_label, year) %>% 
-  count(oa_status) %>% 
-  collect()
-
-p <- not_in_doaj %>% 
-  group_by(year, SDG_label) %>% 
-  mutate(prop = n/sum(n)) %>% 
-  ggplot(aes(as_year(year), prop, colour = oa_status)) +
-  geom_line() +
-  geom_point() +
-  facet_wrap(vars(SDG_label)) +
-  scale_y_continuous(labels = scales::percent) +
-  scale_color_manual(values = c(bronze = "#cd7f32", hybrid = "#ffa500", 
-                                gold = "#ffe135", green = "#4CAF50")) +
-  theme_bw() +
-  labs(x = NULL, y = NULL)
-p
-```
-
 ![](04-oa_apcs_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 
+
 ```r
 plotly::ggplotly(p)
 ```
 
-preservef064fc96874d9801
-
+preserve2a99883355c15d53
 
 
 
@@ -480,7 +479,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveea6b840f969143a3
+preserve4bf70ac4f4c8bd4c
 
 # APC prices
 The figures below use full counting, but for first and last authors separately.
