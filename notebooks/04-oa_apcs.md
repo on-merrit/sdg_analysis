@@ -80,7 +80,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservefc1f4ff6bf813db6
+preserved0dd7d41712a5dc3
 
 
 
@@ -96,7 +96,8 @@ p <- apc_per_sdg %>%
   facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
   theme_bw() +
-  labs(x = NULL, y = NULL)
+  labs(x = NULL, y = NULL) +
+  theme(legend.position = "top")
 p
 ```
 
@@ -107,21 +108,28 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve5815678687d3239b
+preserve5d51fc598a082227
 
 
 ```r
-p <- apc_per_sdg %>% 
-  filter(APC != "Not in DOAJ") %>% 
+apc_merged_hybrid <- step1 %>% 
+  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+                         TRUE ~ APC)) %>%  
+  group_by(SDG_label, year) %>% 
+  count(APC) %>% 
+  collect()
+
+p <- apc_merged_hybrid %>% 
+  filter(APC != "NA") %>% 
   group_by(year, SDG_label) %>% 
   mutate(prop = n/sum(n)) %>% 
-  ggplot(aes(as_year(year), prop, colour = APC)) +
+  filter(APC == "TRUE") %>% 
+  ggplot(aes(as_year(year), prop, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
-  facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
   theme_bw() +
-  labs(x = NULL, y = NULL)
+  labs(x = NULL, y = NULL, colour = NULL)
 p
 ```
 
@@ -132,7 +140,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservedf1fed1c77bf0b3d
+preserve128f07e892fc2206
 
 is this decline in non DOAJ based on the rise of Gold OA and the decline of 
 hybrid/bronze?
@@ -177,7 +185,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservec3f76c193100973e
+preserve1929c54bcdaf77e0
 
 what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
 
@@ -211,7 +219,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveebc13d282f6a8eb0
+preserve6441d74a12847cc0
 
 
 
@@ -250,7 +258,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve2a99883355c15d53
+preserveb91cd1950393d6e4
 
 
 
@@ -479,7 +487,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve4bf70ac4f4c8bd4c
+preserveda71a7e9b3fa2be2
 
 # APC prices
 The figures below use full counting, but for first and last authors separately.
