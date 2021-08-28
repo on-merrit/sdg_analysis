@@ -3,7 +3,7 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "30 July, 2021"
+date: "28 August, 2021"
 output: 
   html_document:
     keep_md: true
@@ -72,7 +72,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve9c59c609a39e29c3
+preserve37cdff7ce54c3182
 
 
 We can observe a slight upward trend, that could be attributable to the overall
@@ -146,8 +146,6 @@ what would be better? maybe to say something about quantiles/quartiles?
 ## Counts
 
 ```r
-author_paper_affiliations_w_groups <- make_author_groups(author_paper_affiliations)
-
 age_base <- papers %>% 
   select(paperid, SDG_label, year) %>% 
   left_join(author_paper_affiliations_w_groups) %>% 
@@ -929,7 +927,8 @@ gender_base <- papers %>%
   left_join(author_paper_affiliations_w_groups) %>% 
   left_join(author_metadata) %>% 
   select(paperid, SDG_label, year, author_position, authorid, 
-         paper_author_cat, gender)
+         paper_author_cat, gender) %>% 
+  filter(gender != "unknown", year < 2020)
 ```
 
 ```
@@ -943,58 +942,71 @@ gender_base <- papers %>%
 
 
 ```r
-# only do this for papers where we have gender for all authors
-gender_ratio_p_paper <- gender_base %>% 
-  select(paperid, gender) %>% 
-  group_by(paperid) %>% 
-  mutate(all_genderized = sum(as.numeric(gender == "unknown")) == 0) %>% 
-  filter(all_genderized) %>% 
+gender_years <- gender_base %>% 
+  group_by(SDG_label, year) %>% 
   count(gender) %>% 
   mutate(prop = n/sum(n)) %>% 
-  ungroup() %>% 
-  filter(gender == "female") %>% 
-  rename(prop_female = prop)
-
-
-gender_oa_papers <- gender_ratio_p_paper %>% 
-  left_join(papers) %>% 
-  # it could be interesting though to look at this via regression -> then keep
-  # more variables
-  select(paperid, prop_female, year, SDG_label) 
-```
-
-```
-## Joining, by = "paperid"
-```
-
-
-```r
-gender_by_sdg <- gender_oa_papers %>% 
-  group_by(year, SDG_label) %>% 
-  summarise(mean_prop_female = mean(prop_female)) %>% 
   collect()
 ```
 
 
 ```r
-gender_by_sdg %>% 
-  ggplot(aes(as_year(year), mean_prop_female, colour = fix_sdg(SDG_label))) +
+gender_position <- gender_base %>% 
+  group_by(SDG_label, year, author_position) %>% 
+  count(gender) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect()
+```
+
+
+
+```r
+date_scale <- scale_x_date(breaks = as_year(c(2006, 2010, 2015, 2019)),
+               date_labels = "%Y")
+p <- gender_years %>% 
+  filter(gender == "female") %>% 
+  ggplot(aes(as_year(year), prop, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
+  date_scale +
   scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
-  labs(x = NULL, y = "Mean share of female authors on publications",
-       caption = "Including publications where all genders are known.",
-       colour = NULL) +
-  theme_bw() +
+  labs(x = NULL, y = "Share of female authorships", colour = NULL) +
   theme(legend.position = "top")
+p
 ```
 
 ![](01-sdg_who_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
-Is this credible? Higher share of females overall? Computations correct? Bias in
-genderizing? 
 
-From general trends on gender I would expect a lower female participation.
+```r
+plotly::ggplotly(p)
+```
+
+preserve3cc3f6ccfcf8186c
+
+
+```r
+p <- gender_position %>% 
+  filter(gender == "female") %>% 
+  ggplot(aes(as_year(year), prop, colour = fix_sdg(SDG_label))) +
+  geom_line() +
+  geom_point() +
+  date_scale +
+  facet_wrap(vars(author_position)) +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  labs(x = NULL, y = "Share of female authorships", colour = NULL) +
+  theme(legend.position = "top")
+p
+```
+
+![](01-sdg_who_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve65433473f09b5b99
 
 
 
