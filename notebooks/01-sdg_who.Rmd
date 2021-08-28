@@ -819,7 +819,7 @@ gender_position <- gender_base %>%
 ```
 
 
-```{r}
+```{r, fig.width=6, fig.height=3}
 date_scale <- scale_x_date(breaks = as_year(c(2006, 2010, 2015, 2019)),
                date_labels = "%Y")
 p <- gender_years %>% 
