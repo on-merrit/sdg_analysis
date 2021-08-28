@@ -727,8 +727,9 @@ pdata <- gender_oa_position %>%
 ```
 
 
-```{r}
+```{r, fig.height=8, fig.width=4}
 pdata %>% 
+  filter(year < 2020) %>% 
   # filter(author_position == "first_author") %>% 
   ggplot(aes(as_year(year), diff_from_male, colour = fix_sdg(SDG_label))) +
   geom_line() +
@@ -737,7 +738,8 @@ pdata %>%
   scale_y_continuous(labels = scales::percent) +
   theme_bw() +
   theme(legend.position = "top") +
-  labs(title = "Difference in OA publishing between genders")
+  labs(title = "Difference in OA publishing between genders",
+       x = NULL, y = "Difference from males", colour = NULL)
 ```
 
 A value of x% means that in that year, the share of papers with women as 
