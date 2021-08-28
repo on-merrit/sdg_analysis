@@ -1,7 +1,7 @@
 ---
 title: "SDG OA author characteristics"
 author: "Thomas Klebel"
-date: "30 July, 2021"
+date: "28 August, 2021"
 output: 
   html_document:
     keep_md: true
@@ -696,7 +696,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserve3d869f5828efafdf
+preserve76a2917c410110de
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -736,7 +736,7 @@ gender_rate <- gender_base %>%
   mutate(prop = n/sum(n)) %>% 
   collect()
 ```
-Visalíse oa rate per gender over time
+Visalise oa rate per gender over time
 
 
 ```r
@@ -760,7 +760,6 @@ Do this only for a specific year.
 
 It will also be more productive to visualise this for first and last authors
 only.
-
 
 Split for author positions
 
@@ -880,6 +879,7 @@ pdata <- gender_oa_position %>%
 
 ```r
 pdata %>% 
+  filter(year < 2020) %>% 
   # filter(author_position == "first_author") %>% 
   ggplot(aes(as_year(year), diff_from_male, colour = fix_sdg(SDG_label))) +
   geom_line() +
@@ -888,7 +888,8 @@ pdata %>%
   scale_y_continuous(labels = scales::percent) +
   theme_bw() +
   theme(legend.position = "top") +
-  labs(title = "Difference in OA publishing between genders")
+  labs(title = "Difference in OA publishing between genders",
+       x = NULL, y = "Difference from males", colour = NULL)
 ```
 
 ![](03-oa_who_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
@@ -966,5 +967,49 @@ first and last positions have little effect?
 
 For the gender rate per paper, we only include papers for which we have gender
 for all authors. Maybe this distorts, i.e. reduces the set considerably?
+
+
+
+
+### Share of female authorships by OA vs non-OA
+
+```r
+gender_rate_2 <- gender_base %>% 
+  group_by(SDG_label, year, is_oa) %>% 
+  count(gender) %>% 
+  filter(gender != "unknown", year < 2019) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect()
+```
+Visalise oa rate per gender over time
+
+
+```r
+p <- gender_rate_2 %>% 
+  filter(gender == "female") %>% 
+  mutate(is_oa = if_else(is_oa, "OA articles", "Non-OA articles")) %>% 
+  ggplot(aes(as_year(year), prop, colour = is_oa)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  facet_wrap(vars(fix_sdg(SDG_label))) +
+  labs(x = NULL, y = "Share of female authorships", colour = NULL) +
+  theme(legend.position = "top")
+p
+```
+
+![](03-oa_who_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve351525d1fee33960
+
+
+
+
+
 
 
