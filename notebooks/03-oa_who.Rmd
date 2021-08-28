@@ -727,7 +727,7 @@ pdata <- gender_oa_position %>%
 ```
 
 
-```{r, fig.height=8, fig.width=4}
+```{r, fig.height=4, fig.width=8}
 pdata %>% 
   filter(year < 2020) %>% 
   # filter(author_position == "first_author") %>% 
