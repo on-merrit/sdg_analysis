@@ -78,6 +78,8 @@ leiden <- spark_read_csv(sc,
                          name = "leiden")
 
 message("Successfully read all datasets!")
+
+theme_set(theme_bw())
 ```
 
 
@@ -603,7 +605,7 @@ gender_rate <- gender_base %>%
   mutate(prop = n/sum(n)) %>% 
   collect()
 ```
-Visalíse oa rate per gender over time
+Visalise oa rate per gender over time
 
 ```{r}
 gender_rate %>% 
@@ -624,7 +626,6 @@ Do this only for a specific year.
 
 It will also be more productive to visualise this for first and last authors
 only.
-
 
 Split for author positions
 
@@ -803,6 +804,43 @@ first and last positions have little effect?
 
 For the gender rate per paper, we only include papers for which we have gender
 for all authors. Maybe this distorts, i.e. reduces the set considerably?
+
+
+
+
+### Share of female authorships by OA vs non-OA
+```{r}
+gender_rate_2 <- gender_base %>% 
+  group_by(SDG_label, year, is_oa) %>% 
+  count(gender) %>% 
+  filter(gender != "unknown", year < 2019) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  collect()
+```
+Visalise oa rate per gender over time
+
+```{r, fig.width=8, fig.height=3.5}
+p <- gender_rate_2 %>% 
+  filter(gender == "female") %>% 
+  mutate(is_oa = if_else(is_oa, "OA articles", "Non-OA articles")) %>% 
+  ggplot(aes(as_year(year), prop, colour = is_oa)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  facet_wrap(vars(fix_sdg(SDG_label))) +
+  labs(x = NULL, y = "Share of female authorships", colour = NULL) +
+  theme(legend.position = "top")
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
+
+
+
+
+
 
 ```{r shut-down, echo=FALSE, message=FALSE}
 message("Done. Shutting down...")
