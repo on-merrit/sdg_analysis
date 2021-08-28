@@ -822,7 +822,7 @@ gender_position <- gender_base %>%
 ```{r}
 date_scale <- scale_x_date(breaks = as_year(c(2006, 2010, 2015, 2019)),
                date_labels = "%Y")
-gender_years %>% 
+p <- gender_years %>% 
   filter(gender == "female") %>% 
   ggplot(aes(as_year(year), prop, colour = fix_sdg(SDG_label))) +
   geom_line() +
@@ -831,10 +831,15 @@ gender_years %>%
   scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
   labs(x = NULL, y = "Share of female authorships", colour = NULL) +
   theme(legend.position = "top")
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
 ```
 
 ```{r, fig.width=8, fig.height=4}
-gender_position %>% 
+p <- gender_position %>% 
   filter(gender == "female") %>% 
   ggplot(aes(as_year(year), prop, colour = fix_sdg(SDG_label))) +
   geom_line() +
@@ -844,6 +849,11 @@ gender_position %>%
   scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
   labs(x = NULL, y = "Share of female authorships", colour = NULL) +
   theme(legend.position = "top")
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
 ```
 
 
