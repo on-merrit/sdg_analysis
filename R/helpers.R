@@ -63,13 +63,13 @@ make_author_groups <- function(spark_author_paper_affiliations) {
 # approach from https://stackoverflow.com/a/11728547/3149349
 cut_quantiles <- function(x) {
   cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE),
-      labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")),
+      labels = c("p[0,20]", "p(20,40]", "p(40,60]", "p(60,80]", "p(80,100]"),
       include.lowest = TRUE)
 }
 
 cut_quartiles <- function(x) {
-  cut(x, breaks = quantile(x, probs = seq(0, 1, by = .25), na.rm = TRUE),
-      labels = {1:4*25} %>% map_chr(~paste("p", . - 25, ., sep = "-")),
+  cut(0:100, breaks = quantile(0:100, probs = seq(0, 1, by = .25), na.rm = TRUE),
+      labels = c("p[0,25]", "p(25,50]", "p(50,75]", "p(75,100]"),
       include.lowest = TRUE)
 }
 
