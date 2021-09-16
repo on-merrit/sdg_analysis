@@ -1,7 +1,7 @@
 ---
 title: "OA Overview"
 author: "Thomas Klebel"
-date: "28 July, 2021"
+date: "16 September, 2021"
 output: 
   html_document:
     keep_md: true
@@ -36,8 +36,8 @@ oa_per_year %>%
   group_by(SDG_label, year) %>%
   mutate(oa_share = n/sum(n)) %>%
   filter(is_oa) %>%
-  ggplot(aes(as_year(year), oa_share, colour = SDG_label,
-             group = SDG_label)) +
+  ggplot(aes(as_year(year), oa_share, colour = fix_sdg(SDG_label),
+             group = fix_sdg(SDG_label))) +
   geom_point() +
   geom_line() +
   scale_y_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
@@ -55,8 +55,8 @@ oa_status_per_year %>%
   filter(!is.na(provider_cat), provider_cat != "Not OA") %>%
   mutate(oa_share = n/sum(n)) %>%
   ggplot(aes(as_year(year), oa_share,
-             colour = SDG_label,
-             group = SDG_label)) +
+             colour = fix_sdg(SDG_label),
+             group = fix_sdg(SDG_label))) +
   geom_point() +
   geom_line() +
   facet_wrap(vars(provider_cat)) +
@@ -287,7 +287,7 @@ p <- oa_with_gdp_per_cap %>%
   scale_size_continuous(trans = "sqrt", labels = scales::comma) +
   scale_y_continuous(labels = scales::percent) +
   scale_x_log10(breaks = c(1e+03, 2e+03, 5e+03, 1e+04, 2e+04, 5e+04, 1e+05),
-                labels = scales::comma) +
+                labels = function(x) scales::comma(x, prefix = "$")) +
   theme_bw() 
 
 p1 <- p +
@@ -309,7 +309,7 @@ p1 +
 plotly::ggplotly(p1)
 ```
 
-preservef897a2cbedb9b277
+preservedaa4f106f4d42f89
 
 
 
@@ -330,7 +330,7 @@ p +
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
 ### split by SDG
 
@@ -342,7 +342,7 @@ oa_per_country_per_SDG <- oa_per_affiliation_selected %>%
          sum_frac_total = sum(sum_frac_oa)) %>%
   collect()
 
-oa_sdg__with_gdp_per_cap <- oa_per_country_per_SDG %>%
+oa_sdg_with_gdp_per_cap <- oa_per_country_per_SDG %>%
   left_join(wb_local, by = c("country" = "country_code")) %>%
   select(-indicator_name) %>%
   filter(indicator_code %in% c("NY.GDP.PCAP.KD")) %>%
@@ -353,7 +353,7 @@ oa_sdg__with_gdp_per_cap <- oa_per_country_per_SDG %>%
 
 
 ```r
-oa_sdg__with_gdp_per_cap %>%
+oa_sdg_with_gdp_per_cap %>%
   filter(sum_frac_total >= 100) %>%
   left_join(proper_countries, by = c("country" = "country_code")) %>% 
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
@@ -364,7 +364,7 @@ oa_sdg__with_gdp_per_cap %>%
   scale_size_continuous(trans = "sqrt", labels = scales::comma) +
   scale_y_continuous(labels = scales::percent) +
   scale_x_log10(breaks = c(1e+03, 2e+03, 5e+03, 1e+04, 2e+04, 5e+04, 1e+05),
-                labels = scales::comma) +
+                labels = function(x) scales::comma(x, prefix = "$")) +
   theme_bw() +
   facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3)), nrow = 2) +
   theme(legend.position = c(.8, .2))
@@ -374,7 +374,7 @@ oa_sdg__with_gdp_per_cap %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 Pattern is stable across all three SDGs. 
 
@@ -438,19 +438,28 @@ pdata <- oa_with_gdp_per_cap %>%
 
 
 ```r
-pdata %>% 
-  ggplot(aes(oa_diff, fct_reorder(region, oa_diff))) +
+p <- pdata %>% 
+  ggplot(aes(oa_diff, fct_reorder(region, oa_diff), label = country)) +
   geom_boxplot(outlier.alpha = 0, width = .7) +
   geom_jitter(height = .11) +
   scale_x_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
-  labs(x = "Percentage point increase in OA publications", 
+  labs(x = "Percentage point increase in OA publication share", 
        y = NULL,
        title = "Change in OA publication propensity across regions",
        subtitle = "Time window: 2009-2013 vs 2014-2018") +
   theme_bw()
+p
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve932efe589b8b2bdc
+
 
 
 ```r
@@ -465,14 +474,14 @@ pdata %>%
   geom_boxplot(outlier.alpha = 0, width = .7) +
   geom_jitter(height = .11) +
   scale_x_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
-  labs(x = "Percentage point increase in OA publications", 
+  labs(x = "Percentage point increase in OA publication share", 
        y = NULL,
        title = "Change in OA publication propensity across income groups",
        subtitle = "Time window: 2009-2013 vs 2014-2018") +
   theme_bw()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 
 
@@ -508,7 +517,7 @@ p +
   aes(colour = oa_increase)
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 Only very few countries dropping in terms of OA.
 
@@ -522,7 +531,7 @@ p +
   theme(legend.position = "top") 
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 Where are biggest increases?
 
@@ -586,7 +595,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preserve43b488b15eeb9586
+preservebddc383ffeb8f420
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -723,7 +732,7 @@ oa_per_region_summarised %>%
   theme(legend.position = c(.8, .2))
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
 
 
 
@@ -758,7 +767,7 @@ oa_per_affil_firsts_w_groups %>%
   geom_boxplot()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
 
 
 
@@ -781,7 +790,7 @@ oa_per_affil_firsts_w_groups %>%
 ## notch went outside hinges. Try setting notch=FALSE.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
 
 This has the issue of treating Bermuda and USA equally (one data point in north
 america).
@@ -801,7 +810,7 @@ oa_per_affil_firsts_w_groups %>%
 ## `summarise()` has grouped output by 'region'. You can override using the `.groups` argument.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
 
 
 ```r
@@ -821,7 +830,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
 
 This figure is good to go in terms of setup. Add manual indication of what the diamond
 means with inkscape or similar.
@@ -852,7 +861,7 @@ oa_per_income_summarised <- oa_per_affiliation %>%
 
 ```r
 oa_per_affil_firsts_w_groups %>% 
-  ggplot(aes(income_group, prop_oa)) +
+  ggplot(aes(fct_rev(income_group), prop_oa)) +
   geom_beeswarm(aes(colour = income_group, group = income_group,
                     size = n_papers),
                 show.legend = FALSE, alpha = .6) +
@@ -868,7 +877,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
 
 - LIC higher, except for SDG 13
 - MIC always lower than rest.
