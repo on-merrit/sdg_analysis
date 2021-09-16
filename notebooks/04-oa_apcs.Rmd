@@ -15,6 +15,7 @@ Sys.setenv(SPARK_HOME = "/usr/hdp/current/spark2-client")
 library(sparklyr)
 library(tidyverse)
 library(arrow)
+library(patchwork)
 source(here::here("R/helpers.R"))
 
 message("Connecting to spark...")
@@ -480,19 +481,19 @@ labels <- lasts %>%
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-lasts %>% 
+lasts_p <- lasts %>% 
   ggplot(aes(P_top10, mean_apc)) +
-  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_point(aes(colour = n_papers), alpha = .4, show.legend = FALSE) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
   geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
-  facet_wrap(vars(SDG_label), nrow = 1) +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 1) +
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
-  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution",
-       caption = "Full counting; last authors only")
+  labs(colour = "Number of papers per institution",
+       caption = "Full counting; last authors only",
+       y = "Mean APC",
+       x = expression(P["top 10%"]))
 ```
 
 Inclusion criterion was for an institution to have at least 20 papers per last
@@ -508,20 +509,30 @@ labels <- firsts %>%
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-firsts %>% 
+firsts_p <- firsts %>% 
   ggplot(aes(P_top10, mean_apc)) +
   geom_point(aes(colour = n_papers), alpha = .4) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
   geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
-  facet_wrap(vars(SDG_label), nrow = 1) +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 1) +
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
-  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution",
-       caption = "Full counting; first authors only")
+  labs(colour = "Number of papers per institution",
+       caption = "Full counting; first authors only",
+       y = "Mean APC",
+       x = expression(P["top 10%"]))
 ```
+
+
+```{r, fig.width=8, fig.height=8}
+firsts_p / lasts_p + 
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Mean APC per institution by institutional prestige (2015-2018)",
+                  tag_levels = "A") &
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines"))
+```
+
 
 
 Same as above, but with zero apcs included into the mean
@@ -561,19 +572,20 @@ labels <- lasts %>%
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-lasts %>% 
+lasts_p <- lasts %>% 
   ggplot(aes(P_top10, mean_apc)) +
-  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_point(aes(colour = n_papers), alpha = .4, show.legend = FALSE) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
   geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
-  facet_wrap(vars(SDG_label), nrow = 1) +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 1) +
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
   labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
        colour = "Number of papers per institution",
-       caption = "Full counting; last authors only; including no APC as '0'")
+       caption = "Full counting; last authors only; including no APC as '0'",
+       y = "Mean APC",
+       x = expression(P["top 10%"]))
 ```
 
 ```{r, fig.width=8, fig.height=5}
@@ -582,19 +594,29 @@ labels <- firsts %>%
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-firsts %>% 
+firsts_p <- firsts %>% 
   ggplot(aes(P_top10, mean_apc)) +
   geom_point(aes(colour = n_papers), alpha = .4) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
   geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
-  facet_wrap(vars(SDG_label), nrow = 1) +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 1) +
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
   labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
        colour = "Number of papers per institution",
-       caption = "Full counting; first authors only; including no APC as '0'")
+       caption = "Full counting; first authors only; including no APC as '0'",
+       y = "Mean APC",
+       x = expression(P["top 10%"]))
+```
+
+
+```{r, fig.width=8, fig.height=8}
+firsts_p / lasts_p + 
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Mean APC per institution by institutional prestige (2015-2018)",
+                  tag_levels = "A") &
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines"))
 ```
 
 
