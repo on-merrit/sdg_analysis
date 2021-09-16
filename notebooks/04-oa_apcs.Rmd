@@ -147,7 +147,7 @@ plotly::ggplotly(p)
 
 ```{r, fig.width=8, fig.height=3}
 apc_merged_hybrid <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
                          TRUE ~ APC)) %>%  
   group_by(SDG_label, year) %>% 
   count(APC) %>% 
@@ -276,7 +276,7 @@ this time with APC yes, no, and IF mean.
 
 ```{r, cache=TRUE}
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
                          TRUE ~ APC)) %>%  
   group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
@@ -376,10 +376,10 @@ What do we learn?
 
 
 
-## collapsing hybrid, bronze + DOAJ APC
+## collapsing hybrid + DOAJ APC
 ```{r, cache=TRUE}
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
                          TRUE ~ APC)) %>%  
   group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
