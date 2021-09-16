@@ -80,7 +80,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve2aa76f85a9412fa1
+preservef1c22810b1b53776
 
 
 
@@ -108,7 +108,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve944bc135eed20029
+preserve5cba95817f3b9fe3
 
 
 ```r
@@ -140,7 +140,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve4b6c3cedd14b263a
+preservedf22cfe62288bbe4
 
 is this decline in non DOAJ based on the rise of Gold OA and the decline of 
 hybrid/bronze?
@@ -185,7 +185,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve3a463b2c0b7d785e
+preservea374c1c373c99800
 
 what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
 
@@ -219,7 +219,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve80ee00906cddc9f8
+preserveb32e234611b33e1e
 
 
 
@@ -258,7 +258,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve8558153972ffd32c
+preservee8e30a1b1a4c6b87
 
 
 
@@ -273,8 +273,8 @@ this time with APC yes, no, and IF mean.
 
 ```r
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
-                         TRUE ~ APC)) %>%  
+  # mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
+  #                        TRUE ~ APC)) %>%  
   group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
 
@@ -328,21 +328,23 @@ The figure below uses fractional counting.
 p <- apc_affiliation_leiden %>% 
   filter(year %in% 2015:2018) %>%
   group_by(SDG_label, P_top10, APC) %>% 
+  filter(APC != "NA") %>% 
   summarise(n = sum(n)) %>%
   # remove those journals for which we really do not have APC information
-  filter(APC != "NA") %>% 
   mutate(apc_share = n/sum(n)) %>% 
   mutate(APC = if_else(APC == "TRUE", "Yes", "No")) %>% 
-  ggplot(aes(P_top10, apc_share, colour = APC)) +
+  # only display the share of articles with an APC
+  filter(APC == "Yes") %>% 
+  ggplot(aes(P_top10, apc_share)) +
   geom_point(size = .7, alpha = .4) +
   scale_x_log10() +
   geom_smooth() +
   facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
-  labs(y = "Share of papers in category", colour = "APC involved",
+  labs(y = "Share of papers with APC", colour = "APC involved",
        title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not",
-       caption = "Fractional counting",
+       caption = "Fractional counting, publications from 2015-2018",
        x = expression(P["top 10%"]))
 ```
 
@@ -359,6 +361,7 @@ p
 ```
 
 ![](04-oa_apcs_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+
 
 Very interesting: really high universities publish less in DAOJ journals. Why is
 that? which types of journals are these? This is especially true in medicine.
@@ -413,14 +416,15 @@ What do we learn?
 
 ```r
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
-                         TRUE ~ APC)) %>%  
+  # mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
+  #                        TRUE ~ APC)) %>%  
   group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
 
 # apc_per_affiliation_per_sdg %>% ungroup() %>% count(APC)
 
 totals <- step1 %>% 
+  filter(APC != "NA") %>% 
   group_by(affiliationid, SDG_label, year) %>% 
   summarise(n_frac_papers = sum(frac_value, na.rm = TRUE))
 
@@ -489,7 +493,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve464618853044915a
+preserve4bc6263e8698ee96
 
 # APC prices
 The figures below use full counting, but for first and last authors separately.
@@ -838,7 +842,7 @@ firsts_p <- firsts %>%
 plotly::ggplotly(firsts_p)
 ```
 
-preserve4061aa01a7b6e6fe
+preservef0f198d63a15d3b8
 
 
 
@@ -854,7 +858,7 @@ lasts_p <- lasts %>%
 plotly::ggplotly(lasts_p)
 ```
 
-preservef472d71a6d2eeeb2
+preserve467e2aa5f1ccbb30
 
 
 
