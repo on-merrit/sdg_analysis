@@ -581,8 +581,7 @@ lasts_p <- lasts %>%
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution",
+  labs(colour = "Number of papers per institution",
        caption = "Full counting; last authors only; including no APC as '0'",
        y = "Mean APC",
        x = expression(P["top 10%"]))
@@ -603,8 +602,7 @@ firsts_p <- firsts %>%
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution",
+  labs(colour = "Number of papers per institution",
        caption = "Full counting; first authors only; including no APC as '0'",
        y = "Mean APC",
        x = expression(P["top 10%"]))
@@ -685,7 +683,8 @@ plot_over_time <- function(df, indicator, y_var) {
     facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
     #scale_y_log10() +
     guides(colour = guide_legend(reverse = FALSE)) +
-    labs(x = NULL, y = "Median of APCs in quartile") +
+    labs(x = NULL, y = "Median of APCs in quartile",
+         colour = expression(paste("Quartiles within P"["top 10%"]))) +
     theme_bw() +
     theme(legend.position = "top")
 }
@@ -693,16 +692,33 @@ plot_over_time <- function(df, indicator, y_var) {
 
 
 ```{r}
-firsts %>% 
+firsts_p <- firsts %>% 
   plot_over_time(P_top10, mean_apc) +
   labs(caption = "First authors; full counting")
 ```
 
+```{r}
+plotly::ggplotly(firsts_p)
+```
+
+
 
 ```{r}
-lasts %>% 
+lasts_p <- lasts %>% 
   plot_over_time(P_top10, mean_apc) +
   labs(caption = "Last authors; full counting")
+```
+
+```{r}
+plotly::ggplotly(lasts_p)
+```
+
+
+```{r, fig.width=8, fig.height=7}
+firsts_p / lasts_p + 
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "top")
 ```
 
 Only SDG 3 really has a clear picture for the lowest percentile.
