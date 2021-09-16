@@ -319,7 +319,7 @@ p <- apc_affiliation_leiden %>%
   # remove those journals for which we really do not have APC information
   filter(APC != "NA") %>% 
   mutate(apc_share = n/sum(n)) %>% 
-  mutate(APC = if_else(APC, "Yes", "No")) %>% 
+  mutate(APC = if_else(APC == "TRUE", "Yes", "No")) %>% 
   ggplot(aes(P_top10, apc_share, colour = APC)) +
   geom_point(size = .7, alpha = .4) +
   scale_x_log10() +
