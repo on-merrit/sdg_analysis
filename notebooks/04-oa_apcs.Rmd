@@ -276,8 +276,8 @@ this time with APC yes, no, and IF mean.
 
 ```{r, cache=TRUE}
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
-                         TRUE ~ APC)) %>%  
+  # mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
+  #                        TRUE ~ APC)) %>%  
   group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
 
@@ -311,28 +311,31 @@ apc_affiliation_leiden <- apc_per_affiliation_per_sdg_local %>%
 
 The figure below uses fractional counting.
 
-```{r}
+```{r, fig.height=4, fig.width=8}
 p <- apc_affiliation_leiden %>% 
   filter(year %in% 2015:2018) %>%
   group_by(SDG_label, P_top10, APC) %>% 
+  filter(APC != "NA") %>% 
   summarise(n = sum(n)) %>%
   # remove those journals for which we really do not have APC information
-  filter(APC != "NA") %>% 
   mutate(apc_share = n/sum(n)) %>% 
   mutate(APC = if_else(APC == "TRUE", "Yes", "No")) %>% 
-  ggplot(aes(P_top10, apc_share, colour = APC)) +
+  # only display the share of articles with an APC
+  filter(APC == "Yes") %>% 
+  ggplot(aes(P_top10, apc_share)) +
   geom_point(size = .7, alpha = .4) +
   scale_x_log10() +
   geom_smooth() +
   facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
-  labs(y = "Share of papers in category", colour = "APC involved",
+  labs(y = "Share of papers with APC", colour = "APC involved",
        title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not",
-       caption = "Fractional counting",
+       caption = "Fractional counting, publications from 2015-2018",
        x = expression(P["top 10%"]))
 p
 ```
+
 
 Very interesting: really high universities publish less in DAOJ journals. Why is
 that? which types of journals are these? This is especially true in medicine.
@@ -379,14 +382,15 @@ What do we learn?
 ## collapsing hybrid + DOAJ APC
 ```{r, cache=TRUE}
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
-                         TRUE ~ APC)) %>%  
+  # mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
+  #                        TRUE ~ APC)) %>%  
   group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
 
 # apc_per_affiliation_per_sdg %>% ungroup() %>% count(APC)
 
 totals <- step1 %>% 
+  filter(APC != "NA") %>% 
   group_by(affiliationid, SDG_label, year) %>% 
   summarise(n_frac_papers = sum(frac_value, na.rm = TRUE))
 
