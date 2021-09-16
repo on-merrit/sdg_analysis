@@ -39,6 +39,10 @@ sdg_labels <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_labels.csv",
 papers <- papers %>% 
   left_join(sdg_labels)
 
+# remove papers from 2020 up-front
+papers <- papers %>% 
+  filter(year < 2020)
+
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
                          name = "affils")
@@ -73,6 +77,8 @@ wb_countries_spark <- spark_read_csv(
   name = "WBCountries")
 
 message("Successfully read all datasets!")
+
+theme_set(theme_bw())
 ```
 
 
@@ -100,8 +106,8 @@ oa_per_year %>%
   group_by(SDG_label, year) %>%
   mutate(oa_share = n/sum(n)) %>%
   filter(is_oa) %>%
-  ggplot(aes(as_year(year), oa_share, colour = SDG_label,
-             group = SDG_label)) +
+  ggplot(aes(as_year(year), oa_share, colour = fix_sdg(SDG_label),
+             group = fix_sdg(SDG_label))) +
   geom_point() +
   geom_line() +
   scale_y_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
@@ -110,14 +116,14 @@ oa_per_year %>%
   theme(legend.position = "top")
 ```
 
-```{r sdg_oa_type_by_fos}
+```{r sdg_oa_type_by_fos, fig.width=8, fig.height=3.75}
 oa_status_per_year %>%
   group_by(SDG_label, year) %>%
   filter(!is.na(provider_cat), provider_cat != "Not OA") %>%
   mutate(oa_share = n/sum(n)) %>%
   ggplot(aes(as_year(year), oa_share,
-             colour = SDG_label,
-             group = SDG_label)) +
+             colour = fix_sdg(SDG_label),
+             group = fix_sdg(SDG_label))) +
   geom_point() +
   geom_line() +
   facet_wrap(vars(provider_cat)) +
@@ -304,7 +310,7 @@ p <- oa_with_gdp_per_cap %>%
   scale_size_continuous(trans = "sqrt", labels = scales::comma) +
   scale_y_continuous(labels = scales::percent) +
   scale_x_log10(breaks = c(1e+03, 2e+03, 5e+03, 1e+04, 2e+04, 5e+04, 1e+05),
-                labels = scales::comma) +
+                labels = function(x) scales::comma(x, prefix = "$")) +
   theme_bw() 
 
 p1 <- p +
@@ -342,7 +348,7 @@ oa_per_country_per_SDG <- oa_per_affiliation_selected %>%
          sum_frac_total = sum(sum_frac_oa)) %>%
   collect()
 
-oa_sdg__with_gdp_per_cap <- oa_per_country_per_SDG %>%
+oa_sdg_with_gdp_per_cap <- oa_per_country_per_SDG %>%
   left_join(wb_local, by = c("country" = "country_code")) %>%
   select(-indicator_name) %>%
   filter(indicator_code %in% c("NY.GDP.PCAP.KD")) %>%
@@ -352,7 +358,7 @@ oa_sdg__with_gdp_per_cap <- oa_per_country_per_SDG %>%
 ```
 
 ```{r, fig.height=6, fig.width=9}
-oa_sdg__with_gdp_per_cap %>%
+oa_sdg_with_gdp_per_cap %>%
   filter(sum_frac_total >= 100) %>%
   left_join(proper_countries, by = c("country" = "country_code")) %>% 
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
@@ -363,7 +369,7 @@ oa_sdg__with_gdp_per_cap %>%
   scale_size_continuous(trans = "sqrt", labels = scales::comma) +
   scale_y_continuous(labels = scales::percent) +
   scale_x_log10(breaks = c(1e+03, 2e+03, 5e+03, 1e+04, 2e+04, 5e+04, 1e+05),
-                labels = scales::comma) +
+                labels = function(x) scales::comma(x, prefix = "$")) +
   theme_bw() +
   facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3)), nrow = 2) +
   theme(legend.position = c(.8, .2))
@@ -431,19 +437,25 @@ pdata <- oa_with_gdp_per_cap %>%
 
 
 ```{r}
-pdata %>% 
-  ggplot(aes(oa_diff, fct_reorder(region, oa_diff))) +
+p <- pdata %>% 
+  ggplot(aes(oa_diff, fct_reorder(region, oa_diff), label = country)) +
   geom_boxplot(outlier.alpha = 0, width = .7) +
   geom_jitter(height = .11) +
   scale_x_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
-  labs(x = "Percentage point increase in OA publications", 
+  labs(x = "Percentage point increase in OA publication share", 
        y = NULL,
        title = "Change in OA publication propensity across regions",
        subtitle = "Time window: 2009-2013 vs 2014-2018") +
   theme_bw()
+p
 ```
 
-```{r}
+```{r, dpi=120}
+plotly::ggplotly(p)
+```
+
+
+```{r, fig.width=7, fig.height=4}
 pdata %>% 
   ggplot(
     aes(oa_diff, 
@@ -455,7 +467,7 @@ pdata %>%
   geom_boxplot(outlier.alpha = 0, width = .7) +
   geom_jitter(height = .11) +
   scale_x_continuous(labels = function(x) scales::percent(x, accuracy = 1)) +
-  labs(x = "Percentage point increase in OA publications", 
+  labs(x = "Percentage point increase in OA publication share", 
        y = NULL,
        title = "Change in OA publication propensity across income groups",
        subtitle = "Time window: 2009-2013 vs 2014-2018") +
@@ -761,7 +773,7 @@ oa_per_income_summarised <- oa_per_affiliation %>%
 
 ```{r, fig.height=7, fig.width=7}
 oa_per_affil_firsts_w_groups %>% 
-  ggplot(aes(income_group, prop_oa)) +
+  ggplot(aes(fct_rev(income_group), prop_oa)) +
   geom_beeswarm(aes(colour = income_group, group = income_group,
                     size = n_papers),
                 show.legend = FALSE, alpha = .6) +
