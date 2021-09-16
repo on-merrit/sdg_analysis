@@ -1,7 +1,7 @@
 ---
 title: "Relationship between OA publishing, APCs and IF"
 author: "Thomas Klebel"
-date: "27 August, 2021"
+date: "16 September, 2021"
 output: 
   html_document:
     keep_md: true
@@ -80,7 +80,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserved0dd7d41712a5dc3
+preserve2aa76f85a9412fa1
 
 
 
@@ -108,12 +108,12 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve5d51fc598a082227
+preserve944bc135eed20029
 
 
 ```r
 apc_merged_hybrid <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
                          TRUE ~ APC)) %>%  
   group_by(SDG_label, year) %>% 
   count(APC) %>% 
@@ -140,7 +140,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve128f07e892fc2206
+preserve4b6c3cedd14b263a
 
 is this decline in non DOAJ based on the rise of Gold OA and the decline of 
 hybrid/bronze?
@@ -185,7 +185,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve1929c54bcdaf77e0
+preserve3a463b2c0b7d785e
 
 what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
 
@@ -219,7 +219,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve6441d74a12847cc0
+preserve80ee00906cddc9f8
 
 
 
@@ -258,7 +258,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveb91cd1950393d6e4
+preserve8558153972ffd32c
 
 
 
@@ -273,7 +273,7 @@ this time with APC yes, no, and IF mean.
 
 ```r
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
                          TRUE ~ APC)) %>%  
   group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
@@ -332,6 +332,7 @@ p <- apc_affiliation_leiden %>%
   # remove those journals for which we really do not have APC information
   filter(APC != "NA") %>% 
   mutate(apc_share = n/sum(n)) %>% 
+  mutate(APC = if_else(APC == "TRUE", "Yes", "No")) %>% 
   ggplot(aes(P_top10, apc_share, colour = APC)) +
   geom_point(size = .7, alpha = .4) +
   scale_x_log10() +
@@ -339,9 +340,10 @@ p <- apc_affiliation_leiden %>%
   facet_wrap(vars(SDG_label)) +
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
-  labs(y = "Share of papers in category", colour = NULL,
+  labs(y = "Share of papers in category", colour = "APC involved",
        title = "Association between institutional prestige (2015-2018)\nand whether APCs are involved or not",
-       caption = "Fractional counting")
+       caption = "Fractional counting",
+       x = expression(P["top 10%"]))
 ```
 
 ```
@@ -407,11 +409,11 @@ What do we learn?
 
 
 
-## collapsing hybrid, bronze + DOAJ APC
+## collapsing hybrid + DOAJ APC
 
 ```r
 apc_per_affiliation_per_sdg <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid", "bronze") ~ "TRUE",
+  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
                          TRUE ~ APC)) %>%  
   group_by(affiliationid, SDG_label, year) %>% 
   count(APC, wt = frac_value)
@@ -487,7 +489,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveda71a7e9b3fa2be2
+preserve464618853044915a
 
 # APC prices
 The figures below use full counting, but for first and last authors separately.
@@ -561,26 +563,20 @@ labels <- lasts %>%
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-lasts %>% 
+lasts_p <- lasts %>% 
   ggplot(aes(P_top10, mean_apc)) +
-  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_point(aes(colour = n_papers), alpha = .4, show.legend = FALSE) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
   geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
-  facet_wrap(vars(SDG_label), nrow = 1) +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 1) +
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
-  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution",
-       caption = "Full counting; last authors only")
+  labs(colour = "Number of papers per institution",
+       caption = "Full counting; last authors only",
+       y = "Mean APC",
+       x = expression(P["top 10%"]))
 ```
-
-```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
-```
-
-![](04-oa_apcs_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 Inclusion criterion was for an institution to have at least 20 papers per last
 author. in SDG 13 the lower ranked institutions do not have that.
@@ -596,26 +592,38 @@ labels <- firsts %>%
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-firsts %>% 
+firsts_p <- firsts %>% 
   ggplot(aes(P_top10, mean_apc)) +
   geom_point(aes(colour = n_papers), alpha = .4) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
   geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
-  facet_wrap(vars(SDG_label), nrow = 1) +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 1) +
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
-  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution",
-       caption = "Full counting; first authors only")
+  labs(colour = "Number of papers per institution",
+       caption = "Full counting; first authors only",
+       y = "Mean APC",
+       x = expression(P["top 10%"]))
+```
+
+
+
+```r
+firsts_p / lasts_p + 
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Mean APC per institution by institutional prestige (2015-2018)",
+                  tag_levels = "A") &
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines"))
 ```
 
 ```
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+
 
 
 Same as above, but with zero apcs included into the mean
@@ -668,26 +676,20 @@ labels <- lasts %>%
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-lasts %>% 
+lasts_p <- lasts %>% 
   ggplot(aes(P_top10, mean_apc)) +
-  geom_point(aes(colour = n_papers), alpha = .4) +
+  geom_point(aes(colour = n_papers), alpha = .4, show.legend = FALSE) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
   geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
-  facet_wrap(vars(SDG_label), nrow = 1) +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 1) +
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
-  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution",
-       caption = "Full counting; last authors only; including no APC as '0'")
+  labs(colour = "Number of papers per institution",
+       caption = "Full counting; last authors only; including no APC as '0'",
+       y = "Mean APC",
+       x = expression(P["top 10%"]))
 ```
-
-```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
-```
-
-![](04-oa_apcs_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 
 ```r
@@ -696,26 +698,37 @@ labels <- firsts %>%
   summarise(cor = cor(mean_apc, P_top10)) %>% 
   mutate(cor = glue::glue("r = {format(cor, nsmall = 2, digits = 2)}"))
 
-firsts %>% 
+firsts_p <- firsts %>% 
   ggplot(aes(P_top10, mean_apc)) +
   geom_point(aes(colour = n_papers), alpha = .4) +
   geom_smooth(show.legend = FALSE, colour = "grey30") +
   geom_text(data = labels, aes(label = cor, x = 50, y = 3700)) +
-  facet_wrap(vars(SDG_label), nrow = 1) +
+  facet_wrap(vars(fix_sdg(SDG_label)), nrow = 1) +
   scale_x_log10() +
   scale_colour_viridis_c(trans = "log10") +
   theme_bw() +
-  theme(legend.position = "top", legend.key.width = unit(1.8, "lines")) +
-  labs(title = "Mean APC per institution by institutional prestige (2015-2018)",
-       colour = "Number of papers per institution",
-       caption = "Full counting; first authors only; including no APC as '0'")
+  labs(colour = "Number of papers per institution",
+       caption = "Full counting; first authors only; including no APC as '0'",
+       y = "Mean APC",
+       x = expression(P["top 10%"]))
+```
+
+
+
+```r
+firsts_p / lasts_p + 
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Mean APC per institution by institutional prestige (2015-2018)",
+                  tag_levels = "A") &
+  theme(legend.position = "top", legend.key.width = unit(1.8, "lines"))
 ```
 
 ```
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
 
 
 
@@ -805,7 +818,8 @@ plot_over_time <- function(df, indicator, y_var) {
     facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
     #scale_y_log10() +
     guides(colour = guide_legend(reverse = FALSE)) +
-    labs(x = NULL, y = "Median of APCs in quartile") +
+    labs(x = NULL, y = "Median of APCs in quartile",
+         colour = expression(paste("Quartiles within P"["top 10%"]))) +
     theme_bw() +
     theme(legend.position = "top")
 }
@@ -814,22 +828,44 @@ plot_over_time <- function(df, indicator, y_var) {
 
 
 ```r
-firsts %>% 
+firsts_p <- firsts %>% 
   plot_over_time(P_top10, mean_apc) +
   labs(caption = "First authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
+
+```r
+plotly::ggplotly(firsts_p)
+```
+
+preserve4061aa01a7b6e6fe
+
 
 
 
 ```r
-lasts %>% 
+lasts_p <- lasts %>% 
   plot_over_time(P_top10, mean_apc) +
   labs(caption = "Last authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+
+```r
+plotly::ggplotly(lasts_p)
+```
+
+preservef472d71a6d2eeeb2
+
+
+
+```r
+firsts_p / lasts_p + 
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "top")
+```
+
+![](04-oa_apcs_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
 
 Only SDG 3 really has a clear picture for the lowest percentile.
 
@@ -841,7 +877,7 @@ firsts %>%
   labs(caption = "First authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
 
 
 
@@ -852,5 +888,5 @@ lasts %>%
   labs(caption = "Last authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
 
