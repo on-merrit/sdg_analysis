@@ -137,7 +137,7 @@ p <- fos_counts %>%
   geom_point() +
   scale_y_log10(labels = scales::comma,
                 breaks = c(10e+3, 30e+3, 1e+5, 1e+6)) +
-  labs(x = NULL, y = "# of papers", colour = NULL,
+  labs(x = NULL, y = "# of publications", colour = NULL,
        title = "Development of SDG areas over time") 
 p
 ```
@@ -548,28 +548,32 @@ plot_over_time <- function(df, indicator, y_var) {
 ```{r sdg_who_ptop_productivity_time, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = P_top10, n_frac_papers) +
-  labs(y = "Median of # of papers (fractional)")
+  labs(y = "Median of # of papers (fractional)", 
+       colour = expression(P["top 10%"]))
 ```
 
 
 ```{r sdg_who_ptop_impact_time, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = P_top10, n_frac_citations) +
-  labs(y = "Median of # of citations (normalised and fractional)")
+  labs(y = "Median of # of citations (normalised and fractional)", 
+       colour = expression(P["top 10%"]))
 ```
 
 
 ```{r sdg_who_pptop_productivity_time, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = PP_top10, n_frac_papers) +
-  labs(y = "Median of # of papers (fractional)")
+  labs(y = "Median of # of papers (fractional)", 
+       colour = expression(PP["top 10%"]))
 ```
 
 
 ```{r sdg_who_pptop_impact_time, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_over_time(indicator = PP_top10, n_frac_citations) +
-  labs(y = "Median of # of citations (normalised and fractional)")
+  labs(y = "Median of # of citations (normalised and fractional)", 
+       colour = expression(PP["top 10%"]))
 ```
 
 Maybe y-axis could be "normalised" to be the fraction of the total, i.e.
@@ -597,18 +601,18 @@ plot_proportions <- function(df, indicator, y_var) {
 ```{r sdg_who_ptop_productivity_share, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_proportions(indicator = P_top10, n_frac_papers) +
-  labs(y = "% of publications (fractional)")
+  labs(y = "% of publications (fractional)", colour = expression(P["top 10%"]))
 ```
 ```{r sdg_who_pptop_productivity_share, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_proportions(indicator = PP_top10, n_frac_papers) +
-  labs(y = "% of publications (fractional)")
+  labs(y = "% of publications (fractional)", colour = expression(PP["top 10%"]))
 ```
 
 ```{r sdg_who_ptop_citations_share, fig.asp=.5, fig.width=8}
 p <- pdata %>%
   plot_proportions(indicator = P_top10, n_frac_citations) +
-  labs(y = "% of citations (fractional)")
+  labs(y = "% of citations (fractional)", colour = expression(P["top 10%"]))
 p
 ```
 
@@ -620,7 +624,7 @@ plotly::ggplotly(p)
 ```{r sdg_who_pptop_citations_share, fig.asp=.5, fig.width=8}
 p <- pdata %>%
   plot_proportions(indicator = PP_top10, n_frac_citations) +
-  labs(y = "% of citations (fractional)")
+  labs(y = "% of citations (fractional)", colour = expression(PP["top 10%"]))
 p
 ```
 
