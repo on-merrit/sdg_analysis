@@ -158,7 +158,7 @@ Improvements:
 
 ## Citations/papers
 
-```{r sdg_who_by_sdg_citation}
+```{r sdg_who_by_sdg_citation, fig.width=7, fig.height=4}
 fos_citations <- papers %>% 
   group_by(year, SDG_label) %>% 
   summarise(across(citations_norm, .fns = c(mean = mean, sd = sd))) %>% 
