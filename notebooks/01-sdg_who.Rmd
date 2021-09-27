@@ -44,6 +44,10 @@ sdg_labels <- spark_read_csv(sc, "/user/tklebel/sdg/data/sdg_labels.csv",
 papers <- papers %>% 
   left_join(sdg_labels)
 
+# remove 2020 altogether
+papers <- papers %>% 
+  filter(year < 2020)
+
 affils <- spark_read_csv(sc,
                          "/user/tklebel/sdg/data/affiliations_with_country_code.csv",
                          name = "affils")
@@ -318,7 +322,7 @@ mean_ages_p_position <- age_cohorts %>%
 ```
 
 ```{r sdg_who_age_position, fig.height=6, fig.width=9}
-mean_ages_p_position %>% 
+p <- mean_ages_p_position %>% 
   mutate(author_position = recode(
     author_position,
     first_author = "First author", last_author = "Last author",
@@ -332,7 +336,13 @@ mean_ages_p_position %>%
   labs(x = NULL, colour = NULL, y = "Mean age at publication",
        title = "Author ages over time", 
        caption = "Only ages above 0 and below 51 are included")
+p
 ```
+
+```{r, dpi=120}
+plotly::ggplotly(p)
+```
+
 
 Multiple findings:
 
@@ -471,7 +481,7 @@ papers_per_affiliation_per_w_leiden %>%
 ```
 
 
-```{r sdg_who_ptop10_vs_sdg_production}
+```{r sdg_who_ptop10_vs_sdg_production, fig.height=4, fig.width=8}
 papers_per_affiliation_per_w_leiden %>%
   filter(last_year_of_period == 2018) %>% 
   plot_bivariate(P_top10, 800, 20000) +
@@ -514,13 +524,6 @@ papers_per_affiliation_per_w_leiden %>%
 
 ## Over time
 ```{r}
-# approach from https://stackoverflow.com/a/11728547/3149349
-cut_quantiles <- function(x) {
-    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE), 
-        labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")), 
-        include.lowest = TRUE)
-}
-
 pdata <- papers_per_affiliation_per_w_leiden %>% 
   filter(year == as.numeric(last_year_of_period), !is.na(P_top10)) %>% 
   group_by(Period) %>% 
@@ -603,15 +606,26 @@ pdata %>%
 ```
 
 ```{r sdg_who_ptop_citations_share, fig.asp=.5, fig.width=8}
-pdata %>%
+p <- pdata %>%
   plot_proportions(indicator = P_top10, n_frac_citations) +
   labs(y = "% of citations (fractional)")
+p
 ```
 
+```{r, dpi=120}
+plotly::ggplotly(p)
+```
+
+
 ```{r sdg_who_pptop_citations_share, fig.asp=.5, fig.width=8}
-pdata %>%
+p <- pdata %>%
   plot_proportions(indicator = PP_top10, n_frac_citations) +
   labs(y = "% of citations (fractional)")
+p
+```
+
+```{r, dpi=120}
+plotly::ggplotly(p)
 ```
 
 # By Country
