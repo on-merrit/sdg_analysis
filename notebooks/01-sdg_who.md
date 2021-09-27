@@ -3,7 +3,7 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "28 August, 2021"
+date: "27 September, 2021"
 output: 
   html_document:
     keep_md: true
@@ -55,7 +55,7 @@ fos_counts <- papers %>%
   
 p <- fos_counts %>% 
   drop_na() %>% 
-  ggplot(aes(as_year(year), n, colour = SDG_label)) +
+  ggplot(aes(as_year(year), n, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   scale_y_log10(labels = scales::comma,
@@ -72,7 +72,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve6f923e2daa800c79
+preserve60298c397c71036c
 
 
 We can observe a slight upward trend, that could be attributable to the overall
@@ -95,7 +95,7 @@ fos_citations <- papers %>%
 
 fos_citations  %>% 
   drop_na() %>% 
-  ggplot(aes(as_year(year), citations_norm_mean, colour = SDG_label)) +
+  ggplot(aes(as_year(year), citations_norm_mean, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   labs(x = NULL, y = "mean normalized citations", colour = NULL,
@@ -277,13 +277,13 @@ mean_ages_p_position <- age_cohorts %>%
 
 
 ```r
-mean_ages_p_position %>% 
+p <- mean_ages_p_position %>% 
   mutate(author_position = recode(
     author_position,
     first_author = "First author", last_author = "Last author",
     middle_author = "Middle author")) %>% 
   ggplot(aes(as_year(year), mean_age, 
-                                 colour = SDG_label)) +
+                                 colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   facet_wrap(vars(author_position), nrow = 2) +
@@ -291,9 +291,18 @@ mean_ages_p_position %>%
   labs(x = NULL, colour = NULL, y = "Mean age at publication",
        title = "Author ages over time", 
        caption = "Only ages above 0 and below 51 are included")
+p
 ```
 
 ![](01-sdg_who_files/figure-html/sdg_who_age_position-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve00d9c74b7ec4b03b
+
 
 Multiple findings:
 
@@ -317,7 +326,7 @@ will be covered in another chapter.
 mean_ages_p_position %>% 
   pivot_wider(names_from = "author_position", values_from = "mean_age") %>% 
   mutate(age_diff = last_author - first_author) %>% 
-  ggplot(aes(as_year(year), age_diff, colour = SDG_label)) +
+  ggplot(aes(as_year(year), age_diff, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   coord_cartesian(ylim = c(0, 10)) +
@@ -437,7 +446,7 @@ papers_per_affiliation_per_w_leiden %>%
   theme(legend.position = "top")
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
 
 
@@ -459,7 +468,7 @@ plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000,
     geom_point(alpha = .3) +
     scale_x_log10() +
     scale_y_log10(labels = scales::comma) +
-    facet_wrap(vars(SDG_label)) +
+    facet_wrap(vars(fix_sdg(SDG_label))) +
     geom_smooth() +
     geom_text(data = labels, aes(x = x, y = y, label = label))
 }
@@ -558,13 +567,6 @@ papers_per_affiliation_per_w_leiden %>%
 ## Over time
 
 ```r
-# approach from https://stackoverflow.com/a/11728547/3149349
-cut_quantiles <- function(x) {
-    cut(x, breaks = quantile(x, probs = seq(0, 1, by = .2), na.rm = TRUE), 
-        labels = {1:5*20} %>% map_chr(~paste("p", . - 20, ., sep = "-")), 
-        include.lowest = TRUE)
-}
-
 pdata <- papers_per_affiliation_per_w_leiden %>% 
   filter(year == as.numeric(last_year_of_period), !is.na(P_top10)) %>% 
   group_by(Period) %>% 
@@ -579,7 +581,7 @@ plot_over_time <- function(df, indicator, y_var) {
     mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
     ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
     geom_line() +
-    facet_wrap(vars(SDG_label)) +
+    facet_wrap(vars(fix_sdg(SDG_label))) +
     scale_y_log10() +
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL)
@@ -641,7 +643,7 @@ plot_proportions <- function(df, indicator, y_var) {
     mutate(prop = n/sum(n)) %>% 
     ggplot(aes(as_year(year), prop, colour = {{indicator}})) +
     geom_line() +
-    facet_wrap(vars(SDG_label)) + 
+    facet_wrap(vars(fix_sdg(SDG_label))) + 
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL) +
     scale_y_continuous(labels = scales::percent)
@@ -675,7 +677,7 @@ pdata %>%
 
 
 ```r
-pdata %>%
+p <- pdata %>%
   plot_proportions(indicator = P_top10, n_frac_citations) +
   labs(y = "% of citations (fractional)")
 ```
@@ -684,11 +686,23 @@ pdata %>%
 ## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using the `.groups` argument.
 ```
 
+```r
+p
+```
+
 ![](01-sdg_who_files/figure-html/sdg_who_ptop_citations_share-1.png)<!-- -->
 
 
 ```r
-pdata %>%
+plotly::ggplotly(p)
+```
+
+preserve3769580eaa5ed45f
+
+
+
+```r
+p <- pdata %>%
   plot_proportions(indicator = PP_top10, n_frac_citations) +
   labs(y = "% of citations (fractional)")
 ```
@@ -697,7 +711,18 @@ pdata %>%
 ## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using the `.groups` argument.
 ```
 
+```r
+p
+```
+
 ![](01-sdg_who_files/figure-html/sdg_who_pptop_citations_share-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve092bf5d1fa2b7792
 
 # By Country
 ## Counts
@@ -803,7 +828,7 @@ papers_per_country_fos_author_pos_country %>%
   scale_y_log10() 
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 
@@ -863,7 +888,7 @@ papers_per_country_fos_author_pos_country %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 
 ```r
@@ -975,14 +1000,14 @@ p <- gender_years %>%
 p
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preserve2753feaade02b698
+preservec38cf5a02a8e3462
 
 
 ```r
@@ -999,14 +1024,14 @@ p <- gender_position %>%
 p
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preserve2ae85a94bb455326
+preserve6ed461aa0c72e4db
 
 
 
