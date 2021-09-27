@@ -147,8 +147,8 @@ plotly::ggplotly(p)
 
 ```{r, fig.width=8, fig.height=3}
 apc_merged_hybrid <- step1 %>% 
-  mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
-                         TRUE ~ APC)) %>%  
+  # mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
+  #                        TRUE ~ APC)) %>%  
   group_by(SDG_label, year) %>% 
   count(APC) %>% 
   collect()
@@ -326,7 +326,7 @@ p <- apc_affiliation_leiden %>%
   geom_point(size = .7, alpha = .4) +
   scale_x_log10() +
   geom_smooth() +
-  facet_wrap(vars(SDG_label)) +
+  facet_wrap(vars(fix_sdg(SDG_label))) +
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers with APC", colour = "APC involved",
@@ -351,7 +351,7 @@ p2 <- apc_affiliation_leiden %>%
   geom_point(size = .7, alpha = .4) +
   scale_x_log10() +
   geom_smooth() +
-  facet_wrap(vars(SDG_label)) +
+  facet_wrap(vars(fix_sdg(SDG_label))) +
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
   labs(y = "Share of papers in category", colour = NULL,
@@ -430,7 +430,8 @@ p <- apc_value_affiliation_leiden %>%
   facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
   scale_y_continuous(labels = scales::percent) +
   guides(colour = guide_legend(reverse = FALSE)) +
-  labs(x = NULL, y = "% of publications per quartile\nwhich involved an APC") +
+  labs(x = NULL, y = "% of publications per quartile\nwhich involved an APC",
+       colour = expression(P["top 10%"])) +
   theme_bw() +
   theme(legend.position = "top")
 p
