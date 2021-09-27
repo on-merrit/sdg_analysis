@@ -125,14 +125,14 @@ venn.diagram(
 
 ## Number of papers
 
-```{r sdg_who_by_sdg_count}
+```{r sdg_who_by_sdg_count, fig.width=7, fig.height=4}
 fos_counts <- papers %>% 
   count(SDG_label, year) %>% 
   collect()
   
 p <- fos_counts %>% 
   drop_na() %>% 
-  ggplot(aes(as_year(year), n, colour = SDG_label)) +
+  ggplot(aes(as_year(year), n, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   scale_y_log10(labels = scales::comma,
@@ -166,7 +166,7 @@ fos_citations <- papers %>%
 
 fos_citations  %>% 
   drop_na() %>% 
-  ggplot(aes(as_year(year), citations_norm_mean, colour = SDG_label)) +
+  ggplot(aes(as_year(year), citations_norm_mean, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   labs(x = NULL, y = "mean normalized citations", colour = NULL,
@@ -328,7 +328,7 @@ p <- mean_ages_p_position %>%
     first_author = "First author", last_author = "Last author",
     middle_author = "Middle author")) %>% 
   ggplot(aes(as_year(year), mean_age, 
-                                 colour = SDG_label)) +
+                                 colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   facet_wrap(vars(author_position), nrow = 2) +
@@ -365,7 +365,7 @@ will be covered in another chapter.
 mean_ages_p_position %>% 
   pivot_wider(names_from = "author_position", values_from = "mean_age") %>% 
   mutate(age_diff = last_author - first_author) %>% 
-  ggplot(aes(as_year(year), age_diff, colour = SDG_label)) +
+  ggplot(aes(as_year(year), age_diff, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   coord_cartesian(ylim = c(0, 10)) +
@@ -463,7 +463,7 @@ plot_bivariate <- function(df, var, x_pos = 1200, y_pos = 11000,
     geom_point(alpha = .3) +
     scale_x_log10() +
     scale_y_log10(labels = scales::comma) +
-    facet_wrap(vars(SDG_label)) +
+    facet_wrap(vars(fix_sdg(SDG_label))) +
     geom_smooth() +
     geom_text(data = labels, aes(x = x, y = y, label = label))
 }
@@ -537,7 +537,7 @@ plot_over_time <- function(df, indicator, y_var) {
     mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
     ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
     geom_line() +
-    facet_wrap(vars(SDG_label)) +
+    facet_wrap(vars(fix_sdg(SDG_label))) +
     scale_y_log10() +
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL)
@@ -586,7 +586,7 @@ plot_proportions <- function(df, indicator, y_var) {
     mutate(prop = n/sum(n)) %>% 
     ggplot(aes(as_year(year), prop, colour = {{indicator}})) +
     geom_line() +
-    facet_wrap(vars(SDG_label)) + 
+    facet_wrap(vars(fix_sdg(SDG_label))) + 
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL) +
     scale_y_continuous(labels = scales::percent)
