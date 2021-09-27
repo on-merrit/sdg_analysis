@@ -3,8 +3,9 @@ title: "Standardisation"
 author: "Thomas Klebel"
 date: "27 9 2021"
 output:
+  pdf_document: default
   html_document:
-    keep_md: true
+    keep_md: yes
 ---
 
 ```{r setup, include=FALSE}
