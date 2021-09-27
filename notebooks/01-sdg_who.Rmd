@@ -599,10 +599,16 @@ plot_proportions <- function(df, indicator, y_var) {
 ```
 
 ```{r sdg_who_ptop_productivity_share, fig.asp=.5, fig.width=8}
-pdata %>%
+p <- pdata %>%
   plot_proportions(indicator = P_top10, n_frac_papers) +
   labs(y = "% of publications (fractional)", colour = expression(P["top 10%"]))
+p
 ```
+
+```{r, dpi=120}
+plotly::ggplotly(p)
+```
+
 ```{r sdg_who_pptop_productivity_share, fig.asp=.5, fig.width=8}
 pdata %>%
   plot_proportions(indicator = PP_top10, n_frac_papers) +
@@ -622,15 +628,12 @@ plotly::ggplotly(p)
 
 
 ```{r sdg_who_pptop_citations_share, fig.asp=.5, fig.width=8}
-p <- pdata %>%
+pdata %>%
   plot_proportions(indicator = PP_top10, n_frac_citations) +
   labs(y = "% of citations (fractional)", colour = expression(PP["top 10%"]))
-p
 ```
 
-```{r, dpi=120}
-plotly::ggplotly(p)
-```
+
 
 # By Country
 ## Counts
