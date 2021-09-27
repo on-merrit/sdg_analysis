@@ -155,26 +155,6 @@ apc_per_sdg %>%
 ```
 
 
-```{r doaj-over-time, fig.width=7, fig.height=3.5}
-p <- apc_per_sdg %>% 
-  filter(year < 2020, APC != "Not in DOAJ") %>% 
-  group_by(year, SDG_label) %>% 
-  mutate(prop = n/sum(n)) %>% 
-  ggplot(aes(as_year(year), prop, colour = APC)) +
-  geom_line() +
-  geom_point() +
-  facet_wrap(vars(SDG_label)) +
-  scale_y_continuous(labels = scales::percent) +
-  theme_bw() +
-  labs(x = NULL, y = NULL) +
-  theme(legend.position = "top")
-p
-```
-
-```{r, dpi=100}
-plotly::ggplotly(p)
-```
-
 ```{r, fig.width=8, fig.height=3}
 apc_merged_hybrid <- step1 %>% 
   # mutate(APC = case_when(oa_status %in% c("hybrid") ~ "TRUE",
