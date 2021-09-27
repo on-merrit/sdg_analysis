@@ -100,7 +100,7 @@ apc_per_sdg <- step1 %>%
 ```
 
 
-```{r, fig.height=3, fig.width=7}
+```{r doaj-share, fig.height=3, fig.width=7}
 p <- apc_per_sdg %>% 
   filter(year %in% 2015:2018) %>%
   group_by(SDG_label, APC) %>% 
@@ -123,11 +123,41 @@ p
 plotly::ggplotly(p)
 ```
 
-
-
-```{r, fig.width=7, fig.height=3.5}
+```{r, fig.height=3, fig.width=7}
 p <- apc_per_sdg %>% 
-  filter(year < 2020) %>% 
+  filter(APC != "Not in DOAJ") %>%
+  group_by(SDG_label, APC) %>% 
+  summarise(n = sum(n)) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  mutate(APC = factor(APC, levels = c("Not in DOAJ", "FALSE", "TRUE"),
+                      labels = c("Not in DOAJ", "No", "Yes"))) %>%
+  ggplot(aes(prop, fct_relevel(SDG_label, "SDG_3", after = 1), fill = APC)) +
+  geom_col(width = .7) +
+  scale_x_continuous(labels = scales::percent) +
+  theme_bw() +
+  labs(x = NULL, y = NULL, fill = "Publishing involved an APC",
+       caption = "2015-2018") +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(reverse = TRUE))
+p
+```
+
+```{r, dpi=100}
+plotly::ggplotly(p)
+```
+
+overall numbers
+```{r, fig.height=3, fig.width=7}
+apc_per_sdg %>% 
+  group_by(APC) %>% 
+  summarise(n = sum(n)) %>% 
+  mutate(prop = n / sum(n))
+```
+
+
+```{r doaj-over-time, fig.width=7, fig.height=3.5}
+p <- apc_per_sdg %>% 
+  filter(year < 2020, APC != "Not in DOAJ") %>% 
   group_by(year, SDG_label) %>% 
   mutate(prop = n/sum(n)) %>% 
   ggplot(aes(as_year(year), prop, colour = APC)) +
