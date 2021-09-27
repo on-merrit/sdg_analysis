@@ -429,11 +429,13 @@ apc_value_affiliation_leiden <- apc_per_affiliation_per_sdg_local %>%
 
 ```{r, fig.width=8, fig.height=4}
 p <- apc_value_affiliation_leiden %>% 
-  mutate(prop_apc = n / n_frac_papers) %>% 
   filter(APC == "TRUE") %>% 
+  select(SDG_label, year, n, n_frac_papers, P_top10) %>% 
   group_by(SDG_label, year, P_top10) %>% 
-  mutate(y_median = weighted.mean(prop_apc, n_frac_papers, na.rm = TRUE)) %>% 
-  ggplot(aes(as_year(year), y_median, colour = P_top10)) +
+  summarise(total_papers = sum(n_frac_papers),
+            apc_papers = sum(n)) %>% 
+  mutate(apc_share = apc_papers/total_papers) %>% 
+  ggplot(aes(as_year(year), apc_share, colour = P_top10)) +
   geom_line() +
   # geom_point() +
   facet_wrap(vars(fct_relevel(SDG_label, "SDG_13", after = 3))) +
