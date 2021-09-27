@@ -135,8 +135,7 @@ p <- apc_per_sdg %>%
   geom_col(width = .7) +
   scale_x_continuous(labels = scales::percent) +
   theme_bw() +
-  labs(x = NULL, y = NULL, fill = "Publishing involved an APC",
-       caption = "2015-2018") +
+  labs(x = NULL, y = NULL, fill = "Publishing involved an APC") +
   theme(legend.position = "top") +
   guides(fill = guide_legend(reverse = TRUE))
 p
