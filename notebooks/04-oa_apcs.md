@@ -1,7 +1,7 @@
 ---
 title: "Relationship between OA publishing, APCs and IF"
 author: "Thomas Klebel"
-date: "16 September, 2021"
+date: "27 September, 2021"
 output: 
   html_document:
     keep_md: true
@@ -80,7 +80,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservef1c22810b1b53776
+preserved74d6d39e32897c2
 
 
 
@@ -108,7 +108,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve5cba95817f3b9fe3
+preserveb9e36fb48932c80c
 
 
 ```r
@@ -140,7 +140,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservedf22cfe62288bbe4
+preserve087209bd390453d4
 
 is this decline in non DOAJ based on the rise of Gold OA and the decline of 
 hybrid/bronze?
@@ -185,7 +185,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservea374c1c373c99800
+preserved8bce8c9a300e0ff
 
 what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
 
@@ -219,7 +219,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveb32e234611b33e1e
+preserve3ba3171d47f66d6d
 
 
 
@@ -258,7 +258,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservee8e30a1b1a4c6b87
+preserve76f96e7451ca775d
 
 
 
@@ -493,7 +493,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve4bc6263e8698ee96
+preserve951e12fa335779fc
 
 # APC prices
 The figures below use full counting, but for first and last authors separately.
@@ -842,7 +842,7 @@ firsts_p <- firsts %>%
 plotly::ggplotly(firsts_p)
 ```
 
-preservef0f198d63a15d3b8
+preservee00af585454d9536
 
 
 
@@ -858,7 +858,7 @@ lasts_p <- lasts %>%
 plotly::ggplotly(lasts_p)
 ```
 
-preserve467e2aa5f1ccbb30
+preserve8b5bbaa2ea58ead7
 
 
 
