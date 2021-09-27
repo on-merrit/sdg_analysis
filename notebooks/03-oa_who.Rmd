@@ -555,7 +555,7 @@ p <- oa_type_affiliation_leiden %>%
   group_by(year, SDG_label, affiliationid) %>% 
   mutate(oa_share = n/sum(n)) %>% 
   ggplot(aes(P_top10, oa_share, colour = provider_cat)) +
-  geom_point(size = .7, alpha = .4) +
+  geom_point(size = .5, alpha = .3) +
   scale_x_log10() +
   geom_smooth() +
   facet_wrap(vars(fix_sdg(SDG_label))) +
