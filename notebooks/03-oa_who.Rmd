@@ -459,7 +459,7 @@ plot_over_time <- function(df, indicator, y_var) {
 ```
 
 
-```{r oa_who_impact_1, fig.asp=.5, fig.width=8}
+```{r oa_who_impact_1, fig.asp=.4, fig.width=8}
 pdata %>%
   plot_over_time(indicator = P_top10, oa_share) +
   labs(y = "Share of SDG papers which are OA", 
