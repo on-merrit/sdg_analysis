@@ -519,8 +519,9 @@ oa_type_affiliation_leiden <- oa_type_per_affiliation_per_sdg_local %>%
 ```{r fig.asp=.5, fig.width=8}
 oa_type_affiliation_leiden %>% 
   filter(provider_cat != "Not OA") %>% 
-  mutate(oa_share = n/n_frac_papers) %>% 
-  group_by(year, SDG_label, provider_cat) %>% 
+  group_by(year, SDG_label, affiliationid) %>% 
+  mutate(oa_share = n/sum(n)) %>% 
+  group_by(SDG_label, provider_cat, year) %>% 
   summarise(cor = cor(oa_share, P_top10, use = "pairwise.complete.obs")) %>% 
   ggplot(aes(year, cor, colour = provider_cat)) +
   geom_line() +
