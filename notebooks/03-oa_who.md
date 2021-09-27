@@ -1,7 +1,7 @@
 ---
 title: "SDG OA author characteristics"
 author: "Thomas Klebel"
-date: "28 August, 2021"
+date: "27 September, 2021"
 output: 
   html_document:
     keep_md: true
@@ -181,7 +181,7 @@ age_oa_positions <- age_cohorts %>%
 
 
 ```r
-age_oa_positions %>%
+p <- age_oa_positions %>%
   filter(age_cohort != "NA", year < 2020) %>% 
   ggplot(aes(as_year(year), oa_share, colour = age_cohort)) +
   geom_point() +
@@ -192,9 +192,18 @@ age_oa_positions %>%
   theme(legend.position = c(.9385, .083)) +
   labs(x = NULL, y = "OA share", title = "OA share over time", colour = NULL,
        caption = "Only considering multi author papers. Dropping 2020 because of low cell counts")
+p
 ```
 
 ![](03-oa_who_files/figure-html/oa_authors_by_academic_age_by_SDG_by_position-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve935165f6e4874a79
+
 
 Findings:
 
@@ -409,7 +418,7 @@ affil_oa %>%
   labs(x = "OA share (leiden)", y = "OA share SDG", caption = "Data for 2018")
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 
 Now by SDG
@@ -431,7 +440,7 @@ affil_oa %>%
 ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 The association between overall OA level publications and SDG OA level is
 rising, in particular for SDG 13.
 
@@ -443,11 +452,12 @@ affil_oa %>%
   group_by(year, SDG_label) %>% 
   filter(n_frac_papers > 50) %>% 
   summarise(cor = cor(oa_share, P_top10, use = "pairwise.complete.obs")) %>% 
-  ggplot(aes(year, cor, colour = SDG_label)) +
+  ggplot(aes(year, cor, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
   scale_y_continuous(limits = c(0, .6)) +
-  labs(y = "Correlation between OA shares in SDG & P_top10", x = NULL, 
+  labs(y = expression(paste("Correlation between OA shares in SDG & P"["top 10%"])),
+       x = NULL, 
        colour = NULL)
 ```
 
@@ -455,7 +465,7 @@ affil_oa %>%
 ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 
 
@@ -476,7 +486,7 @@ affil_oa %>%
 ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 
 Very interesting: while in 2008, the prestige of a university (measured both in
@@ -507,7 +517,7 @@ plot_over_time <- function(df, indicator, y_var) {
     mutate(y_median = median({{y_var}}, na.rm = TRUE)) %>% 
     ggplot(aes(as_year(year), y_median, colour = {{indicator}})) +
     geom_line() +
-    facet_wrap(vars(SDG_label)) +
+    facet_wrap(vars(fix_sdg(SDG_label))) +
     scale_y_continuous(labels = scales::percent) +
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL)
@@ -519,7 +529,8 @@ plot_over_time <- function(df, indicator, y_var) {
 ```r
 pdata %>%
   plot_over_time(indicator = P_top10, oa_share) +
-  labs(y = "Share of SDG papers which are OA")
+  labs(y = "Share of SDG papers which are OA", 
+       colour = expression(P["top 10%"]))
 ```
 
 ![](03-oa_who_files/figure-html/oa_who_impact_1-1.png)<!-- -->
@@ -615,9 +626,10 @@ oa_type_affiliation_leiden %>%
   ggplot(aes(year, cor, colour = provider_cat)) +
   geom_line() +
   geom_point() +
-  facet_wrap(vars(SDG_label)) +
+  facet_wrap(vars(fix_sdg(SDG_label))) +
   theme(legend.position = "top") +
   labs(title = "Correlation between share of papers in category & P_top10",
+       y = "Correlation", x = NULL,
        colour = NULL)
 ```
 
@@ -625,7 +637,7 @@ oa_type_affiliation_leiden %>%
 ## `summarise()` has grouped output by 'year', 'SDG_label'. You can override using the `.groups` argument.
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 What does this mean, especially the green negative correlation?
 
@@ -649,7 +661,7 @@ oa_type_affiliation_leiden %>%
 ## `summarise()` has grouped output by 'year', 'SDG_label'. You can override using the `.groups` argument.
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 ```r
@@ -658,13 +670,14 @@ p <- oa_type_affiliation_leiden %>%
   group_by(year, SDG_label, affiliationid) %>% 
   mutate(oa_share = n/sum(n)) %>% 
   ggplot(aes(P_top10, oa_share, colour = provider_cat)) +
-  geom_point(size = .7, alpha = .4) +
+  geom_point(size = .5, alpha = .3) +
   scale_x_log10() +
   geom_smooth() +
-  facet_wrap(vars(SDG_label)) +
+  facet_wrap(vars(fix_sdg(SDG_label))) +
   scale_y_continuous(labels = scales::percent) +
   theme(legend.position = "top") +
-  labs(y = "Share of papers in category", colour = NULL,
+  labs(y = "Share of papers in category", colour = NULL, 
+       x = expression(P["top 10%"]),
        title = "Association between type of OA and institutional prestige (2018)")
 p
 ```
@@ -673,7 +686,7 @@ p
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 - Share of papers which are journal and repository hosted is similar across
 institutions and SDGs
@@ -696,7 +709,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserve76a2917c410110de
+preserve49b37a5f34cbdef1
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -748,7 +761,7 @@ gender_rate %>%
   facet_wrap(vars(SDG_label))
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 This does not show big differences. At least in health, papers by women tend to
 have slightly higher OA rates. 
@@ -784,7 +797,7 @@ gender_rate_p_position %>%
              cols = vars(author_position))
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 Also here there is no difference. What does this show? The proportion of papers
 which are OA per gender, SDG, author position and year. 
@@ -841,7 +854,7 @@ gender_by_sdg %>%
   theme(legend.position = c(.8, .2))
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
 
 Very interesting: OA papers generally have a lower share of female authors.
 The reasons for this are probably related with general factors of OA
@@ -892,7 +905,7 @@ pdata %>%
        x = NULL, y = "Difference from males", colour = NULL)
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
 
 A value of x% means that in that year, the share of papers with women as 
 first/last authors which were published OA is X percentage points higher, e.g.
@@ -955,7 +968,7 @@ gender_by_sdg_no_single %>%
   theme(legend.position = c(.8, .2))
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
 
 The effect is already smaller than above, but still there. So single author
 papers are not the only source of confounding here.
@@ -998,14 +1011,14 @@ p <- gender_rate_2 %>%
 p
 ```
 
-![](03-oa_who_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+![](03-oa_who_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preserve351525d1fee33960
+preserve8f638e58f02f3a15
 
 
 
