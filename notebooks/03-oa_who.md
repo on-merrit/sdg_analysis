@@ -202,7 +202,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve935165f6e4874a79
+preserve472d59e27cda0313
 
 
 Findings:
@@ -620,8 +620,9 @@ oa_type_affiliation_leiden <- oa_type_per_affiliation_per_sdg_local %>%
 ```r
 oa_type_affiliation_leiden %>% 
   filter(provider_cat != "Not OA") %>% 
-  mutate(oa_share = n/n_frac_papers) %>% 
-  group_by(year, SDG_label, provider_cat) %>% 
+  group_by(year, SDG_label, affiliationid) %>% 
+  mutate(oa_share = n/sum(n)) %>% 
+  group_by(SDG_label, provider_cat, year) %>% 
   summarise(cor = cor(oa_share, P_top10, use = "pairwise.complete.obs")) %>% 
   ggplot(aes(year, cor, colour = provider_cat)) +
   geom_line() +
@@ -634,7 +635,7 @@ oa_type_affiliation_leiden %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'year', 'SDG_label'. You can override using the `.groups` argument.
+## `summarise()` has grouped output by 'SDG_label', 'provider_cat'. You can override using the `.groups` argument.
 ```
 
 ![](03-oa_who_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
@@ -709,7 +710,7 @@ p <- p + aes(label = Country, text = University)
 plotly::ggplotly(p)
 ```
 
-preserve49b37a5f34cbdef1
+preserve5dad36e59591a392
 
 Unclear where this split comes from. It is not related to size (in terms of 
 number of publications), and seems also unrelated to country/continent. 
@@ -1018,7 +1019,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve8f638e58f02f3a15
+preserveaa20c6b69919e6ce
 
 
 
