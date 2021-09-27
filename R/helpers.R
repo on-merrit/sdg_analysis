@@ -68,9 +68,10 @@ cut_quantiles <- function(x) {
 }
 
 cut_quartiles <- function(x) {
-  cut(x, breaks = quantile(0:100, probs = seq(0, 1, by = .25), na.rm = TRUE),
+  cut(x, breaks = quantile(x, probs = seq(0, 1, by = .25), na.rm = TRUE),
       labels = c("p[0,25]", "p(25,50]", "p(50,75]", "p(75,100]"),
       include.lowest = TRUE)
 }
 
 fix_sdg <- function(x) fct_relevel(x, "SDG_13", after = 3)
+# maybe do like: "Health/Well-Being (SDG 3)", "Climate Action (SDG 13)", ...
