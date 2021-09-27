@@ -60,7 +60,7 @@ p <- fos_counts %>%
   geom_point() +
   scale_y_log10(labels = scales::comma,
                 breaks = c(10e+3, 30e+3, 1e+5, 1e+6)) +
-  labs(x = NULL, y = "# of papers", colour = NULL,
+  labs(x = NULL, y = "# of publications", colour = NULL,
        title = "Development of SDG areas over time") 
 p
 ```
@@ -72,7 +72,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve60298c397c71036c
+preservec2956da500880048
 
 
 We can observe a slight upward trend, that could be attributable to the overall
@@ -301,7 +301,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve00d9c74b7ec4b03b
+preservee0664770b40a7519
 
 
 Multiple findings:
@@ -593,7 +593,8 @@ plot_over_time <- function(df, indicator, y_var) {
 ```r
 pdata %>%
   plot_over_time(indicator = P_top10, n_frac_papers) +
-  labs(y = "Median of # of papers (fractional)")
+  labs(y = "Median of # of papers (fractional)", 
+       colour = expression(P["top 10%"]))
 ```
 
 ![](01-sdg_who_files/figure-html/sdg_who_ptop_productivity_time-1.png)<!-- -->
@@ -603,7 +604,8 @@ pdata %>%
 ```r
 pdata %>%
   plot_over_time(indicator = P_top10, n_frac_citations) +
-  labs(y = "Median of # of citations (normalised and fractional)")
+  labs(y = "Median of # of citations (normalised and fractional)", 
+       colour = expression(P["top 10%"]))
 ```
 
 ![](01-sdg_who_files/figure-html/sdg_who_ptop_impact_time-1.png)<!-- -->
@@ -613,7 +615,8 @@ pdata %>%
 ```r
 pdata %>%
   plot_over_time(indicator = PP_top10, n_frac_papers) +
-  labs(y = "Median of # of papers (fractional)")
+  labs(y = "Median of # of papers (fractional)", 
+       colour = expression(PP["top 10%"]))
 ```
 
 ![](01-sdg_who_files/figure-html/sdg_who_pptop_productivity_time-1.png)<!-- -->
@@ -623,7 +626,8 @@ pdata %>%
 ```r
 pdata %>%
   plot_over_time(indicator = PP_top10, n_frac_citations) +
-  labs(y = "Median of # of citations (normalised and fractional)")
+  labs(y = "Median of # of citations (normalised and fractional)", 
+       colour = expression(PP["top 10%"]))
 ```
 
 ![](01-sdg_who_files/figure-html/sdg_who_pptop_impact_time-1.png)<!-- -->
@@ -652,21 +656,33 @@ plot_proportions <- function(df, indicator, y_var) {
 
 
 ```r
-pdata %>%
+p <- pdata %>%
   plot_proportions(indicator = P_top10, n_frac_papers) +
-  labs(y = "% of publications (fractional)")
+  labs(y = "% of publications (fractional)", colour = expression(P["top 10%"]))
 ```
 
 ```
 ## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using the `.groups` argument.
 ```
 
+```r
+p
+```
+
 ![](01-sdg_who_files/figure-html/sdg_who_ptop_productivity_share-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve9b3afd51f239c509
+
 
 ```r
 pdata %>%
   plot_proportions(indicator = PP_top10, n_frac_papers) +
-  labs(y = "% of publications (fractional)")
+  labs(y = "% of publications (fractional)", colour = expression(PP["top 10%"]))
 ```
 
 ```
@@ -679,7 +695,7 @@ pdata %>%
 ```r
 p <- pdata %>%
   plot_proportions(indicator = P_top10, n_frac_citations) +
-  labs(y = "% of citations (fractional)")
+  labs(y = "% of citations (fractional)", colour = expression(P["top 10%"]))
 ```
 
 ```
@@ -697,32 +713,23 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve3769580eaa5ed45f
+preserve2622b94641edc27d
 
 
 
 ```r
-p <- pdata %>%
+pdata %>%
   plot_proportions(indicator = PP_top10, n_frac_citations) +
-  labs(y = "% of citations (fractional)")
+  labs(y = "% of citations (fractional)", colour = expression(PP["top 10%"]))
 ```
 
 ```
 ## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using the `.groups` argument.
 ```
 
-```r
-p
-```
-
 ![](01-sdg_who_files/figure-html/sdg_who_pptop_citations_share-1.png)<!-- -->
 
 
-```r
-plotly::ggplotly(p)
-```
-
-preserve092bf5d1fa2b7792
 
 # By Country
 ## Counts
@@ -1007,7 +1014,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservec38cf5a02a8e3462
+preserved2ec2cb1b6049a51
 
 
 ```r
@@ -1031,7 +1038,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve6ed461aa0c72e4db
+preserve8669b353f5d29587
 
 
 
