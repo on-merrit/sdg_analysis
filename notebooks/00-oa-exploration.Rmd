@@ -222,6 +222,7 @@ oa_per_affiliation_selected <- oa_per_affiliation %>%
          SDG_label) 
 
 oa_per_country <- oa_per_affiliation_selected %>%
+  filter(year >= 2015 & year <= 2018) %>% 
   group_by(country, is_oa) %>%
   summarise(sum_frac_oa = sum(frac_count)) %>%
   mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
