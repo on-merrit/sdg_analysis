@@ -80,7 +80,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preservee8b4a53a3d8d0f9e
+preserve9218ac9293e48670
 
 
 ```r
@@ -95,8 +95,7 @@ p <- apc_per_sdg %>%
   geom_col(width = .7) +
   scale_x_continuous(labels = scales::percent) +
   theme_bw() +
-  labs(x = NULL, y = NULL, fill = "Publishing involved an APC",
-       caption = "2015-2018") +
+  labs(x = NULL, y = NULL, fill = "Publishing involved an APC") +
   theme(legend.position = "top") +
   guides(fill = guide_legend(reverse = TRUE))
 ```
@@ -116,7 +115,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve6252e6d7a5356697
+preserve3ae6c7b289477e5b
 
 overall numbers
 
@@ -136,32 +135,6 @@ apc_per_sdg %>%
 ## 3 TRUE        5879043 0.372
 ```
 
-
-
-```r
-p <- apc_per_sdg %>% 
-  filter(year < 2020, APC != "Not in DOAJ") %>% 
-  group_by(year, SDG_label) %>% 
-  mutate(prop = n/sum(n)) %>% 
-  ggplot(aes(as_year(year), prop, colour = APC)) +
-  geom_line() +
-  geom_point() +
-  facet_wrap(vars(SDG_label)) +
-  scale_y_continuous(labels = scales::percent) +
-  theme_bw() +
-  labs(x = NULL, y = NULL) +
-  theme(legend.position = "top")
-p
-```
-
-![](04-oa_apcs_files/figure-html/doaj-over-time-1.png)<!-- -->
-
-
-```r
-plotly::ggplotly(p)
-```
-
-preserve545af9e23f1c3a85
 
 
 ```r
@@ -186,14 +159,14 @@ p <- apc_merged_hybrid %>%
 p
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preserve9765f2e8ccc087ef
+preserve03562e68f2ba4b26
 
 is this decline in non DOAJ based on the rise of Gold OA and the decline of 
 hybrid/bronze?
@@ -230,7 +203,7 @@ p <- oa_colours %>%
 p
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 
 
@@ -238,7 +211,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserved797340cb4898984
+preserve3af6fa19512249ca
 
 what is the share of stuff that is "not in doaj" in terms of hybrid/bronze, etc?
 
@@ -265,14 +238,14 @@ p <- not_in_doaj %>%
 p
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preservee71e560cf1eb2304
+preservecfa00135507203db
 
 
 
@@ -303,7 +276,7 @@ p <- not_in_doaj %>%
 p
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 
 
@@ -311,7 +284,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve496fa7a01168ad98
+preserve49d9ce4cdc009ed1
 
 
 
@@ -413,7 +386,7 @@ p
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
 
 
 Very interesting: really high universities publish less in DAOJ journals. Why is
@@ -444,7 +417,7 @@ p2
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 We can conclude:
 
@@ -540,14 +513,14 @@ p <- apc_value_affiliation_leiden %>%
 p
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preserve148e08aca99afd47
+preservefda9d9beb3bb0207
 
 # APC prices
 The figures below use full counting, but for first and last authors separately.
@@ -680,7 +653,7 @@ firsts_p / lasts_p +
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 
 
@@ -786,7 +759,7 @@ firsts_p / lasts_p +
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
 
 
 
@@ -896,7 +869,7 @@ firsts_p <- firsts %>%
 plotly::ggplotly(firsts_p)
 ```
 
-preserve5dd1d3eb33551fa3
+preserve9725859c1f6ca208
 
 
 
@@ -912,7 +885,7 @@ lasts_p <- lasts %>%
 plotly::ggplotly(lasts_p)
 ```
 
-preserve7bebc9e449311aa4
+preservec3602968865e38de
 
 
 
@@ -923,7 +896,7 @@ firsts_p / lasts_p +
   theme(legend.position = "top")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
 
 Only SDG 3 really has a clear picture for the lowest percentile.
 
@@ -935,7 +908,7 @@ firsts %>%
   labs(caption = "First authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
 
 
 
@@ -946,5 +919,5 @@ lasts %>%
   labs(caption = "Last authors; full counting")
 ```
 
-![](04-oa_apcs_files/figure-html/unnamed-chunk-44-1.png)<!-- -->
+![](04-oa_apcs_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
 
