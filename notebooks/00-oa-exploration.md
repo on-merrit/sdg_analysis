@@ -279,7 +279,7 @@ oa_with_gdp_per_cap <- oa_per_country %>%
   filter(is_oa)
 
 p <- oa_with_gdp_per_cap %>%
-  filter(sum_frac_total >= 100) %>%
+  filter(sum_frac_total >= 50) %>%
   left_join(proper_countries, by = c("country" = "country_code")) %>% 
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
   geom_point(aes(size = sum_frac_total)) +
@@ -310,7 +310,7 @@ p1 +
 plotly::ggplotly(p1)
 ```
 
-preserve97479721f0a95ce9
+preserveabad198edadc925d
 
 
 
@@ -337,6 +337,7 @@ p +
 
 ```r
 oa_per_country_per_SDG <- oa_per_affiliation_selected %>%
+  filter(year >= 2015 & year <= 2018) %>% 
   group_by(country, SDG_label, is_oa) %>%
   summarise(sum_frac_oa = sum(frac_count)) %>%
   mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
@@ -355,7 +356,7 @@ oa_sdg_with_gdp_per_cap <- oa_per_country_per_SDG %>%
 
 ```r
 oa_sdg_with_gdp_per_cap %>%
-  filter(sum_frac_total >= 100) %>%
+  filter(sum_frac_total >= 50) %>%
   left_join(proper_countries, by = c("country" = "country_code")) %>% 
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
   geom_point(aes(size = sum_frac_total, colour = region)) +
@@ -459,7 +460,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve396e5f217b03682b
+preserve6ae828a74612db16
 
 
 
@@ -596,7 +597,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preservea4670d3e735bface
+preserve74a8e5654c500469
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
