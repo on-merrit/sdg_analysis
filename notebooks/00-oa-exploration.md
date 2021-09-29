@@ -1,7 +1,7 @@
 ---
 title: "OA Overview"
 author: "Thomas Klebel"
-date: "16 September, 2021"
+date: "29 September, 2021"
 output: 
   html_document:
     keep_md: true
@@ -182,6 +182,7 @@ oa_per_affiliation_selected <- oa_per_affiliation %>%
          SDG_label) 
 
 oa_per_country <- oa_per_affiliation_selected %>%
+  filter(year >= 2015 & year <= 2018) %>% 
   group_by(country, is_oa) %>%
   summarise(sum_frac_oa = sum(frac_count)) %>%
   mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
@@ -309,7 +310,7 @@ p1 +
 plotly::ggplotly(p1)
 ```
 
-preservedaa4f106f4d42f89
+preserve97479721f0a95ce9
 
 
 
@@ -330,7 +331,7 @@ p +
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 ### split by SDG
 
@@ -374,7 +375,7 @@ oa_sdg_with_gdp_per_cap %>%
 ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 Pattern is stable across all three SDGs. 
 
@@ -451,14 +452,14 @@ p <- pdata %>%
 p
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preserve932efe589b8b2bdc
+preserve396e5f217b03682b
 
 
 
@@ -481,7 +482,7 @@ pdata %>%
   theme_bw()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 
 
@@ -517,7 +518,7 @@ p +
   aes(colour = oa_increase)
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 Only very few countries dropping in terms of OA.
 
@@ -531,7 +532,7 @@ p +
   theme(legend.position = "top") 
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 Where are biggest increases?
 
@@ -595,7 +596,7 @@ p <- pdata %>%
 plotly::ggplotly(p)
 ```
 
-preservebddc383ffeb8f420
+preservea4670d3e735bface
 
 Here we could also look into the proportion of papers coming from single, dual 
 or multi-author papers.
@@ -732,7 +733,7 @@ oa_per_region_summarised %>%
   theme(legend.position = c(.8, .2))
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 
 
@@ -767,7 +768,7 @@ oa_per_affil_firsts_w_groups %>%
   geom_boxplot()
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 
 
@@ -790,7 +791,7 @@ oa_per_affil_firsts_w_groups %>%
 ## notch went outside hinges. Try setting notch=FALSE.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 This has the issue of treating Bermuda and USA equally (one data point in north
 america).
@@ -810,7 +811,7 @@ oa_per_affil_firsts_w_groups %>%
 ## `summarise()` has grouped output by 'region'. You can override using the `.groups` argument.
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 
 ```r
@@ -830,7 +831,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 This figure is good to go in terms of setup. Add manual indication of what the diamond
 means with inkscape or similar.
@@ -877,7 +878,7 @@ oa_per_affil_firsts_w_groups %>%
   labs(x = NULL, y = "% of papers which are OA")
 ```
 
-![](00-oa-exploration_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
+![](00-oa-exploration_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 - LIC higher, except for SDG 13
 - MIC always lower than rest.
