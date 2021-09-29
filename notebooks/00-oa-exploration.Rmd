@@ -359,7 +359,7 @@ oa_sdg_with_gdp_per_cap <- oa_per_country_per_SDG %>%
   filter(is_oa)
 ```
 
-```{r, fig.height=6, fig.width=9}
+```{r, fig.height=7, fig.width=9}
 oa_sdg_with_gdp_per_cap %>%
   filter(sum_frac_total >= 50) %>%
   left_join(proper_countries, by = c("country" = "country_code")) %>% 
