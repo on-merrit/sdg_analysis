@@ -302,7 +302,7 @@ oa_with_gdp_per_cap <- oa_per_country %>%
   filter(is_oa)
 
 p <- oa_with_gdp_per_cap %>%
-  filter(sum_frac_total >= 100) %>%
+  filter(sum_frac_total >= 50) %>%
   left_join(proper_countries, by = c("country" = "country_code")) %>% 
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
   geom_point(aes(size = sum_frac_total)) +
@@ -343,6 +343,7 @@ p +
 ### split by SDG
 ```{r}
 oa_per_country_per_SDG <- oa_per_affiliation_selected %>%
+  filter(year >= 2015 & year <= 2018) %>% 
   group_by(country, SDG_label, is_oa) %>%
   summarise(sum_frac_oa = sum(frac_count)) %>%
   mutate(prop_oa = sum_frac_oa/sum(sum_frac_oa),
@@ -360,7 +361,7 @@ oa_sdg_with_gdp_per_cap <- oa_per_country_per_SDG %>%
 
 ```{r, fig.height=6, fig.width=9}
 oa_sdg_with_gdp_per_cap %>%
-  filter(sum_frac_total >= 100) %>%
+  filter(sum_frac_total >= 50) %>%
   left_join(proper_countries, by = c("country" = "country_code")) %>% 
   ggplot(aes(NY.GDP.PCAP.KD, prop_oa)) +
   geom_point(aes(size = sum_frac_total, colour = region)) +
