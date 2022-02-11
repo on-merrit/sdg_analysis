@@ -21,7 +21,7 @@ source(here::here("R/helpers.R"))
 message("Connecting to spark...")
 
 config <- spark_config()
-config$spark.executor.cores <- 15
+config$spark.executor.cores <- 5
 config$spark.executor.instances <- 5
 config$spark.executor.memory <- "60G"
 sc <- spark_connect(master = "yarn-client", config = config,
@@ -756,5 +756,11 @@ lasts %>%
   filter(SDG_label == "SDG_3") %>% 
   plot_over_time(P_top10, mean_apc) +
   labs(caption = "Last authors; full counting")
+```
+
+
+```{r shut-down, echo=FALSE, message=FALSE}
+message("Done. Shutting down...")
+spark_disconnect(sc)
 ```
 
