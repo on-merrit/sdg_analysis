@@ -28,9 +28,9 @@ theme_set(theme_bw())
 message("Connecting to spark...")
 
 config <- spark_config()
-config$spark.executor.cores <- 15
-config$spark.executor.instances <- 5
-config$spark.executor.memory <- "60G"
+config$spark.executor.cores <- 5
+config$spark.executor.instances <- 10
+config$spark.executor.memory <- "20G"
 sc <- spark_connect(master = "yarn-client", config = config,
                     app_name = "sdg_who")
 message("Connection to Spark successful!")
