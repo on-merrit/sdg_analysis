@@ -3,7 +3,7 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "27 September, 2021"
+date: "28 January, 2023"
 output: 
   html_document:
     keep_md: true
@@ -72,7 +72,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve3d12313bad49f8ff
+preserveb142a6f5a4da712d
 
 
 We can observe a slight upward trend, that could be attributable to the overall
@@ -92,7 +92,14 @@ fos_citations <- papers %>%
   group_by(year, SDG_label) %>% 
   summarise(across(citations_norm, .fns = c(mean = mean, sd = sd))) %>% 
   collect()
+```
 
+```
+## `summarise()` has grouped output by 'year'. You can override using the `.groups`
+## argument.
+```
+
+```r
 fos_citations  %>% 
   drop_na() %>% 
   ggplot(aes(as_year(year), citations_norm_mean, colour = fix_sdg(SDG_label))) +
@@ -156,9 +163,6 @@ age_base <- papers %>%
 
 ```
 ## Joining, by = "paperid"
-```
-
-```
 ## Joining, by = "authorid"
 ```
 
@@ -251,6 +255,11 @@ mean_ages <- age_cohorts %>%
   collect()
 ```
 
+```
+## `summarise()` has grouped output by 'SDG_label'. You can override using the
+## `.groups` argument.
+```
+
 
 ```r
 ggplot(mean_ages, aes(as_year(year), mean_age, colour = SDG_label)) +
@@ -273,6 +282,11 @@ mean_ages_p_position <- age_cohorts %>%
   filter(current_age > 0, current_age <= 50) %>% 
   summarise(mean_age = mean(current_age, na.rm = TRUE)) %>% 
   collect()
+```
+
+```
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
 ```
 
 
@@ -301,7 +315,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve5887b2c652fc7076
+preserveb49dd8c38ac91bed
 
 
 Multiple findings:
@@ -370,10 +384,9 @@ papers_per_affiliation_per_fos <- papers %>%
 
 ```
 ## Joining, by = "paperid"
-```
-
-```
 ## Joining, by = c("citationcount", "affiliationid")
+## `summarise()` has grouped output by 'affiliationid', 'year'. You can override
+## using the `.groups` argument.
 ```
 
 
@@ -396,17 +409,14 @@ affil_leiden_key <- read_csv2(
 ```
 
 ```
-## 
+## Rows: 25563 Columns: 7
 ## ── Column specification ────────────────────────────────────────────────────────
-## cols(
-##   affiliationid = col_double(),
-##   normalizedname = col_character(),
-##   displayname = col_character(),
-##   university_normalized = col_character(),
-##   University = col_character(),
-##   Country = col_character(),
-##   university_normalized_leiden = col_character()
-## )
+## Delimiter: ";"
+## chr (6): normalizedname, displayname, university_normalized, University, Cou...
+## dbl (1): affiliationid
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
 ```r
@@ -418,9 +428,6 @@ papers_per_affiliation_per_w_leiden <- papers_per_affiliation_per_fos %>%
 
 ```
 ## Joining, by = "affiliationid"
-```
-
-```
 ## Joining, by = c("University", "Country")
 ```
 
@@ -662,7 +669,8 @@ p <- pdata %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using the `.groups` argument.
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
 ```
 
 ```r
@@ -676,7 +684,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve73adac3a3d4a8c24
+preserve37d216adca7b1742
 
 
 ```r
@@ -686,7 +694,8 @@ pdata %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using the `.groups` argument.
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
 ```
 
 ![](01-sdg_who_files/figure-html/sdg_who_pptop_productivity_share-1.png)<!-- -->
@@ -699,7 +708,8 @@ p <- pdata %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using the `.groups` argument.
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
 ```
 
 ```r
@@ -713,7 +723,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveabe2920d9bc9719a
+preserve6168b5a1ff4af895
 
 
 
@@ -724,7 +734,8 @@ pdata %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using the `.groups` argument.
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
 ```
 
 ![](01-sdg_who_files/figure-html/sdg_who_pptop_citations_share-1.png)<!-- -->
@@ -741,7 +752,14 @@ wb_local <- wb_indicators %>%
   group_by(country_name, country_code, indicator_code, indicator_name) %>% 
   summarise(value = mean(value, na.rm = TRUE)) %>% 
   collect()
+```
 
+```
+## `summarise()` has grouped output by 'country_name', 'country_code',
+## 'indicator_code'. You can override using the `.groups` argument.
+```
+
+```r
 proper_countries <- wb_countries %>% 
   filter(!is.na(`Currency Unit`)) %>% 
   select(country_code = `Country Code`, short_name = `Short Name`, Region,
@@ -774,9 +792,6 @@ papers_w_affils <- papers %>%
 
 ```
 ## Joining, by = "paperid"
-```
-
-```
 ## Joining, by = "affiliationid"
 ```
 
@@ -790,11 +805,15 @@ papers_per_country_fos_author_pos <- papers_w_affils %>%
   collect()
 ```
 
+```
+## `summarise()` has grouped output by 'country', 'year', 'SDG_label'. You can
+## override using the `.groups` argument.
+```
+
 
 
 ```r
-papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos %>% 
-  filter(year == 2018) %>% 
+papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos %>%
   left_join(wb_2014_2018, by = c("country" = "country_code")) %>% 
   drop_na()
 
@@ -802,12 +821,15 @@ papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos_c
   mutate(income_group = fct_relevel(income_group, "High income", 
                                     "Upper middle income", 
                                     "Lower middle income", "Low income"))
+
+papers_per_country_fos_author_pos_country_2018 <- papers_per_country_fos_author_pos_country %>% 
+  filter(year == 2018)
 ```
 
 
 
 ```r
-papers_per_country_fos_author_pos_country %>% 
+papers_per_country_fos_author_pos_country_2018 %>% 
   filter(author_position == "first_author") %>% 
   ggplot(aes(gdp_per_cap, n, colour = Region, label = country_name)) +
   geom_point() +
@@ -826,7 +848,7 @@ papers_per_country_fos_author_pos_country %>%
 
 
 ```r
-papers_per_country_fos_author_pos_country %>% 
+papers_per_country_fos_author_pos_country_2018 %>% 
   ggplot(aes(author_position, n, fill = income_group)) +
   geom_boxplot() +
   facet_wrap(vars(SDG_label)) +
@@ -852,7 +874,7 @@ plot_box <- function(df, var) {
 
 
 ```r
-plot_box(papers_per_country_fos_author_pos_country, n) +
+plot_box(papers_per_country_fos_author_pos_country_2018, n) +
   labs(title = "Productivity by SDG",
        subtitle = "First authors only",
        y = "# of papers", x = NULL, fill = NULL)
@@ -860,8 +882,9 @@ plot_box(papers_per_country_fos_author_pos_country, n) +
 
 ![](01-sdg_who_files/figure-html/sdg_who_production_by_region-1.png)<!-- -->
 
+
 ```r
-plot_box(papers_per_country_fos_author_pos_country, tncs) +
+plot_box(papers_per_country_fos_author_pos_country_2018, tncs) +
   labs(title = "Total citations for research on SDGs",
        subtitle = "First authors only",
        y = "total citations (full counting)", x = NULL, fill = NULL)
@@ -871,7 +894,7 @@ plot_box(papers_per_country_fos_author_pos_country, tncs) +
 
 
 ```r
-plot_box(papers_per_country_fos_author_pos_country, mncs) +
+plot_box(papers_per_country_fos_author_pos_country_2018, mncs) +
   labs(title = "Mean citations for research on SDG",
        subtitle = "First authors only",
        y = "mean citations (full counting)", x = NULL, fill = NULL)
@@ -882,7 +905,7 @@ plot_box(papers_per_country_fos_author_pos_country, mncs) +
 
 
 ```r
-papers_per_country_fos_author_pos_country %>% 
+papers_per_country_fos_author_pos_country_2018 %>% 
   filter(author_position == "first_author") %>% 
   ggplot(aes(n, mncs, colour = income_group)) +
   geom_point(size = .4) +
@@ -899,7 +922,7 @@ papers_per_country_fos_author_pos_country %>%
 
 
 ```r
-papers_per_country_fos_author_pos_country %>% 
+papers_per_country_fos_author_pos_country_2018 %>% 
   filter(author_position == "first_author") %>% 
   # mutate(mncs = mncs + .1) %>% 
   # filter(mncs < 10) %>% 
@@ -918,6 +941,139 @@ papers_per_country_fos_author_pos_country %>%
 ```
 
 ![](01-sdg_who_files/figure-html/sdg_who_mncs_by_country-1.png)<!-- -->
+
+
+----
+
+New plots: Share of papers within SDG per income category over time.
+
+
+```r
+normalised_country_share_time <- papers_per_country_fos_author_pos_country %>% 
+  # filter(author_position == "first_author") %>% 
+  group_by(SDG_label, year, income_group) %>% 
+  summarise(nn = sum(n)) %>% 
+  mutate(share = nn/sum(nn))
+```
+
+```
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
+```
+
+
+```r
+normalised_country_share_time %>% 
+  ggplot(aes(year, share, colour = income_group, group = income_group)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(SDG_label))
+```
+
+![](01-sdg_who_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
+
+
+
+```r
+normalised_region_share_time <- papers_per_country_fos_author_pos_country %>% 
+  filter(author_position == "first_author") %>%
+  group_by(SDG_label, year, Region) %>% 
+  summarise(nn = sum(n)) %>% 
+  mutate(share = nn/sum(nn))
+```
+
+```
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
+```
+
+
+```r
+date_scale <- scale_x_date(breaks = as_year(c(2006, 2010, 2015, 2019)),
+               date_labels = "%Y")
+normalised_region_share_time %>% 
+  ggplot(aes(as_year(year), share, colour = Region, group = Region)) +
+  geom_line() +
+  geom_point() + 
+  facet_wrap(vars(fix_sdg(SDG_label))) +
+  date_scale +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  theme(legend.position = "top") +
+  labs(x = NULL, y = "% of publications from world region within year and SDG",
+       colour = NULL)
+```
+
+![](01-sdg_who_files/figure-html/world_regions_over_time-1.png)<!-- -->
+
+How much of "East Asia & Pacific" is China?
+
+
+```r
+papers_per_country_fos_author_pos_country %>% 
+  filter(Region == "East Asia & Pacific") %>% 
+  filter(year == 2019) %>% 
+  group_by(SDG_label, country_name) %>% 
+  summarise(nn = sum(n)) %>% 
+  filter(SDG_label == "SDG_3") %>% 
+  mutate(share = nn/sum(nn)) %>% 
+  arrange(desc(share)) %>% 
+  mutate(cumulative_share = cumsum(share)) %>% 
+  mutate(perc = scales::percent(share),
+         cumulative_perc = scales::percent(cumulative_share)) %>% 
+  head(10) %>% 
+  select(SDG_label, country_name, n = nn, perc, cumulative_perc) %>% 
+  knitr::kable(caption = "Share of publications in 2019 among 'East Asia & Pacific'")
+```
+
+```
+## `summarise()` has grouped output by 'SDG_label'. You can override using the
+## `.groups` argument.
+```
+
+
+
+Table: Share of publications in 2019 among 'East Asia & Pacific'
+
+|SDG_label |country_name         |      n|perc      |cumulative_perc |
+|:---------|:--------------------|------:|:---------|:---------------|
+|SDG_3     |China                | 357664|47.30567% |47.30567%       |
+|SDG_3     |Japan                | 148574|19.65083% |66.95650%       |
+|SDG_3     |Australia            | 104972|13.88390% |80.84040%       |
+|SDG_3     |Korea, Rep.          |  82177|10.86897% |91.70937%       |
+|SDG_3     |Hong Kong SAR, China |  12351|1.63358%  |93.34294%       |
+|SDG_3     |Singapore            |  11781|1.55819%  |94.90113%       |
+|SDG_3     |Thailand             |   9985|1.32064%  |96.22178%       |
+|SDG_3     |New Zealand          |   9081|1.20108%  |97.42286%       |
+|SDG_3     |Malaysia             |   8774|1.16047%  |98.58333%       |
+|SDG_3     |Indonesia            |   6534|0.86421%  |99.44754%       |
+
+How strong is China growing?
+
+```r
+pdata <- papers_per_country_fos_author_pos_country %>% 
+  filter(Region == "East Asia & Pacific") %>% 
+  group_by(SDG_label, year, country_name) %>% 
+  summarise(nn = sum(n)) %>% 
+  mutate(share = nn/sum(nn))
+```
+
+```
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
+```
+
+```r
+pdata %>% 
+  ggplot(aes(year, nn, group = country_name)) +
+  geom_line() +
+  geom_line(data = filter(pdata, country_name == "China"), colour = "red") +
+  geom_point() +
+  facet_wrap(vars(SDG_label)) 
+```
+
+![](01-sdg_who_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+
+Answer: a lot. This is the main reason for the growth of the whole region.
 
 # SDG by funding
 To which extent is research in these areas being funded?
@@ -965,9 +1121,6 @@ gender_base <- papers %>%
 
 ```
 ## Joining, by = "paperid"
-```
-
-```
 ## Joining, by = "authorid"
 ```
 
@@ -1007,14 +1160,14 @@ p <- gender_years %>%
 p
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preserveed358c0010266677
+preservea6133259d47f097f
 
 
 ```r
@@ -1031,14 +1184,14 @@ p <- gender_position %>%
 p
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
 
 
 ```r
 plotly::ggplotly(p)
 ```
 
-preservee2718088a59caa09
+preserve677040c7a80eb3f7
 
 
 
