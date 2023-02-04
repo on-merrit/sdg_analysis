@@ -3,11 +3,13 @@ title: Which authors, institutions, nations, regions contribute work on these SD
   areas (to which extent, and over time, and what characteristics of contributors
   can be observed)?
 author: "Thomas Klebel"
-date: "28 January, 2023"
+date: "04 February, 2023"
 output: 
   html_document:
     keep_md: true
 ---
+
+
 
 
 
@@ -58,6 +60,7 @@ p <- fos_counts %>%
   ggplot(aes(as_year(year), n, colour = fix_sdg(SDG_label))) +
   geom_line() +
   geom_point() +
+  colorspace::scale_color_discrete_qualitative() +
   scale_y_log10(labels = scales::comma,
                 breaks = c(10e+3, 30e+3, 1e+5, 1e+6)) +
   labs(x = NULL, y = "# of publications", colour = NULL,
@@ -72,7 +75,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveb142a6f5a4da712d
+preserve7e33664a0fd03f5d
 
 
 We can observe a slight upward trend, that could be attributable to the overall
@@ -315,7 +318,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserveb49dd8c38ac91bed
+preservedcb8c6c876388c21
 
 
 Multiple findings:
@@ -447,6 +450,7 @@ papers_per_affiliation_per_w_leiden %>%
   facet_wrap(vars(indicator)) + 
   geom_boxplot() +
   scale_y_log10(labels = scales::comma) +
+  colorspace::scale_fill_discrete_qualitative() +
   labs(x = NULL, y = NULL, fill = "Leiden Ranking",
        title = "Difference according to mapping to Leiden ranking",
        caption = "Only papers from 2018 plotted") +
@@ -590,6 +594,7 @@ plot_over_time <- function(df, indicator, y_var) {
     geom_line() +
     facet_wrap(vars(fix_sdg(SDG_label))) +
     scale_y_log10() +
+    colorspace::scale_color_discrete_qualitative() +
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL)
 }
@@ -657,7 +662,8 @@ plot_proportions <- function(df, indicator, y_var) {
     facet_wrap(vars(fix_sdg(SDG_label))) + 
     guides(colour = guide_legend(reverse = TRUE)) +
     labs(x = NULL) +
-    scale_y_continuous(labels = scales::percent)
+    scale_y_continuous(labels = scales::percent) +
+    colorspace::scale_color_discrete_qualitative()
 }
 ```
 
@@ -684,7 +690,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve37d216adca7b1742
+preserve582d43c2d5775712
 
 
 ```r
@@ -723,7 +729,7 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve6168b5a1ff4af895
+preserve0d466e11c4b60838
 
 
 
@@ -814,13 +820,13 @@ papers_per_country_fos_author_pos <- papers_w_affils %>%
 
 ```r
 papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos %>%
-  left_join(wb_2014_2018, by = c("country" = "country_code")) %>% 
+  left_join(un_countries_selection, by = c("country" = "country_code")) %>% 
   drop_na()
 
-papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos_country %>% 
-  mutate(income_group = fct_relevel(income_group, "High income", 
-                                    "Upper middle income", 
-                                    "Lower middle income", "Low income"))
+# papers_per_country_fos_author_pos_country <- papers_per_country_fos_author_pos_country %>% 
+#   mutate(income_group = fct_relevel(income_group, "High income", 
+#                                     "Upper middle income", 
+#                                     "Lower middle income", "Low income"))
 
 papers_per_country_fos_author_pos_country_2018 <- papers_per_country_fos_author_pos_country %>% 
   filter(year == 2018)
@@ -844,8 +850,6 @@ papers_per_country_fos_author_pos_country_2018 %>%
        colour = NULL)
 ```
 
-![](01-sdg_who_files/figure-html/sdg_who_total_n_by_country-1.png)<!-- -->
-
 
 ```r
 papers_per_country_fos_author_pos_country_2018 %>% 
@@ -856,8 +860,6 @@ papers_per_country_fos_author_pos_country_2018 %>%
   #            cols = vars(SDG_label)) +
   scale_y_log10() 
 ```
-
-![](01-sdg_who_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 
@@ -880,8 +882,6 @@ plot_box(papers_per_country_fos_author_pos_country_2018, n) +
        y = "# of papers", x = NULL, fill = NULL)
 ```
 
-![](01-sdg_who_files/figure-html/sdg_who_production_by_region-1.png)<!-- -->
-
 
 ```r
 plot_box(papers_per_country_fos_author_pos_country_2018, tncs) +
@@ -890,8 +890,6 @@ plot_box(papers_per_country_fos_author_pos_country_2018, tncs) +
        y = "total citations (full counting)", x = NULL, fill = NULL)
 ```
 
-![](01-sdg_who_files/figure-html/sdg_who_tncs_by_region-1.png)<!-- -->
-
 
 ```r
 plot_box(papers_per_country_fos_author_pos_country_2018, mncs) +
@@ -899,8 +897,6 @@ plot_box(papers_per_country_fos_author_pos_country_2018, mncs) +
        subtitle = "First authors only",
        y = "mean citations (full counting)", x = NULL, fill = NULL)
 ```
-
-![](01-sdg_who_files/figure-html/sdg_who_mncs_by_region-1.png)<!-- -->
 
 
 
@@ -913,12 +909,6 @@ papers_per_country_fos_author_pos_country_2018 %>%
   scale_y_log10() +
   geom_smooth(se = TRUE, alpha = .1)
 ```
-
-```
-## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
-```
-
-![](01-sdg_who_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 
 ```r
@@ -940,8 +930,6 @@ papers_per_country_fos_author_pos_country_2018 %>%
        colour = NULL)
 ```
 
-![](01-sdg_who_files/figure-html/sdg_who_mncs_by_country-1.png)<!-- -->
-
 
 ----
 
@@ -956,11 +944,6 @@ normalised_country_share_time <- papers_per_country_fos_author_pos_country %>%
   mutate(share = nn/sum(nn))
 ```
 
-```
-## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
-## the `.groups` argument.
-```
-
 
 ```r
 normalised_country_share_time %>% 
@@ -970,14 +953,12 @@ normalised_country_share_time %>%
   facet_wrap(vars(SDG_label))
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
-
 
 
 ```r
 normalised_region_share_time <- papers_per_country_fos_author_pos_country %>% 
   filter(author_position == "first_author") %>%
-  group_by(SDG_label, year, Region) %>% 
+  group_by(SDG_label, year, continent) %>% 
   summarise(nn = sum(n)) %>% 
   mutate(share = nn/sum(nn))
 ```
@@ -992,25 +973,98 @@ normalised_region_share_time <- papers_per_country_fos_author_pos_country %>%
 date_scale <- scale_x_date(breaks = as_year(c(2006, 2010, 2015, 2019)),
                date_labels = "%Y")
 normalised_region_share_time %>% 
-  ggplot(aes(as_year(year), share, colour = Region, group = Region)) +
+  ggplot(aes(as_year(year), share, colour = continent, group = continent)) +
   geom_line() +
   geom_point() + 
   facet_wrap(vars(fix_sdg(SDG_label))) +
   date_scale +
   scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  colorspace::scale_color_discrete_qualitative() +
   theme(legend.position = "top") +
   labs(x = NULL, y = "% of publications from world region within year and SDG",
        colour = NULL)
 ```
 
-![](01-sdg_who_files/figure-html/world_regions_over_time-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/continents_over_time-1.png)<!-- -->
+
+
+```r
+normalised_region_share_time <- papers_per_country_fos_author_pos_country %>% 
+  filter(author_position == "first_author") %>%
+  group_by(SDG_label, year, sub_continent) %>% 
+  summarise(nn = sum(n)) %>% 
+  mutate(share = nn/sum(nn))
+```
+
+```
+## `summarise()` has grouped output by 'SDG_label', 'year'. You can override using
+## the `.groups` argument.
+```
+
+
+```r
+date_scale <- scale_x_date(breaks = as_year(c(2006, 2010, 2015, 2019)),
+               date_labels = "%Y")
+base_col = "grey80"
+
+subset_countries <- filter(
+  normalised_region_share_time, 
+  sub_continent %in% c("Northern America", "Western Europe", "Northern Europe",
+                       "Eastern Asia"
+  ))
+
+normalised_region_share_time %>% 
+  ggplot(aes(as_year(year), share, group = sub_continent, colour = sub_continent)) +
+  geom_line(colour = base_col) +
+  geom_line(data = subset_countries) +
+  geom_point(data = subset_countries, size = 1.2) +
+  facet_wrap(vars(fix_sdg(SDG_label))) +
+  date_scale +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  colorspace::scale_color_discrete_qualitative() +
+  theme(legend.position = "top") +
+  labs(x = NULL, y = "% of publications from world region within SDGs",
+       colour = NULL)
+```
+
+![](01-sdg_who_files/figure-html/sub_continents_over_time-1.png)<!-- -->
+
+
+```r
+date_scale <- scale_x_date(breaks = as_year(c(2006, 2010, 2015, 2019)),
+               date_labels = "%Y")
+
+
+p <- normalised_region_share_time %>% 
+  ggplot(aes(as_year(year), share, group = sub_continent, colour = sub_continent)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(fix_sdg(SDG_label))) +
+  date_scale +
+  colorspace::scale_color_discrete_qualitative() +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  theme(legend.position = "top") +
+  labs(x = NULL, y = "% of publications from world region within year and SDG",
+       colour = NULL)
+p
+```
+
+![](01-sdg_who_files/figure-html/sub_continents_all_over_time-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preserve485a54a7f375ba8b
+
 
 How much of "East Asia & Pacific" is China?
 
 
 ```r
 papers_per_country_fos_author_pos_country %>% 
-  filter(Region == "East Asia & Pacific") %>% 
+  filter(sub_continent == "Eastern Asia") %>% 
   filter(year == 2019) %>% 
   group_by(SDG_label, country_name) %>% 
   summarise(nn = sum(n)) %>% 
@@ -1034,24 +1088,21 @@ papers_per_country_fos_author_pos_country %>%
 
 Table: Share of publications in 2019 among 'East Asia & Pacific'
 
-|SDG_label |country_name         |      n|perc      |cumulative_perc |
-|:---------|:--------------------|------:|:---------|:---------------|
-|SDG_3     |China                | 357664|47.30567% |47.30567%       |
-|SDG_3     |Japan                | 148574|19.65083% |66.95650%       |
-|SDG_3     |Australia            | 104972|13.88390% |80.84040%       |
-|SDG_3     |Korea, Rep.          |  82177|10.86897% |91.70937%       |
-|SDG_3     |Hong Kong SAR, China |  12351|1.63358%  |93.34294%       |
-|SDG_3     |Singapore            |  11781|1.55819%  |94.90113%       |
-|SDG_3     |Thailand             |   9985|1.32064%  |96.22178%       |
-|SDG_3     |New Zealand          |   9081|1.20108%  |97.42286%       |
-|SDG_3     |Malaysia             |   8774|1.16047%  |98.58333%       |
-|SDG_3     |Indonesia            |   6534|0.86421%  |99.44754%       |
+|SDG_label |country_name                                   |      n|perc     |cumulative_perc |
+|:---------|:----------------------------------------------|------:|:--------|:---------------|
+|SDG_3     |China                                          | 357664|59.4991% |59.4991%        |
+|SDG_3     |Japan                                          | 148574|24.7160% |84.2151%        |
+|SDG_3     |Republic of Korea                              |  82177|13.6705% |97.8856%        |
+|SDG_3     |China, Hong Kong Special Administrative Region |  12351|2.0546%  |99.9403%        |
+|SDG_3     |China, Macao Special Administrative Region     |    237|0.0394%  |99.9797%        |
+|SDG_3     |Mongolia                                       |     79|0.0131%  |99.9928%        |
+|SDG_3     |Democratic People's Republic of Korea          |     43|0.0072%  |100.0000%       |
 
 How strong is China growing?
 
 ```r
 pdata <- papers_per_country_fos_author_pos_country %>% 
-  filter(Region == "East Asia & Pacific") %>% 
+  filter(sub_continent == "Eastern Asia") %>% 
   group_by(SDG_label, year, country_name) %>% 
   summarise(nn = sum(n)) %>% 
   mutate(share = nn/sum(nn))
@@ -1065,13 +1116,14 @@ pdata <- papers_per_country_fos_author_pos_country %>%
 ```r
 pdata %>% 
   ggplot(aes(year, nn, group = country_name)) +
-  geom_line() +
-  geom_line(data = filter(pdata, country_name == "China"), colour = "red") +
-  geom_point() +
-  facet_wrap(vars(SDG_label)) 
+  geom_line(colour = base_col) +
+  geom_line(data = filter(pdata, country_name == "China"),
+            aes(colour = country_name)) +
+  geom_point(data = filter(pdata, country_name == "China")) +
+  facet_wrap(vars(SDG_label), scales = "free_y") 
 ```
 
-![](01-sdg_who_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](01-sdg_who_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
 Answer: a lot. This is the main reason for the growth of the whole region.
 
@@ -1155,30 +1207,7 @@ p <- gender_years %>%
   geom_point() +
   date_scale +
   scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
-  labs(x = NULL, y = "Share of female authorships", colour = NULL) +
-  theme(legend.position = "top")
-p
-```
-
-![](01-sdg_who_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
-
-
-```r
-plotly::ggplotly(p)
-```
-
-preservea6133259d47f097f
-
-
-```r
-p <- gender_position %>% 
-  filter(gender == "female") %>% 
-  ggplot(aes(as_year(year), prop, colour = fix_sdg(SDG_label))) +
-  geom_line() +
-  geom_point() +
-  date_scale +
-  facet_wrap(vars(author_position)) +
-  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  colorspace::scale_color_discrete_qualitative() +
   labs(x = NULL, y = "Share of female authorships", colour = NULL) +
   theme(legend.position = "top")
 p
@@ -1191,7 +1220,32 @@ p
 plotly::ggplotly(p)
 ```
 
-preserve677040c7a80eb3f7
+preserve34b919cd1ee0fe8c
+
+
+```r
+p <- gender_position %>% 
+  filter(gender == "female") %>% 
+  ggplot(aes(as_year(year), prop, colour = fix_sdg(SDG_label))) +
+  geom_line() +
+  geom_point() +
+  date_scale +
+  facet_wrap(vars(author_position)) +
+  scale_y_continuous(labels = function(x) scales::percent(x, 1)) +
+  colorspace::scale_color_discrete_qualitative() +
+  labs(x = NULL, y = "Share of female authorships", colour = NULL) +
+  theme(legend.position = "top")
+p
+```
+
+![](01-sdg_who_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+
+
+```r
+plotly::ggplotly(p)
+```
+
+preservea5852618ffdd93ca
 
 
 
