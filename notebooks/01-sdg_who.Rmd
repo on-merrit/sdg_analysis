@@ -134,6 +134,15 @@ venn.diagram(
 
 ## Number of papers
 
+```{r}
+n <- papers %>% 
+  count(SDG_label) %>% 
+  collect() %>% 
+  mutate(total_n = sum(n))
+n
+```
+
+
 ```{r sdg_who_by_sdg_count, fig.width=7, fig.height=4}
 fos_counts <- papers %>% 
   count(SDG_label, year) %>% 
